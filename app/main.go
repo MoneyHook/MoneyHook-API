@@ -3,9 +3,10 @@ package main
 import (
 	"net/http"
 
-	"example.com/m/db"
-	"example.com/m/handler"
-	"example.com/m/store"
+	"MoneyHook/MoneyHook-API/db"
+	"MoneyHook/MoneyHook-API/handler"
+	"MoneyHook/MoneyHook-API/store"
+
 	"github.com/labstack/echo/v4"
 )
 

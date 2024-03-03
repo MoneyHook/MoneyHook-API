@@ -3,7 +3,8 @@ package store
 import (
 	"fmt"
 
-	"example.com/m/model"
+	"MoneyHook/MoneyHook-API/model"
+
 	"gorm.io/gorm"
 )
 

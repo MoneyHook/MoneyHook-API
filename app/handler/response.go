@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"example.com/m/model"
+	"MoneyHook/MoneyHook-API/model"
 )
 
 type categoryResponse struct {

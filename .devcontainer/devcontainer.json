@@ -1,0 +1,27 @@
+{
+	"name": "Echo Container",
+	"dockerComposeFile": ["../compose.yaml"],
+
+	"initializeCommand": "ls -al",
+	"service": "go",
+
+	"workspaceFolder": "/workspace",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"golang.go",
+				"garytyler.darcula-pycharm",
+				"oderwat.indent-rainbow",
+				"mosapride.zenkaku",
+				"MS-CEINTL.vscode-language-pack-ja",
+				"TabNine.tabnine-vscode",
+				"ms-vsliveshare.vsliveshare",
+				"vscode-icons-team.vscode-icons",
+				"ms-azuretools.vscode-docker",
+				"intellsmi.deepl-translate"
+			]
+		}
+	},
+
+	"forwardPorts": [8080]
+}

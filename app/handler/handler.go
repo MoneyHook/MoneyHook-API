@@ -1,6 +1,6 @@
 package handler
 
-import category "example.com/m/cagegory"
+import category "MoneyHook/MoneyHook-API/cagegory"
 
 type Handler struct {
 	categoryStore category.Store

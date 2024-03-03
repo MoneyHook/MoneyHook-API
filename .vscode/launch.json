@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Remote",
+        "type": "go",
+        "request": "attach",
+        "mode": "remote",
+        "remotePath": "/app",
+        "host": "localhost",
+        "port": 2345,
+        "cwd": "/app",
+        "showLog": true
+      }
+    ]
+  }

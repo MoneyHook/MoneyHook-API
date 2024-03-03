@@ -1,6 +1,6 @@
 package category
 
-import "example.com/m/model"
+import "MoneyHook/MoneyHook-API/model"
 
 type Store interface {
 	GetCategoryList() *model.CategoryList
