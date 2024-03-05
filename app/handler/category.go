@@ -2,28 +2,31 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 )
 
+func getUserId(c echo.Context) int {
+	userId, error := strconv.Atoi(c.Request().Header["Authorization"][0])
+	if error != nil {
+		return 1
+	}
+	return userId
+}
+
 func (h *Handler) GetCategoryList(c echo.Context) error {
 	result := h.categoryStore.GetCategoryList()
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
+
 	result_list := getCategoryListResponse(result)
 
 	return c.JSON(http.StatusOK, *result_list)
 }
 
 func (h *Handler) GetCategoryWithSubCategoryList(c echo.Context) error {
-	result := h.categoryStore.GetCategoryWithSubCategoryList()
-	// result := h.categoryStore.GetCategoryWithSubCategoryList()
+	userId := getUserId(c)
+	result := h.categoryStore.GetCategoryWithSubCategoryList(userId)
 
-	// fmt.Println(*result)
-	// for _, c := range result.CategoryWithSubCategoryList {
-	// 	fmt.Println(c.SubCategoryList)
-	// }
 	result_list := getCategoryWithSubCategoryListResponse(result)
 
 	return c.JSON(http.StatusOK, *result_list)

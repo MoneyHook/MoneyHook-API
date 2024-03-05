@@ -5,18 +5,18 @@ import (
 )
 
 type categoryResponse struct {
-	Category_id   int    `json:"categoryId"`
-	Category_name string `json:"categoryName"`
+	Category_id   int    `json:"category_id"`
+	Category_name string `json:"category_name"`
 }
 
 type categoryListResponse struct {
-	CategoryList []categoryResponse `json:"categoryList"`
+	CategoryList []categoryResponse `json:"category_list"`
 }
 
-func getCategoryListResponse(data *model.CategoryList) *categoryListResponse {
+func getCategoryListResponse(data *[]model.Category) *categoryListResponse {
 	cl := &categoryListResponse{}
 
-	for _, category := range data.CategoryList {
+	for _, category := range *data {
 		cr := &categoryResponse{Category_id: category.CategoryId, Category_name: category.CategoryName}
 		cl.CategoryList = append(cl.CategoryList, *cr)
 	}
@@ -25,31 +25,31 @@ func getCategoryListResponse(data *model.CategoryList) *categoryListResponse {
 }
 
 type categoryWithSubCategoryListResponse struct {
-	CategoryList []categoryWithSubCategory `json:"categoryList"`
+	CategoryList []categoryWithSubCategory `json:"category_list"`
 }
 
 type categoryWithSubCategory struct {
-	Category_id             int                       `json:"categoryId"`
-	Category_name           string                    `json:"categoryName"`
-	SubCategoryListResponse []subCategoryListResponse `json:"subCategoryList"`
+	CategoryId              int                       `json:"category_id"`
+	CategoryName            string                    `json:"category_name"`
+	SubCategoryListResponse []subCategoryListResponse `json:"sub_category_list"`
 }
 
 type subCategoryListResponse struct {
-	Sub_Category_id   int    `json:"sub_categoryId"`
-	Sub_Category_name string `json:"sub_categoryName"`
-	Enable            bool   `json:"enable"`
+	SubCategoryId   int    `json:"sub_category_id"`
+	SubCategoryName string `json:"sub_category_name"`
+	Enable          bool   `json:"enable"`
 }
 
-func getCategoryWithSubCategoryListResponse(data *model.CategoryWithSubCategoryList) *categoryWithSubCategoryListResponse {
+func getCategoryWithSubCategoryListResponse(data *[]model.CategoryWithSubCategory) *categoryWithSubCategoryListResponse {
 	cl := &categoryWithSubCategoryListResponse{}
 
-	for _, category := range data.CategoryWithSubCategoryList {
+	for _, category := range *data {
 		scl := []subCategoryListResponse{}
 		for _, sub_category := range category.SubCategoryList {
-			scl = append(scl, subCategoryListResponse{Sub_Category_id: sub_category.SubCategoryId, Sub_Category_name: sub_category.SubCategoryName})
+			scl = append(scl, subCategoryListResponse{SubCategoryId: sub_category.SubCategoryId, SubCategoryName: sub_category.SubCategoryName, Enable: sub_category.Enable})
 		}
 
-		cr := &categoryWithSubCategory{Category_id: category.CategoryId, Category_name: category.CategoryName, SubCategoryListResponse: scl}
+		cr := &categoryWithSubCategory{CategoryId: category.CategoryId, CategoryName: category.CategoryName, SubCategoryListResponse: scl}
 		cl.CategoryList = append(cl.CategoryList, *cr)
 	}
 

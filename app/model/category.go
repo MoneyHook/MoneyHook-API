@@ -5,14 +5,6 @@ type Category struct {
 	CategoryName string `gorm:"category_name"`
 }
 
-type CategoryList struct {
-	CategoryList []Category
-}
-
-type CategoryWithSubCategoryList struct {
-	CategoryWithSubCategoryList []CategoryWithSubCategory
-}
-
 type CategoryWithSubCategory struct {
 	CategoryId      int
 	CategoryName    string
@@ -30,5 +22,5 @@ func (SubCategory) TableName() string {
 type SubCategory struct {
 	SubCategoryId   int
 	SubCategoryName string
-	// Enable          bool
+	Enable          bool
 }

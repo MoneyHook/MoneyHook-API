@@ -3,6 +3,6 @@ package category
 import "MoneyHook/MoneyHook-API/model"
 
 type Store interface {
-	GetCategoryList() *model.CategoryList
-	GetCategoryWithSubCategoryList() *model.CategoryWithSubCategoryList
+	GetCategoryList() *[]model.Category
+	GetCategoryWithSubCategoryList(userId int) *[]model.CategoryWithSubCategory
 }
