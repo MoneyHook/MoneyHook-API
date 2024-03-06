@@ -29,12 +29,12 @@ type categoryWithSubCategoryListResponse struct {
 }
 
 type categoryWithSubCategory struct {
-	CategoryId              int                       `json:"category_id"`
-	CategoryName            string                    `json:"category_name"`
-	SubCategoryListResponse []subCategoryListResponse `json:"sub_category_list"`
+	CategoryId              int                                 `json:"category_id"`
+	CategoryName            string                              `json:"category_name"`
+	SubCategoryListResponse []subCategoryListWithEnableResponse `json:"sub_category_list"`
 }
 
-type subCategoryListResponse struct {
+type subCategoryListWithEnableResponse struct {
 	SubCategoryId   int    `json:"sub_category_id"`
 	SubCategoryName string `json:"sub_category_name"`
 	Enable          bool   `json:"enable"`
@@ -44,9 +44,9 @@ func getCategoryWithSubCategoryListResponse(data *[]model.CategoryWithSubCategor
 	cl := &categoryWithSubCategoryListResponse{}
 
 	for _, category := range *data {
-		scl := []subCategoryListResponse{}
+		scl := []subCategoryListWithEnableResponse{}
 		for _, sub_category := range category.SubCategoryList {
-			scl = append(scl, subCategoryListResponse{SubCategoryId: sub_category.SubCategoryId, SubCategoryName: sub_category.SubCategoryName, Enable: sub_category.Enable})
+			scl = append(scl, subCategoryListWithEnableResponse{SubCategoryId: sub_category.SubCategoryId, SubCategoryName: sub_category.SubCategoryName, Enable: sub_category.Enable})
 		}
 
 		cr := &categoryWithSubCategory{CategoryId: category.CategoryId, CategoryName: category.CategoryName, SubCategoryListResponse: scl}
@@ -54,4 +54,24 @@ func getCategoryWithSubCategoryListResponse(data *[]model.CategoryWithSubCategor
 	}
 
 	return cl
+}
+
+type subCategoryListResponse struct {
+	SubCategoryList []subCategoryResponse `json:"sub_category_list"`
+}
+
+type subCategoryResponse struct {
+	SubCategoryId   int    `json:"sub_category_id"`
+	SubCategoryName string `json:"sub_category_name"`
+}
+
+func getSubCategoryListResponse(data *[]model.SubCategory) *subCategoryListResponse {
+	scl := &subCategoryListResponse{}
+
+	for _, sub_category := range *data {
+		scr := &subCategoryResponse{SubCategoryId: sub_category.SubCategoryId, SubCategoryName: sub_category.SubCategoryName}
+		scl.SubCategoryList = append(scl.SubCategoryList, *scr)
+	}
+
+	return scl
 }

@@ -21,7 +21,8 @@ func main() {
 	d := db.New()
 
 	cs := store.NewCategoryStore(d)
-	h := handler.NewHandler(cs)
+	scs := store.NewSubCategoryStore(d)
+	h := handler.NewHandler(cs, scs)
 	h.Register(v1)
 
 	e.Logger.Fatal(e.Start(":8080"))

@@ -1,25 +1,25 @@
 package model
 
 type Category struct {
-	CategoryId   int    `gorm:"category_id"`
-	CategoryName string `gorm:"category_name"`
+	CategoryId   int
+	CategoryName string
 }
 
 type CategoryWithSubCategory struct {
 	CategoryId      int
 	CategoryName    string
-	SubCategoryList []SubCategory `gorm:"foreignKey:SubCategoryId;references:CategoryId"`
+	SubCategoryList []SubCategoryWithEnable
 }
 
 type Tabler interface {
 	TableName() string
 }
 
-func (SubCategory) TableName() string {
+func (SubCategoryWithEnable) TableName() string {
 	return "sub_category"
 }
 
-type SubCategory struct {
+type SubCategoryWithEnable struct {
 	SubCategoryId   int
 	SubCategoryName string
 	Enable          bool

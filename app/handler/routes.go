@@ -8,4 +8,7 @@ func (h *Handler) Register(v1 *echo.Group) {
 	category := v1.Group("/category")
 	category.GET("/getCategoryList", h.GetCategoryList)
 	category.GET("/getCategoryWithSubCategoryList", h.GetCategoryWithSubCategoryList)
+
+	sub_category := v1.Group("/subCategory")
+	sub_category.GET("/getSubCategoryList/:categoryId", h.GetSubCategoryList)
 }
