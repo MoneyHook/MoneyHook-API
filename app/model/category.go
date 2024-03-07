@@ -8,7 +8,7 @@ type Category struct {
 type CategoryWithSubCategory struct {
 	CategoryId      int
 	CategoryName    string
-	SubCategoryList []SubCategoryWithEnable
+	SubCategoryList []SubCategoryWithEnable `gorm:"foreignKey:SubCategoryId;references:CategoryId"`
 }
 
 type Tabler interface {

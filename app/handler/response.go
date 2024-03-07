@@ -75,3 +75,31 @@ func getSubCategoryListResponse(data *[]model.SubCategory) *subCategoryListRespo
 
 	return scl
 }
+
+type timelineListResponse struct {
+	TimelineList []timelineResponse `json:"transaction_list"`
+}
+
+type timelineResponse struct {
+	TransactionId     int    `json:"transaction_id"`
+	TransactionName   string `json:"transaction_name"`
+	TransactionAmount int    `json:"transaction_amount"`
+	TransactionSign   int    `json:"transaction_sign"`
+	TransactionDate   string `json:"transaction_date"`
+	CategoryId        int    `json:"category_id"`
+	CategoryName      string `json:"category_name"`
+	SubCategoryId     int    `json:"sub_category_id"`
+	SubCategoryName   string `json:"sub_category_name"`
+	FixedFlg          bool   `json:"fixed_flg"`
+}
+
+func getTimelineListResponse(data *[]model.Timeline) *timelineListResponse {
+	tll := &timelineListResponse{}
+
+	for _, t := range *data {
+		tl := &timelineResponse{TransactionId: t.TransactionId, TransactionName: t.TransactionName, TransactionAmount: t.TransactionAmount, TransactionSign: t.TransactionSign, TransactionDate: t.TransactionDate, CategoryId: t.CategoryId, CategoryName: t.CategoryName, SubCategoryId: t.SubCategoryId, SubCategoryName: t.SubCategoryName, FixedFlg: t.FixedFlg}
+		tll.TimelineList = append(tll.TimelineList, *tl)
+	}
+
+	return tll
+}
