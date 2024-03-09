@@ -1,6 +1,10 @@
 package model
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type Timeline struct {
 	gorm.Model
@@ -8,7 +12,7 @@ type Timeline struct {
 	TransactionName   string
 	TransactionAmount int
 	TransactionSign   int
-	TransactionDate   string
+	TransactionDate   time.Time
 	CategoryId        int
 	CategoryName      string
 	SubCategoryId     int

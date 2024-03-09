@@ -97,7 +97,16 @@ func getTimelineListResponse(data *[]model.Timeline) *timelineListResponse {
 	tll := &timelineListResponse{}
 
 	for _, t := range *data {
-		tl := &timelineResponse{TransactionId: t.TransactionId, TransactionName: t.TransactionName, TransactionAmount: t.TransactionAmount, TransactionSign: t.TransactionSign, TransactionDate: t.TransactionDate, CategoryId: t.CategoryId, CategoryName: t.CategoryName, SubCategoryId: t.SubCategoryId, SubCategoryName: t.SubCategoryName, FixedFlg: t.FixedFlg}
+		tl := &timelineResponse{TransactionId: t.TransactionId,
+			TransactionName:   t.TransactionName,
+			TransactionAmount: t.TransactionAmount,
+			TransactionSign:   t.TransactionSign,
+			TransactionDate:   t.TransactionDate.Format("2006-01-02"),
+			CategoryId:        t.CategoryId,
+			CategoryName:      t.CategoryName,
+			SubCategoryId:     t.SubCategoryId,
+			SubCategoryName:   t.SubCategoryName,
+			FixedFlg:          t.FixedFlg}
 		tll.TimelineList = append(tll.TimelineList, *tl)
 	}
 
