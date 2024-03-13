@@ -19,3 +19,8 @@ type Timeline struct {
 	SubCategoryName   string
 	FixedFlg          bool
 }
+
+type MonthlySpendingData struct {
+	TotalAmount int
+	Month       string
+}

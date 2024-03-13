@@ -112,3 +112,22 @@ func getTimelineListResponse(data *[]model.Timeline) *timelineListResponse {
 
 	return tll
 }
+
+type monthlySpendingDataResponse struct {
+	MonthlyTotalAmountList []monthlyTotalAmount `json:"monthly_total_amount_list"`
+}
+
+type monthlyTotalAmount struct {
+	TotalAmount int    `json:"total_amount"`
+	Month       string `json:"month"`
+}
+
+func getmonthlySpendingDataResponse(data *[]model.MonthlySpendingData) *monthlySpendingDataResponse {
+	msdr := &monthlySpendingDataResponse{}
+
+	for _, m := range *data {
+		ml := &monthlyTotalAmount{TotalAmount: m.TotalAmount, Month: m.Month}
+		msdr.MonthlyTotalAmountList = append(msdr.MonthlyTotalAmountList, *ml)
+	}
+	return msdr
+}

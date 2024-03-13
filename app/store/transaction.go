@@ -33,3 +33,18 @@ func (cs *TransactionStore) GetTimelineData(userId int, month string) *[]model.T
 
 	return &timeline_list
 }
+func (cs *TransactionStore) GetMonthlySpendingData(userId int, month string) *[]model.MonthlySpendingData {
+	var result_list []model.MonthlySpendingData
+
+	cs.db.Unscoped().
+		Select("SUM(transaction_amount) as total_amount", "DATE_FORMAT(transaction_date, '%Y-%m-01') as month").
+		Table("transaction").
+		Where("user_no = ?", userId).
+		Where("0 > transaction_amount").
+		Where("transaction_date BETWEEN DATE_SUB(?, INTERVAL 5 MONTH) AND LAST_DAY(?)", month, month).
+		Group("month").
+		Order("month DESC").
+		Find(&result_list)
+
+	return &result_list
+}
