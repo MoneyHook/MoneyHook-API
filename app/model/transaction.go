@@ -24,3 +24,15 @@ type MonthlySpendingData struct {
 	TotalAmount int
 	Month       string
 }
+
+type TransactionData struct {
+	gorm.Model
+	TransactionDate   time.Time
+	TransactionName   string
+	TransactionAmount int
+	CategoryId        int
+	CategoryName      string
+	SubCategoryId     int
+	SubCategoryName   string
+	FixedFlg          bool
+}

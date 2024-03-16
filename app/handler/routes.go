@@ -8,6 +8,7 @@ func (h *Handler) Register(v1 *echo.Group) {
 	transaction := v1.Group("/transaction")
 	transaction.GET("/getTimelineData", h.getTimelineData)
 	transaction.GET("/getMonthlySpendingData", h.getMonthlySpendingData)
+	transaction.GET("/getTransaction/:transactionId", h.getTransaction)
 
 	category := v1.Group("/category")
 	category.GET("/getCategoryList", h.GetCategoryList)

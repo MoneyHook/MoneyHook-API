@@ -48,3 +48,26 @@ func (cs *TransactionStore) GetMonthlySpendingData(userId int, month string) *[]
 
 	return &result_list
 }
+
+func (cs *TransactionStore) GetTransactionData(userId int, transactionId int) *model.TransactionData {
+	var result model.TransactionData
+
+	cs.db.Unscoped().
+		Select(
+			"t.transaction_date",
+			"t.transaction_name",
+			"t.transaction_amount",
+			"t.category_id",
+			"c.category_name",
+			"t.sub_category_id",
+			"sc.sub_category_name",
+			"t.fixed_flg").
+		Table("transaction t").
+		Joins("INNER JOIN category c ON c.category_id = t.category_id").
+		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
+		Where("t.user_no = ?", userId).
+		Where("t.transaction_id = ?", transactionId).
+		Find(&result)
+
+	return &result
+}

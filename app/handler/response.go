@@ -131,3 +131,34 @@ func getmonthlySpendingDataResponse(data *[]model.MonthlySpendingData) *monthlyS
 	}
 	return msdr
 }
+
+type transactionResponse struct {
+	Transaction transactionData `json:"transaction"`
+}
+
+type transactionData struct {
+	TransactionDate   string `json:"transaction_date"`
+	TransactionName   string `json:"transaction_name"`
+	TransactionAmount int    `json:"transaction_amount"`
+	CategoryId        int    `json:"category_id"`
+	CategoryName      string `json:"category_name"`
+	SubCategoryId     int    `json:"sub_category_id"`
+	SubCategoryName   string `json:"sub_category_name"`
+	FixedFlg          bool   `json:"fixed_flg"`
+}
+
+func getTransactionResponse(data *model.TransactionData) *transactionResponse {
+	tr := &transactionResponse{}
+
+	tr.Transaction = transactionData{
+		TransactionDate:   data.TransactionDate.Format("2006-01-02"),
+		TransactionName:   data.TransactionName,
+		TransactionAmount: data.TransactionAmount,
+		CategoryId:        data.CategoryId,
+		CategoryName:      data.CategoryName,
+		SubCategoryId:     data.SubCategoryId,
+		SubCategoryName:   data.SubCategoryName,
+		FixedFlg:          data.FixedFlg}
+
+	return tr
+}
