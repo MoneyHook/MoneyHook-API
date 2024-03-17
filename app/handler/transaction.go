@@ -41,3 +41,16 @@ func (h *Handler) getTransaction(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, *result_list)
 }
+
+func (h *Handler) getMonthlyFixedIncome(c echo.Context)error{
+	userId := getUserId(c)
+	month := c.QueryParam("month")
+
+	// result := h.transactionStore.GetMonthlySpendingData(userId, month)
+	h.transactionStore.GetMonthlyFixedIncomeData(userId, month)
+
+	// result_list := getmonthlySpendingDataResponse(result)
+
+	return c.JSON(http.StatusOK, []string{"ok", "ok"})
+
+}

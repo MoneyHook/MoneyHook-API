@@ -36,3 +36,13 @@ type TransactionData struct {
 	SubCategoryName   string
 	FixedFlg          bool
 }
+
+type MonthlyFixedIncome struct{
+	gorm.Model
+	CategoryId int 
+	CategoryName string
+    TotalCategoryAmount int
+	TransactionCategoryId int
+	TransactionName string
+	TransactionAmount int
+}
