@@ -4,6 +4,7 @@ import (
 	"MoneyHook/MoneyHook-API/model"
 
 	"gorm.io/gorm"
+	"fmt"
 )
 
 type TransactionStore struct {
@@ -73,7 +74,7 @@ func (cs *TransactionStore) GetTransactionData(userId int, transactionId int) *m
 }
 
 func (cs *TransactionStore) GetMonthlyFixedIncomeData(userId int, month string) *model.MonthlyFixedIncome {
-	var result model.MonthlyFixedIncome
+	var result_list []model.MonthlyFixedIncome
 
 	cs.db.Unscoped().
 		Select(
@@ -82,23 +83,23 @@ func (cs *TransactionStore) GetMonthlyFixedIncomeData(userId int, month string) 
 			"sum(t.transaction_amount) OVER(PARTITION BY c.category_name) AS total_category_amount",
 			"t.category_id AS transaction_category_id",
 			"t.transaction_name",
-			"t.transaction_amount"
-			).
+			"t.transaction_amount").
 		Table("transaction t").
-		Joins(INNER JOIN category c ON c.category_id = t.category_id).
-		Joins(INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id).
+		Joins("INNER JOIN category c ON c.category_id = t.category_id").
+		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_date BETWEEN ?", month).
 		Where("LAST_DAY(?)", month).
 		Where("0 > t.transaction_amount").
-		Where(t.fixed_flg = TRUE).
-		Order(total_category_amount).
+		Where("t.fixed_flg = TRUE").
+		Order("total_category_amount").
 		Debug().
-		Find(&result)
-	
-	// for _,v :=range result{
+		Find(&result_list)
+
+	// for _, v := range result_list {
 	// 	fmt.Println(v)
 	// }
-
-	return &result
+	// result_list[0].TransactionName
+	
+	return &result_list
 }
