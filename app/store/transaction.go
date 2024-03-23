@@ -72,15 +72,20 @@ func (cs *TransactionStore) GetTransactionData(userId int, transactionId int) *m
 	return &result
 }
 
-func (cs *TransactionStore) GetMonthlyFixedIncomeData(userId int, month string) *[]model.MonthlyFixedIncome {
-	var result_list []model.MonthlyFixedIncome
+func (cs *TransactionStore) GetMonthlyFixedData(userId int, month string, isSpending bool) *[]model.MonthlyFixedData {
+	var result_list []model.MonthlyFixedData
+
+	var conditions string
+	if isSpending {
+		conditions = "0 > t.transaction_amount"
+	} else {
+		conditions = "0 < t.transaction_amount"
+	}
 
 	cs.db.Unscoped().
 		Select(
-			"c.category_id",
 			"c.category_name",
 			"sum(t.transaction_amount) OVER(PARTITION BY c.category_name) AS total_category_amount",
-			"t.category_id AS transaction_category_id",
 			"t.transaction_name",
 			"t.transaction_amount").
 		Table("transaction t").
@@ -89,7 +94,7 @@ func (cs *TransactionStore) GetMonthlyFixedIncomeData(userId int, month string) 
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_date BETWEEN ?", month).
 		Where("LAST_DAY(?)", month).
-		Where("0 < t.transaction_amount").
+		Where(conditions).
 		Where("t.fixed_flg = TRUE").
 		Order("total_category_amount").
 		Find(&result_list)

@@ -46,9 +46,20 @@ func (h *Handler) getMonthlyFixedIncome(c echo.Context) error {
 	userId := getUserId(c)
 	month := c.QueryParam("month")
 
-	result := h.transactionStore.GetMonthlyFixedIncomeData(userId, month)
+	result := h.transactionStore.GetMonthlyFixedData(userId, month, false)
 
-	result_list := getMonthlyFixedIncomeResponse(result)
+	result_list := getMonthlyFixedResponse(result)
+
+	return c.JSON(http.StatusOK, result_list)
+}
+
+func (h *Handler) getMonthlyFixedSpending(c echo.Context) error {
+	userId := getUserId(c)
+	month := c.QueryParam("month")
+
+	result := h.transactionStore.GetMonthlyFixedData(userId, month, true)
+
+	result_list := getMonthlyFixedResponse(result)
 
 	return c.JSON(http.StatusOK, result_list)
 }
