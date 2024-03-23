@@ -263,3 +263,87 @@ func containsHomeList(data_list *[]homeCategory, category_name *string) bool {
 	}
 	return false
 }
+
+type monthlyVariableResponse struct {
+	TotalVariable       int                       `json:"total_variable"`
+	MonthlyVariableList []monthlyVariableCategory `json:"monthly_variable_list"`
+}
+
+type monthlyVariableCategory struct {
+	CategoryName               string                       `json:"category_name"`
+	CategoryTotoalAmount       int                          `json:"category_total_amount"`
+	MonthlyVariableSubCategory []monthlyVariableSubCategory `json:"sub_category_list"`
+}
+
+type monthlyVariableSubCategory struct {
+	SubCategoryId          int                          `json:"sub_category_id"`
+	SubCategoryName        string                       `json:"sub_category_name"`
+	SubCategoryTotalAmount int                          `json:"sub_category_total_amount"`
+	TransactionList        []monthlyVariableTransaction `json:"transaction_list"`
+}
+
+type monthlyVariableTransaction struct {
+	TransactionId     int    `json:"transaction_id"`
+	TransactionName   string `json:"transaction_name"`
+	TransactionAmount int    `json:"transaction_amount"`
+}
+
+func getMonthlyVariableResponse(data *[]model.MonthlyVariableData) *monthlyVariableResponse {
+	mvr := &monthlyVariableResponse{}
+
+	mvcl := &[]monthlyVariableCategory{}
+	for _, category := range *data {
+		if containsVariableCategory(mvcl, &category.CategoryName) {
+			continue
+		}
+
+		mvc := &monthlyVariableCategory{CategoryName: category.CategoryName, CategoryTotoalAmount: category.CategoryTotalAmount}
+
+		for _, sub_category := range *data {
+			if mvc.CategoryName == sub_category.CategoryName {
+				mvsc := &monthlyVariableSubCategory{SubCategoryId: sub_category.SubCategoryId,
+					SubCategoryName:        sub_category.SubCategoryName,
+					SubCategoryTotalAmount: sub_category.SubCategoryTotalAmount}
+
+				if containsVariableSubCategory(&mvc.MonthlyVariableSubCategory, &sub_category.SubCategoryName) {
+					continue
+				}
+				for _, transaction := range *data {
+					if mvsc.SubCategoryId == transaction.SubCategoryId {
+						mvt := &monthlyVariableTransaction{TransactionId: transaction.TransactionId,
+							TransactionName:   transaction.TransactionName,
+							TransactionAmount: transaction.TransactionAmount}
+
+						mvsc.TransactionList = append(mvsc.TransactionList, *mvt)
+					}
+				}
+
+				mvc.MonthlyVariableSubCategory = append(mvc.MonthlyVariableSubCategory, *mvsc)
+			}
+		}
+		*mvcl = append(*mvcl, *mvc)
+		mvr.TotalVariable += category.CategoryTotalAmount
+	}
+
+	mvr.MonthlyVariableList = *mvcl
+
+	return mvr
+}
+
+func containsVariableCategory(data_list *[]monthlyVariableCategory, category_name *string) bool {
+	for _, v := range *data_list {
+		if v.CategoryName == *category_name {
+			return true
+		}
+	}
+	return false
+}
+
+func containsVariableSubCategory(data_list *[]monthlyVariableSubCategory, sub_category_name *string) bool {
+	for _, v := range *data_list {
+		if v.SubCategoryName == *sub_category_name {
+			return true
+		}
+	}
+	return false
+}

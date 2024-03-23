@@ -51,3 +51,14 @@ type HomeCategory struct {
 	SubCategoryName        string
 	SubCategoryTotalAmount int
 }
+
+type MonthlyVariableData struct {
+	CategoryName           string
+	CategoryTotalAmount    int
+	SubCategoryId          int
+	SubCategoryName        string
+	SubCategoryTotalAmount int
+	TransactionId          int
+	TransactionName        string
+	TransactionAmount      int
+}

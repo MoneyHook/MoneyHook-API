@@ -74,3 +74,14 @@ func (h *Handler) getHome(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, result_list)
 }
+
+func (h *Handler) getMonthlyVariableData(c echo.Context) error {
+	userId := getUserId(c)
+	month := c.QueryParam("month")
+
+	result := h.transactionStore.GetMonthlyVariableData(userId, month)
+
+	result_list := getMonthlyVariableResponse(result)
+
+	return c.JSON(http.StatusOK, result_list)
+}
