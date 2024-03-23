@@ -162,3 +162,52 @@ func getTransactionResponse(data *model.TransactionData) *transactionResponse {
 
 	return tr
 }
+
+type montylyFixedIncomeReponse struct {
+	MontylyFixedList []montylyFixedIncomeData `json:"monthly_fixed_list"`
+}
+
+type montylyFixedIncomeData struct {
+	CategoryName        string                          `json:"category_name"`
+	TotalCategoryAmount int                             `json:"total_category_amount"`
+	TransactionList     []montylyFixedIncomeTransaction `json:"transaction_list"`
+}
+
+type montylyFixedIncomeTransaction struct {
+	TransactionName   string `json:"transactin_name"`
+	TransactionAmount int    `json:"transaction_amount"`
+}
+
+func getMonthlyFixedIncomeResponse(data *[]model.MonthlyFixedIncome) *montylyFixedIncomeReponse {
+	mfir := &montylyFixedIncomeReponse{}
+
+	mfid_l := &[]montylyFixedIncomeData{}
+	for _, category := range *data {
+		if contains_list(mfid_l, &category.CategoryName) {
+			continue
+		}
+
+		mfid := &montylyFixedIncomeData{CategoryName: category.CategoryName, TotalCategoryAmount: category.TotalCategoryAmount}
+		for _, transaction := range *data {
+			if mfid.CategoryName == transaction.CategoryName {
+				mfid.TransactionList = append(mfid.TransactionList,
+					montylyFixedIncomeTransaction{TransactionName: transaction.TransactionName, TransactionAmount: transaction.TransactionAmount})
+			}
+		}
+
+		*mfid_l = append(*mfid_l, *mfid)
+
+	}
+	mfir.MontylyFixedList = *mfid_l
+
+	return mfir
+}
+
+func contains_list(data_list *[]montylyFixedIncomeData, category_name *string) bool {
+	for _, v := range *data_list {
+		if v.CategoryName == *category_name {
+			return true
+		}
+	}
+	return false
+}

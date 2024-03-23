@@ -4,7 +4,6 @@ import (
 	"MoneyHook/MoneyHook-API/model"
 
 	"gorm.io/gorm"
-	"fmt"
 )
 
 type TransactionStore struct {
@@ -73,7 +72,7 @@ func (cs *TransactionStore) GetTransactionData(userId int, transactionId int) *m
 	return &result
 }
 
-func (cs *TransactionStore) GetMonthlyFixedIncomeData(userId int, month string) *model.MonthlyFixedIncome {
+func (cs *TransactionStore) GetMonthlyFixedIncomeData(userId int, month string) *[]model.MonthlyFixedIncome {
 	var result_list []model.MonthlyFixedIncome
 
 	cs.db.Unscoped().
@@ -90,16 +89,10 @@ func (cs *TransactionStore) GetMonthlyFixedIncomeData(userId int, month string) 
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_date BETWEEN ?", month).
 		Where("LAST_DAY(?)", month).
-		Where("0 > t.transaction_amount").
+		Where("0 < t.transaction_amount").
 		Where("t.fixed_flg = TRUE").
 		Order("total_category_amount").
-		Debug().
 		Find(&result_list)
 
-	// for _, v := range result_list {
-	// 	fmt.Println(v)
-	// }
-	// result_list[0].TransactionName
-	
 	return &result_list
 }
