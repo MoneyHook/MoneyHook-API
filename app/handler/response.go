@@ -183,7 +183,7 @@ func getMonthlyFixedResponse(data *[]model.MonthlyFixedData) *montylyFixedRepons
 
 	mfid_l := &[]montylyFixedData{}
 	for _, category := range *data {
-		if contains_list(mfid_l, &category.CategoryName) {
+		if containsMonthlyFixedList(mfid_l, &category.CategoryName) {
 			continue
 		}
 
@@ -203,7 +203,59 @@ func getMonthlyFixedResponse(data *[]model.MonthlyFixedData) *montylyFixedRepons
 	return mfir
 }
 
-func contains_list(data_list *[]montylyFixedData, category_name *string) bool {
+func containsMonthlyFixedList(data_list *[]montylyFixedData, category_name *string) bool {
+	for _, v := range *data_list {
+		if v.CategoryName == *category_name {
+			return true
+		}
+	}
+	return false
+}
+
+type homeResponse struct {
+	Balance          int            `json:"balance"`
+	HomeCategoryList []homeCategory `json:"category_list"`
+}
+
+type homeCategory struct {
+	CategoryName         string            `json:"category_name"`
+	CategoryTotoalAmount int               `json:"category_total_amount"`
+	HomeSubCategoryList  []homeSubCategory `json:"sub_category_list"`
+}
+
+type homeSubCategory struct {
+	SubCategoryName        string `json:"sub_category_name"`
+	SubCategoryTotalAmount int    `json:"sub_category_total_amount"`
+}
+
+func getHomeResponse(data *[]model.HomeCategory) *homeResponse {
+	hr := &homeResponse{}
+
+	hcl := &[]homeCategory{}
+	for _, category := range *data {
+		if containsHomeList(hcl, &category.CategoryName) {
+			continue
+		}
+
+		hc := &homeCategory{CategoryName: category.CategoryName, CategoryTotoalAmount: category.CategoryTotalAmount}
+
+		for _, sub_category := range *data {
+			if hc.CategoryName == sub_category.CategoryName {
+				hc.HomeSubCategoryList = append(hc.HomeSubCategoryList,
+					homeSubCategory{SubCategoryName: sub_category.SubCategoryName, SubCategoryTotalAmount: sub_category.SubCategoryTotalAmount})
+			}
+		}
+
+		*hcl = append(*hcl, *hc)
+		hr.Balance += category.CategoryTotalAmount
+	}
+
+	hr.HomeCategoryList = *hcl
+
+	return hr
+}
+
+func containsHomeList(data_list *[]homeCategory, category_name *string) bool {
 	for _, v := range *data_list {
 		if v.CategoryName == *category_name {
 			return true

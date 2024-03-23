@@ -63,3 +63,14 @@ func (h *Handler) getMonthlyFixedSpending(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, result_list)
 }
+
+func (h *Handler) getHome(c echo.Context) error {
+	userId := getUserId(c)
+	month := c.QueryParam("month")
+
+	result := h.transactionStore.GetHome(userId, month)
+
+	result_list := getHomeResponse(result)
+
+	return c.JSON(http.StatusOK, result_list)
+}

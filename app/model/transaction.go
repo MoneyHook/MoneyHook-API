@@ -44,3 +44,10 @@ type MonthlyFixedData struct {
 	TransactionName     string
 	TransactionAmount   int
 }
+
+type HomeCategory struct {
+	CategoryName           string
+	CategoryTotalAmount    int
+	SubCategoryName        string
+	SubCategoryTotalAmount int
+}
