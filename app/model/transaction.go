@@ -62,3 +62,15 @@ type MonthlyVariableData struct {
 	TransactionName        string
 	TransactionAmount      int
 }
+
+type TotalSpendingData struct {
+	CategoryName           string
+	CategoryTotalAmount    int
+	SubCategoryId          int
+	SubCategoryName        string
+	SubCategoryTotalAmount int
+	TransactionId          int
+	TransactionName        string
+	TransactionAmount      int
+	TransactionDate        time.Time
+}

@@ -85,3 +85,17 @@ func (h *Handler) getMonthlyVariableData(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, result_list)
 }
+
+func (h *Handler) getTotalSpendingData(c echo.Context) error {
+	userId := getUserId(c)
+	categoryId := c.QueryParam("category_id")
+	subCategoryId := c.QueryParam("sub_category_id")
+	startMonth := c.QueryParam("start_month")
+	endMonth := c.QueryParam("end_month")
+
+	result := h.transactionStore.GetTotalSpending(userId, categoryId, subCategoryId, startMonth, endMonth)
+
+	result_list := getTotalSpendingResponse(result)
+
+	return c.JSON(http.StatusOK, result_list)
+}

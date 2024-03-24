@@ -178,3 +178,57 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId int, month string) *[]
 
 	return &monthly_variable_data
 }
+
+func (ts *TransactionStore) GetTotalSpending(userId int, categoryId string, subCategoryId string, startMonth string, endMonth string) *[]model.TotalSpendingData {
+	var total_spending_data []model.TotalSpendingData
+
+	var condition = make(map[string]interface{})
+	if len(categoryId) > 0 {
+		condition["c.category_id"] = categoryId
+	}
+	if len(subCategoryId) > 0 {
+		condition["sc.sub_category_id"] = subCategoryId
+	}
+
+	subquery_1 := ts.db.Select("transaction_id",
+		"transaction_name",
+		"transaction_amount").
+		Table("transaction").
+		Where("user_no = ?", userId).
+		Where("transaction_date BETWEEN ? AND LAST_DAY(?)", startMonth, endMonth)
+
+	subquery_2 := ts.db.Select("t.sub_category_id",
+		"sc.sub_category_name",
+		"SUM(t.transaction_amount) AS sub_category_total_amount").
+		Table("transaction t").
+		Joins("INNER JOIN sub_category sc ON t.sub_category_id = sc.sub_category_id").
+		Where("t.user_no = ?", userId).
+		Where("t.fixed_flg = FALSE").
+		Where("transaction_date BETWEEN ? AND LAST_DAY(?)", startMonth, endMonth).
+		Group("t.sub_category_id")
+
+	ts.db.Select("c.category_name",
+		"SUM(t.transaction_amount) OVER (PARTITION BY c.category_name) AS category_total_amount",
+		"sub_clist.sub_category_id",
+		"sub_clist.sub_category_name",
+		"sub_clist.sub_category_total_amount",
+		"tran_list.transaction_id",
+		"tran_list.transaction_name",
+		"tran_list.transaction_amount",
+		"t.transaction_date").
+		Table("transaction t").
+		Joins("INNER JOIN category c ON c.category_id = t.category_id").
+		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
+		Joins("RIGHT JOIN (?) tran_list ON tran_list.transaction_id = t.transaction_id", subquery_1).
+		Joins("RIGHT JOIN (?) sub_clist ON sub_clist.sub_category_id = t.sub_category_id", subquery_2).
+		Where("t.user_no = ?", userId).
+		Where("0 > t.transaction_amount").
+		Where(condition).
+		Where("transaction_date BETWEEN ? AND LAST_DAY  (?)", startMonth, endMonth).
+		Order("category_total_amount").
+		Order("sub_category_total_amount").
+		Order("transaction_amount").
+		Scan(&total_spending_data)
+
+	return &total_spending_data
+}

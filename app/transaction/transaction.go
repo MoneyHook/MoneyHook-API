@@ -9,4 +9,5 @@ type Store interface {
 	GetMonthlyFixedData(userId int, month string, isSpending bool) *[]model.MonthlyFixedData
 	GetHome(userId int, month string) *[]model.HomeCategory
 	GetMonthlyVariableData(userId int, month string) *[]model.MonthlyVariableData
+	GetTotalSpending(userId int, categoryId string, subCategoryId string, startMonth string, endMonth string) *[]model.TotalSpendingData
 }

@@ -347,3 +347,87 @@ func containsVariableSubCategory(data_list *[]monthlyVariableSubCategory, sub_ca
 	}
 	return false
 }
+
+type totalSpendingResponse struct {
+	TotalSpending     int                     `json:"total_spending"`
+	TotalSpendingList []totalSpendingCategory `json:"category_total_list"`
+}
+
+type totalSpendingCategory struct {
+	CategoryName             string                     `json:"category_name"`
+	CategoryTotoalAmount     int                        `json:"category_total_amount"`
+	TotalSpendingSubCategory []totalSpendingSubCategory `json:"sub_category_list"`
+}
+
+type totalSpendingSubCategory struct {
+	SubCategoryId          int                        `json:"sub_category_id"`
+	SubCategoryName        string                     `json:"sub_category_name"`
+	SubCategoryTotalAmount int                        `json:"sub_category_total_amount"`
+	TransactionList        []totalSpendingTransaction `json:"transaction_list"`
+}
+
+type totalSpendingTransaction struct {
+	TransactionId     int    `json:"transaction_id"`
+	TransactionName   string `json:"transaction_name"`
+	TransactionAmount int    `json:"transaction_amount"`
+}
+
+func getTotalSpendingResponse(data *[]model.TotalSpendingData) *totalSpendingResponse {
+	tsr := &totalSpendingResponse{}
+
+	mvcl := &[]totalSpendingCategory{}
+	for _, category := range *data {
+		if containsTotalSpendingCategory(mvcl, &category.CategoryName) {
+			continue
+		}
+
+		mvc := &totalSpendingCategory{CategoryName: category.CategoryName, CategoryTotoalAmount: category.CategoryTotalAmount}
+
+		for _, sub_category := range *data {
+			if mvc.CategoryName == sub_category.CategoryName {
+				mvsc := &totalSpendingSubCategory{SubCategoryId: sub_category.SubCategoryId,
+					SubCategoryName:        sub_category.SubCategoryName,
+					SubCategoryTotalAmount: sub_category.SubCategoryTotalAmount}
+
+				if containsTotalSpendingSubCategory(&mvc.TotalSpendingSubCategory, &sub_category.SubCategoryName) {
+					continue
+				}
+				for _, transaction := range *data {
+					if mvsc.SubCategoryId == transaction.SubCategoryId {
+						mvt := &totalSpendingTransaction{TransactionId: transaction.TransactionId,
+							TransactionName:   transaction.TransactionName,
+							TransactionAmount: transaction.TransactionAmount}
+
+						mvsc.TransactionList = append(mvsc.TransactionList, *mvt)
+					}
+				}
+
+				mvc.TotalSpendingSubCategory = append(mvc.TotalSpendingSubCategory, *mvsc)
+			}
+		}
+		*mvcl = append(*mvcl, *mvc)
+		tsr.TotalSpending += category.CategoryTotalAmount
+	}
+
+	tsr.TotalSpendingList = *mvcl
+
+	return tsr
+}
+
+func containsTotalSpendingCategory(data_list *[]totalSpendingCategory, category_name *string) bool {
+	for _, v := range *data_list {
+		if v.CategoryName == *category_name {
+			return true
+		}
+	}
+	return false
+}
+
+func containsTotalSpendingSubCategory(data_list *[]totalSpendingSubCategory, sub_category_name *string) bool {
+	for _, v := range *data_list {
+		if v.SubCategoryName == *sub_category_name {
+			return true
+		}
+	}
+	return false
+}
