@@ -15,6 +15,9 @@ func (h *Handler) Register(v1 *echo.Group) {
 	transaction.GET("/getMonthlyVariableData", h.getMonthlyVariableData)
 	transaction.GET("/getTotalSpending", h.getTotalSpendingData)
 
+	fixed := v1.Group("/fixed")
+	fixed.GET("/getFixed", h.getFixed)
+
 	category := v1.Group("/category")
 	category.GET("/getCategoryList", h.GetCategoryList)
 	category.GET("/getCategoryWithSubCategoryList", h.GetCategoryWithSubCategoryList)

@@ -23,7 +23,8 @@ func main() {
 	cs := store.NewCategoryStore(d)
 	scs := store.NewSubCategoryStore(d)
 	ts := store.NewTransactionStore(d)
-	h := handler.NewHandler(cs, scs, ts)
+	fs := store.NewFixedStore(d)
+	h := handler.NewHandler(cs, scs, ts, fs)
 	h.Register(v1)
 
 	e.Logger.Fatal(e.Start(":8080"))

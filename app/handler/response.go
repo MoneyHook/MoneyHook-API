@@ -431,3 +431,35 @@ func containsTotalSpendingSubCategory(data_list *[]totalSpendingSubCategory, sub
 	}
 	return false
 }
+
+type fixedResponse struct {
+	MonthlyTransactionId     int    `json:"monthly_transaction_id"`
+	MonthlyTransactionName   string `json:"monthly_transaction_name"`
+	MonthlyTransactionAmount int    `json:"monthly_transaction_amount"`
+	MonthlyTransactionSign   int    `json:"monthly_transaction_sign"`
+	MonthlyTransactionDate   int    `json:"monthly_transaction_date"`
+	CategoryId               int    `json:"category_id"`
+	CategoryName             string `json:"category_name"`
+	SubCategoryId            int    `json:"sub_category_id"`
+	SubCategoryName          string `json:"sub_category_name"`
+}
+
+func GetFixedResponse(data_list *[]model.GetFixed) *[]fixedResponse {
+	fr := &[]fixedResponse{}
+
+	for _, data := range *data_list {
+		*fr = append(*fr,
+			fixedResponse{MonthlyTransactionId: data.MonthlyTransactionId,
+				MonthlyTransactionName:   data.MonthlyTransactionName,
+				MonthlyTransactionAmount: data.MonthlyTransactionAmount,
+				MonthlyTransactionSign:   data.MonthlyTransactionSign,
+				MonthlyTransactionDate:   data.MonthlyTransactionDate,
+				CategoryId:               data.CategoryId,
+				CategoryName:             data.CategoryName,
+				SubCategoryId:            data.SubCategoryId,
+				SubCategoryName:          data.SubCategoryName,
+			})
+	}
+
+	return fr
+}
