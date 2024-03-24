@@ -15,3 +15,13 @@ func (h *Handler) getFixed(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, result_list)
 }
+
+func (h *Handler) getDeletedFixed(c echo.Context) error {
+	userId := getUserId(c)
+
+	result := h.fixedStore.GetFixedDeletedData(userId)
+
+	result_list := GetFixedDeletedResponse(result)
+
+	return c.JSON(http.StatusOK, result_list)
+}

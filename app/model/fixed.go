@@ -16,3 +16,13 @@ type GetFixed struct {
 	SubCategoryId            int
 	SubCategoryName          string
 }
+
+type GetDeletedFixed struct {
+	gorm.Model
+	MonthlyTransactionId     int
+	MonthlyTransactionName   string
+	MonthlyTransactionAmount int
+	MonthlyTransactionDate   int
+	CategoryName             string
+	SubCategoryName          string
+}

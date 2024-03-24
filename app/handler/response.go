@@ -463,3 +463,29 @@ func GetFixedResponse(data_list *[]model.GetFixed) *[]fixedResponse {
 
 	return fr
 }
+
+type deletedFixedResponse struct {
+	MonthlyTransactionId     int    `json:"monthly_transaction_id"`
+	MonthlyTransactionName   string `json:"monthly_transaction_name"`
+	MonthlyTransactionAmount int    `json:"monthly_transaction_amount"`
+	MonthlyTransactionDate   int    `json:"monthly_transaction_date"`
+	CategoryName             string `json:"category_name"`
+	SubCategoryName          string `json:"sub_category_name"`
+}
+
+func GetFixedDeletedResponse(data_list *[]model.GetDeletedFixed) *[]deletedFixedResponse {
+	dfr := &[]deletedFixedResponse{}
+
+	for _, data := range *data_list {
+		*dfr = append(*dfr,
+			deletedFixedResponse{MonthlyTransactionId: data.MonthlyTransactionId,
+				MonthlyTransactionName:   data.MonthlyTransactionName,
+				MonthlyTransactionAmount: data.MonthlyTransactionAmount,
+				MonthlyTransactionDate:   data.MonthlyTransactionDate,
+				CategoryName:             data.CategoryName,
+				SubCategoryName:          data.SubCategoryName,
+			})
+	}
+
+	return dfr
+}
