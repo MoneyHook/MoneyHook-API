@@ -11,3 +11,9 @@ type SubCategoryModel struct {
 	CategoryId      int
 	SubCategoryName string
 }
+
+type EditSubCategoryModel struct {
+	UserId        int
+	SubCategoryId int
+	IsEnable      bool
+}

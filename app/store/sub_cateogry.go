@@ -30,3 +30,17 @@ func (cs *SubCategoryStore) CreateSubCategory(subCategory *model.SubCategoryMode
 	cs.db.Table("sub_category").Create(&subCategory)
 	return subCategory
 }
+
+func (cs *SubCategoryStore) HideSubCategory(subCategory *model.EditSubCategoryModel) {
+	cs.db.Table("hidden_sub_category").Create(map[string]interface{}{
+		"user_no":         subCategory.UserId,
+		"sub_category_id": subCategory.SubCategoryId,
+	})
+}
+
+func (cs *SubCategoryStore) ExposeSubCategory(subCategory *model.EditSubCategoryModel) {
+	cs.db.Table("hidden_sub_category").
+		Where("user_no = ?", subCategory.UserId).
+		Where("sub_category_id = ?", subCategory.SubCategoryId).
+		Delete(&subCategory)
+}

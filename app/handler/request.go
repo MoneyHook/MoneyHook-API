@@ -73,3 +73,23 @@ func (r *editTransactionRequest) bind(c echo.Context, u *model.EditTransaction) 
 
 	return nil
 }
+
+type editSubCategoryRequest struct {
+	SubCategoryId int  `json:"sub_category_id" validate:"required"`
+	IsEnable      bool `json:"is_enable"  validate:"required"`
+}
+
+func (r *editSubCategoryRequest) bind(c echo.Context, u *model.EditSubCategoryModel) error {
+	if err := c.Bind(r); err != nil {
+		return err
+	}
+	// TODO バリデーション
+	// if err := c.Validate(r); err != nil {
+	// 	return err
+	// }
+
+	u.SubCategoryId = r.SubCategoryId
+	u.IsEnable = r.IsEnable
+
+	return nil
+}
