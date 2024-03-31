@@ -119,12 +119,42 @@ func (h *Handler) addTransaction(c echo.Context) error {
 			CategoryId:      addTran.CategoryId,
 			SubCategoryName: addTran.SubCategoryName,
 		}
+		// TODO Createの前に、同じユーザー、同じカテゴリIDに紐づくサブカテゴリ名が存在するか確認
 		h.subCategoryStore.CreateSubCategory(&subCategory)
 		addTran.SubCategoryId = subCategory.SubCategoryId
 	}
 
 	// err := h.transactionStore.AddTransaction(&addTran)
 	h.transactionStore.AddTransaction(&addTran)
+
+	return c.JSON(http.StatusOK, "ok")
+}
+
+func (h *Handler) editTransaction(c echo.Context) error {
+	userId := getUserId(c)
+	var editTran model.EditTransaction
+
+	editTran.UserId = userId
+
+	req := &editTransactionRequest{}
+	if err := req.bind(c, &editTran); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, "error")
+		// return c.JSON(http.StatusUnprocessableEntity, err)
+	}
+
+	if editTran.SubCategoryName != "" {
+		subCategory := model.SubCategoryModel{
+			UserNo:          editTran.UserId,
+			CategoryId:      editTran.CategoryId,
+			SubCategoryName: editTran.SubCategoryName,
+		}
+		// TODO Createの前に、同じユーザー、同じカテゴリIDに紐づくサブカテゴリ名が存在するか確認
+		h.subCategoryStore.CreateSubCategory(&subCategory)
+		editTran.SubCategoryId = subCategory.SubCategoryId
+	}
+
+	// err := h.transactionStore.EditTransaction(&addTran)
+	h.transactionStore.EditTransaction(&editTran)
 
 	return c.JSON(http.StatusOK, "ok")
 }

@@ -85,3 +85,15 @@ type AddTransaction struct {
 	SubCategoryName   string
 	FixedFlg          bool
 }
+
+type EditTransaction struct {
+	TransactionId     int
+	UserId            int
+	TransactionDate   string
+	TransactionAmount int
+	TransactionName   string
+	CategoryId        int
+	SubCategoryId     int
+	SubCategoryName   string
+	FixedFlg          bool
+}

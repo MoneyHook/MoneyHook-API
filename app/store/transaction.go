@@ -244,3 +244,17 @@ func (ts *TransactionStore) AddTransaction(transaction *model.AddTransaction) {
 		"fixed_flg":          transaction.FixedFlg,
 	})
 }
+
+func (ts *TransactionStore) EditTransaction(transaction *model.EditTransaction) {
+	ts.db.Table("transaction").
+		Where("transaction_id = ?", transaction.TransactionId).
+		Where("user_no = ?", transaction.UserId).
+		Updates(map[string]interface{}{
+			"transaction_name":   transaction.TransactionName,
+			"transaction_amount": transaction.TransactionAmount,
+			"transaction_date":   transaction.TransactionDate,
+			"category_id":        transaction.CategoryId,
+			"sub_category_id":    transaction.SubCategoryId,
+			"fixed_flg":          transaction.FixedFlg,
+		})
+}

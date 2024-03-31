@@ -11,4 +11,5 @@ type Store interface {
 	GetMonthlyVariableData(userId int, month string) *[]model.MonthlyVariableData
 	GetTotalSpending(userId int, categoryId string, subCategoryId string, startMonth string, endMonth string) *[]model.TotalSpendingData
 	AddTransaction(*model.AddTransaction)
+	EditTransaction(*model.EditTransaction)
 }
