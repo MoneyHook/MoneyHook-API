@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"MoneyHook/MoneyHook-API/model"
 	"net/http"
 	"strconv"
 
@@ -98,4 +99,32 @@ func (h *Handler) getTotalSpendingData(c echo.Context) error {
 	result_list := getTotalSpendingResponse(result)
 
 	return c.JSON(http.StatusOK, result_list)
+}
+
+func (h *Handler) addTransaction(c echo.Context) error {
+	userId := getUserId(c)
+	var addTran model.AddTransaction
+
+	addTran.UserId = userId
+
+	req := &addTransactionRequest{}
+	if err := req.bind(c, &addTran); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, "error")
+		// return c.JSON(http.StatusUnprocessableEntity, err)
+	}
+
+	if addTran.SubCategoryName != "" {
+		subCategory := model.SubCategoryModel{
+			UserNo:          addTran.UserId,
+			CategoryId:      addTran.CategoryId,
+			SubCategoryName: addTran.SubCategoryName,
+		}
+		h.subCategoryStore.CreateSubCategory(&subCategory)
+		addTran.SubCategoryId = subCategory.SubCategoryId
+	}
+
+	// err := h.transactionStore.AddTransaction(&addTran)
+	h.transactionStore.AddTransaction(&addTran)
+
+	return c.JSON(http.StatusOK, "ok")
 }

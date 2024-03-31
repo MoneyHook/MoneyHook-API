@@ -232,3 +232,15 @@ func (ts *TransactionStore) GetTotalSpending(userId int, categoryId string, subC
 
 	return &total_spending_data
 }
+
+func (ts *TransactionStore) AddTransaction(transaction *model.AddTransaction) {
+	ts.db.Table("transaction").Create(map[string]interface{}{
+		"user_no":            transaction.UserId,
+		"transaction_name":   transaction.TransactionName,
+		"transaction_amount": transaction.TransactionAmount,
+		"transaction_date":   transaction.TransactionDate,
+		"category_id":        transaction.CategoryId,
+		"sub_category_id":    transaction.SubCategoryId,
+		"fixed_flg":          transaction.FixedFlg,
+	})
+}

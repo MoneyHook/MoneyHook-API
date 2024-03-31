@@ -25,3 +25,8 @@ func (cs *SubCategoryStore) GetSubCategoryList(userId int, categoryId int) *[]mo
 
 	return &sub_category_list
 }
+
+func (cs *SubCategoryStore) CreateSubCategory(subCategory *model.SubCategoryModel) *model.SubCategoryModel {
+	cs.db.Table("sub_category").Create(&subCategory)
+	return subCategory
+}

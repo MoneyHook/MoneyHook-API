@@ -14,6 +14,7 @@ func (h *Handler) Register(v1 *echo.Group) {
 	transaction.GET("/getHome", h.getHome)
 	transaction.GET("/getMonthlyVariableData", h.getMonthlyVariableData)
 	transaction.GET("/getTotalSpending", h.getTotalSpendingData)
+	transaction.POST("/addTransaction", h.addTransaction)
 
 	fixed := v1.Group("/fixed")
 	fixed.GET("/getFixed", h.getFixed)

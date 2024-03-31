@@ -21,8 +21,8 @@ RUN apt-get update \
 # RUN go mod tidy
 
 ENV CGO_ENABLED=0 \
-  GOOS=linux \
-  GOARCH=arm64
+	GOOS=linux \
+	GOARCH=arm64
 
 EXPOSE 8080
 
