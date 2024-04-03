@@ -20,6 +20,7 @@ func (h *Handler) Register(v1 *echo.Group) {
 	fixed := v1.Group("/fixed")
 	fixed.GET("/getFixed", h.getFixed)
 	fixed.GET("/getDeletedFixed", h.getDeletedFixed)
+	fixed.POST("/addFixed", h.addFixed)
 
 	category := v1.Group("/category")
 	category.GET("/getCategoryList", h.GetCategoryList)

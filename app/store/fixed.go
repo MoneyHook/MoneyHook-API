@@ -56,3 +56,15 @@ func (fs *FixedStore) GetFixedDeletedData(userId int) *[]model.GetDeletedFixed {
 
 	return &fixed_list
 }
+
+func (ts *FixedStore) AddFixed(monthlyTransaction *model.AddFixed) {
+	ts.db.Table("monthly_transaction").Create(map[string]interface{}{
+		"user_no":                    monthlyTransaction.UserId,
+		"monthly_transaction_name":   monthlyTransaction.MonthlyTransactionName,
+		"monthly_transaction_amount": monthlyTransaction.MonthlyTransactionAmount,
+		"monthly_transaction_date":   monthlyTransaction.MonthlyTransactionDate,
+		"category_id":                monthlyTransaction.CategoryId,
+		"sub_category_id":            monthlyTransaction.SubCategoryId,
+		"include_flg":                true,
+	})
+}

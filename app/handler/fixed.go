@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"MoneyHook/MoneyHook-API/model"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -24,4 +25,33 @@ func (h *Handler) getDeletedFixed(c echo.Context) error {
 	result_list := GetFixedDeletedResponse(result)
 
 	return c.JSON(http.StatusOK, result_list)
+}
+
+func (h *Handler) addFixed(c echo.Context) error {
+	userId := getUserId(c)
+	var addFixed model.AddFixed
+
+	addFixed.UserId = userId
+
+	req := &addFixedRequest{}
+	if err := req.bind(c, &addFixed); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, "error")
+		// return c.JSON(http.StatusUnprocessableEntity, err)
+	}
+
+	if addFixed.SubCategoryName != "" {
+		subCategory := model.SubCategoryModel{
+			UserNo:          addFixed.UserId,
+			CategoryId:      addFixed.CategoryId,
+			SubCategoryName: addFixed.SubCategoryName,
+		}
+		// TODO Createの前に、同じユーザー、同じカテゴリIDに紐づくサブカテゴリ名が存在するか確認
+		h.subCategoryStore.CreateSubCategory(&subCategory)
+		addFixed.SubCategoryId = subCategory.SubCategoryId
+	}
+
+	// err := h.FixedStore.AddFixed(&addFixed)
+	h.fixedStore.AddFixed(&addFixed)
+
+	return c.JSON(http.StatusOK, "ok")
 }

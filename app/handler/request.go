@@ -93,3 +93,34 @@ func (r *editSubCategoryRequest) bind(c echo.Context, u *model.EditSubCategoryMo
 
 	return nil
 }
+
+type addFixedRequest struct {
+	MonthlyTransaction struct {
+		MonthlyTransactionName   string `json:"monthly_transaction_name"  validate:"required"`
+		MonthlyTransactionAmount int    `json:"monthly_transaction_amount"  validate:"required"`
+		MonthlyTransactionSign   int    `json:"monthly_transaction_sign"  validate:"required"`
+		MonthlyTransactionDate   int    `json:"monthly_transaction_date" validate:"required"`
+		CategoryId               int    `json:"category_id"  validate:"required"`
+		SubCategoryId            int    `json:"sub_category_id"`
+		SubCategoryName          string `json:"sub_category_name"`
+	} `json:"monthly_transaction"`
+}
+
+func (r *addFixedRequest) bind(c echo.Context, u *model.AddFixed) error {
+	if err := c.Bind(r); err != nil {
+		return err
+	}
+	// TODO バリデーション
+	// if err := c.Validate(r); err != nil {
+	// 	return err
+	// }
+
+	u.MonthlyTransactionDate = r.MonthlyTransaction.MonthlyTransactionDate
+	u.MonthlyTransactionAmount = r.MonthlyTransaction.MonthlyTransactionAmount * r.MonthlyTransaction.MonthlyTransactionSign
+	u.MonthlyTransactionName = r.MonthlyTransaction.MonthlyTransactionName
+	u.CategoryId = r.MonthlyTransaction.CategoryId
+	u.SubCategoryId = r.MonthlyTransaction.SubCategoryId
+	u.SubCategoryName = r.MonthlyTransaction.SubCategoryName
+
+	return nil
+}

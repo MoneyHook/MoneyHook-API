@@ -26,3 +26,13 @@ type GetDeletedFixed struct {
 	CategoryName             string
 	SubCategoryName          string
 }
+
+type AddFixed struct {
+	UserId                   int
+	MonthlyTransactionName   string
+	MonthlyTransactionAmount int
+	MonthlyTransactionDate   int
+	CategoryId               int
+	SubCategoryId            int
+	SubCategoryName          string
+}
