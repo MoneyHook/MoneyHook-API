@@ -36,3 +36,15 @@ type AddFixed struct {
 	SubCategoryId            int
 	SubCategoryName          string
 }
+
+type EditFixed struct {
+	UserId                   int
+	MonthlyTransactionId     int
+	MonthlyTransactionName   string
+	MonthlyTransactionAmount int
+	MonthlyTransactionDate   int
+	CategoryId               int
+	SubCategoryId            int
+	SubCategoryName          string
+	IncludeFlg               bool
+}

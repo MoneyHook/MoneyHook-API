@@ -68,3 +68,17 @@ func (ts *FixedStore) AddFixed(monthlyTransaction *model.AddFixed) {
 		"include_flg":                true,
 	})
 }
+
+func (ts *FixedStore) EditFixed(monthlyTransaction *model.EditFixed) {
+	ts.db.Table("monthly_transaction").
+		Where("monthly_transaction_id = ?", monthlyTransaction.MonthlyTransactionId).
+		Where("user_no = ?", monthlyTransaction.UserId).
+		Updates(map[string]interface{}{
+			"monthly_transaction_name":   monthlyTransaction.MonthlyTransactionName,
+			"monthly_transaction_amount": monthlyTransaction.MonthlyTransactionAmount,
+			"monthly_transaction_date":   monthlyTransaction.MonthlyTransactionDate,
+			"category_id":                monthlyTransaction.CategoryId,
+			"sub_category_id":            monthlyTransaction.SubCategoryId,
+			"include_flg":                monthlyTransaction.IncludeFlg,
+		})
+}

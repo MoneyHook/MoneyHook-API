@@ -55,3 +55,32 @@ func (h *Handler) addFixed(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, "ok")
 }
+
+func (h *Handler) editFixed(c echo.Context) error {
+	userId := getUserId(c)
+	var editFixed model.EditFixed
+
+	editFixed.UserId = userId
+
+	req := &editFixedRequest{}
+	if err := req.bind(c, &editFixed); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, "error")
+		// return c.JSON(http.StatusUnprocessableEntity, err)
+	}
+
+	if editFixed.SubCategoryName != "" {
+		subCategory := model.SubCategoryModel{
+			UserNo:          editFixed.UserId,
+			CategoryId:      editFixed.CategoryId,
+			SubCategoryName: editFixed.SubCategoryName,
+		}
+		// TODO Createの前に、同じユーザー、同じカテゴリIDに紐づくサブカテゴリ名が存在するか確認
+		h.subCategoryStore.CreateSubCategory(&subCategory)
+		editFixed.SubCategoryId = subCategory.SubCategoryId
+	}
+
+	// err := h.transactionStore.EditFixed(&addTran)
+	h.fixedStore.EditFixed(&editFixed)
+
+	return c.JSON(http.StatusOK, "ok")
+}
