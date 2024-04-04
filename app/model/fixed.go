@@ -48,3 +48,8 @@ type EditFixed struct {
 	SubCategoryName          string
 	IncludeFlg               bool
 }
+
+type DeleteFixed struct {
+	UserId               int
+	MonthlyTransactionId int
+}

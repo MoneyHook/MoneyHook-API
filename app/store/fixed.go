@@ -82,3 +82,10 @@ func (ts *FixedStore) EditFixed(monthlyTransaction *model.EditFixed) {
 			"include_flg":                monthlyTransaction.IncludeFlg,
 		})
 }
+
+func (ts *FixedStore) DeleteFixed(monthlyTransaction *model.DeleteFixed) {
+	ts.db.Table("monthly_transaction").
+		Where("monthly_transaction_id = ?", monthlyTransaction.MonthlyTransactionId).
+		Where("user_no = ?", monthlyTransaction.UserId).
+		Delete(&model.DeleteFixed{})
+}

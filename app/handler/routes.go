@@ -22,6 +22,7 @@ func (h *Handler) Register(v1 *echo.Group) {
 	fixed.GET("/getDeletedFixed", h.getDeletedFixed)
 	fixed.POST("/addFixed", h.addFixed)
 	fixed.PATCH("/editFixed", h.editFixed)
+	fixed.DELETE("/deleteFixed/:monthly_transaction_id", h.deleteFixed)
 
 	category := v1.Group("/category")
 	category.GET("/getCategoryList", h.GetCategoryList)

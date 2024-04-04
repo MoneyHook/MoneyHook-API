@@ -7,4 +7,5 @@ type Store interface {
 	GetFixedDeletedData(userId int) *[]model.GetDeletedFixed
 	AddFixed(*model.AddFixed)
 	EditFixed(*model.EditFixed)
+	DeleteFixed(*model.DeleteFixed)
 }

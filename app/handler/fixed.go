@@ -2,7 +2,9 @@ package handler
 
 import (
 	"MoneyHook/MoneyHook-API/model"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 )
@@ -81,6 +83,21 @@ func (h *Handler) editFixed(c echo.Context) error {
 
 	// err := h.transactionStore.EditFixed(&addTran)
 	h.fixedStore.EditFixed(&editFixed)
+
+	return c.JSON(http.StatusOK, "ok")
+}
+
+func (h *Handler) deleteFixed(c echo.Context) error {
+	fmt.Println("ok")
+	userId := getUserId(c)
+	monthlyTransactionId, err := strconv.Atoi(c.Param("monthly_transaction_id"))
+	if err != nil {
+		return c.JSON(http.StatusOK, "hej")
+	}
+	deleteFixed := model.DeleteFixed{UserId: userId, MonthlyTransactionId: monthlyTransactionId}
+
+	// err := h.transactionStore.EditFixed(&addTran)
+	h.fixedStore.DeleteFixed(&deleteFixed)
 
 	return c.JSON(http.StatusOK, "ok")
 }
