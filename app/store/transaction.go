@@ -258,3 +258,10 @@ func (ts *TransactionStore) EditTransaction(transaction *model.EditTransaction) 
 			"fixed_flg":          transaction.FixedFlg,
 		})
 }
+
+func (ts *TransactionStore) DeleteTransaction(transaction *model.DeleteTransaction) {
+	ts.db.Table("transaction").
+		Where("transaction_id = ?", transaction.TransactionId).
+		Where("user_no = ?", transaction.UserId).
+		Delete(&model.DeleteTransaction{})
+}

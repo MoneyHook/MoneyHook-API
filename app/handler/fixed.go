@@ -2,7 +2,6 @@ package handler
 
 import (
 	"MoneyHook/MoneyHook-API/model"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -88,7 +87,6 @@ func (h *Handler) editFixed(c echo.Context) error {
 }
 
 func (h *Handler) deleteFixed(c echo.Context) error {
-	fmt.Println("ok")
 	userId := getUserId(c)
 	monthlyTransactionId, err := strconv.Atoi(c.Param("monthly_transaction_id"))
 	if err != nil {

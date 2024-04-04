@@ -158,3 +158,17 @@ func (h *Handler) editTransaction(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, "ok")
 }
+
+func (h *Handler) deleteTransaction(c echo.Context) error {
+	userId := getUserId(c)
+	transactionId, err := strconv.Atoi(c.Param("transactionId"))
+	if err != nil {
+		return c.JSON(http.StatusOK, "hej")
+	}
+	deleteTransaction := model.DeleteTransaction{UserId: userId, TransactionId: transactionId}
+
+	// err := h.transactionStore.EditFixed(&addTran)
+	h.transactionStore.DeleteTransaction(&deleteTransaction)
+
+	return c.JSON(http.StatusOK, "ok")
+}

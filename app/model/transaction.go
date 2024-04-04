@@ -97,3 +97,8 @@ type EditTransaction struct {
 	SubCategoryName   string
 	FixedFlg          bool
 }
+
+type DeleteTransaction struct {
+	UserId        int
+	TransactionId int
+}
