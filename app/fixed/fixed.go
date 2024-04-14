@@ -1,4 +1,4 @@
-package transaction
+package fixed
 
 import "MoneyHook/MoneyHook-API/model"
 

@@ -5,6 +5,9 @@ import (
 )
 
 func (h *Handler) Register(v1 *echo.Group) {
+	user := v1.Group("/user")
+	user.POST("/googleSignIn", h.googleSignIn)
+
 	transaction := v1.Group("/transaction")
 	transaction.GET("/getTimelineData", h.getTimelineData)
 	transaction.GET("/getMonthlySpendingData", h.getMonthlySpendingData)

@@ -5,6 +5,7 @@ import (
 
 	"MoneyHook/MoneyHook-API/db"
 	"MoneyHook/MoneyHook-API/handler"
+	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/store"
 
 	"github.com/labstack/echo/v4"
@@ -20,12 +21,15 @@ func main() {
 
 	d := db.New()
 
-	cs := store.NewCategoryStore(d)
-	scs := store.NewSubCategoryStore(d)
+	us := store.NewUserStore(d)
 	ts := store.NewTransactionStore(d)
 	fs := store.NewFixedStore(d)
-	h := handler.NewHandler(cs, scs, ts, fs)
+	cs := store.NewCategoryStore(d)
+	scs := store.NewSubCategoryStore(d)
+	h := handler.NewHandler(us, ts, fs, cs, scs)
 	h.Register(v1)
+
+	message.Read()
 
 	e.Logger.Fatal(e.Start(":8080"))
 }

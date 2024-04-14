@@ -42,5 +42,5 @@ func (h *Handler) EditSubCategory(c echo.Context) error {
 		h.subCategoryStore.HideSubCategory(&editSubCategory)
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{"status": "success"})
+	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }

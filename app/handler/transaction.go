@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/model"
 	"net/http"
 	"strconv"
@@ -109,7 +110,7 @@ func (h *Handler) addTransaction(c echo.Context) error {
 
 	req := &addTransactionRequest{}
 	if err := req.bind(c, &addTran); err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, "error")
+		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("test_error_message")))
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
@@ -127,7 +128,7 @@ func (h *Handler) addTransaction(c echo.Context) error {
 	// err := h.transactionStore.AddTransaction(&addTran)
 	h.transactionStore.AddTransaction(&addTran)
 
-	return c.JSON(http.StatusOK, "ok")
+	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }
 
 func (h *Handler) editTransaction(c echo.Context) error {
@@ -156,7 +157,7 @@ func (h *Handler) editTransaction(c echo.Context) error {
 	// err := h.transactionStore.EditTransaction(&addTran)
 	h.transactionStore.EditTransaction(&editTran)
 
-	return c.JSON(http.StatusOK, "ok")
+	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }
 
 func (h *Handler) deleteTransaction(c echo.Context) error {
@@ -170,5 +171,5 @@ func (h *Handler) deleteTransaction(c echo.Context) error {
 	// err := h.transactionStore.EditFixed(&addTran)
 	h.transactionStore.DeleteTransaction(&deleteTransaction)
 
-	return c.JSON(http.StatusOK, "ok")
+	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }

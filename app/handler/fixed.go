@@ -54,7 +54,7 @@ func (h *Handler) addFixed(c echo.Context) error {
 	// err := h.FixedStore.AddFixed(&addFixed)
 	h.fixedStore.AddFixed(&addFixed)
 
-	return c.JSON(http.StatusOK, "ok")
+	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }
 
 func (h *Handler) editFixed(c echo.Context) error {
@@ -83,7 +83,7 @@ func (h *Handler) editFixed(c echo.Context) error {
 	// err := h.transactionStore.EditFixed(&addTran)
 	h.fixedStore.EditFixed(&editFixed)
 
-	return c.JSON(http.StatusOK, "ok")
+	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }
 
 func (h *Handler) deleteFixed(c echo.Context) error {
@@ -97,5 +97,5 @@ func (h *Handler) deleteFixed(c echo.Context) error {
 	// err := h.transactionStore.EditFixed(&addTran)
 	h.fixedStore.DeleteFixed(&deleteFixed)
 
-	return c.JSON(http.StatusOK, "ok")
+	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }
