@@ -2,7 +2,6 @@ package handler
 
 import (
 	"MoneyHook/MoneyHook-API/model"
-	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -24,8 +23,7 @@ func (h *Handler) googleSignIn(c echo.Context) error {
 		h.userStore.UpdateToken(&googleSignIn)
 	} else {
 		// No: userテーブル・user_tokenテーブルに登録
-		result := h.userStore.CreateUser(&googleSignIn)
-		fmt.Println(result.UserNo)
+		h.userStore.CreateUser(&googleSignIn)
 
 		h.userStore.CreateToken(&googleSignIn)
 	}
