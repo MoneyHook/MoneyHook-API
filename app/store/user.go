@@ -47,7 +47,7 @@ func (us *UserStore) CreateUser(googleSignIn *model.GoogleSignIn) *model.GoogleS
 		Where("user_id = ?", googleSignIn.UserId).
 		Scan(&googleSignIn.UserNo)
 
-	if result != nil {
+	if result == nil {
 		// エラー処理
 		fmt.Println("error")
 	}

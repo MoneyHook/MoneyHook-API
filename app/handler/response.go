@@ -164,6 +164,7 @@ func getTransactionResponse(data *model.TransactionData) *transactionResponse {
 }
 
 type montylyFixedReponse struct {
+	DisposableIncome int                `json:"disposable_income"`
 	MontylyFixedList []montylyFixedData `json:"monthly_fixed_list"`
 }
 
@@ -174,7 +175,7 @@ type montylyFixedData struct {
 }
 
 type montylyFixedTransaction struct {
-	TransactionName   string `json:"transactin_name"`
+	TransactionName   string `json:"transaction_name"`
 	TransactionAmount int    `json:"transaction_amount"`
 }
 
@@ -433,6 +434,10 @@ func containsTotalSpendingSubCategory(data_list *[]totalSpendingSubCategory, sub
 }
 
 type fixedResponse struct {
+	MonthlyTransactionList []fixedResponseData `json:"monthly_transaction_list"`
+}
+
+type fixedResponseData struct {
 	MonthlyTransactionId     int    `json:"monthly_transaction_id"`
 	MonthlyTransactionName   string `json:"monthly_transaction_name"`
 	MonthlyTransactionAmount int    `json:"monthly_transaction_amount"`
@@ -444,12 +449,12 @@ type fixedResponse struct {
 	SubCategoryName          string `json:"sub_category_name"`
 }
 
-func GetFixedResponse(data_list *[]model.GetFixed) *[]fixedResponse {
-	fr := &[]fixedResponse{}
+func GetFixedResponse(data_list *[]model.GetFixed) *fixedResponse {
+	fr := &[]fixedResponseData{}
 
 	for _, data := range *data_list {
 		*fr = append(*fr,
-			fixedResponse{MonthlyTransactionId: data.MonthlyTransactionId,
+			fixedResponseData{MonthlyTransactionId: data.MonthlyTransactionId,
 				MonthlyTransactionName:   data.MonthlyTransactionName,
 				MonthlyTransactionAmount: data.MonthlyTransactionAmount,
 				MonthlyTransactionSign:   data.MonthlyTransactionSign,
@@ -461,7 +466,7 @@ func GetFixedResponse(data_list *[]model.GetFixed) *[]fixedResponse {
 			})
 	}
 
-	return fr
+	return &fixedResponse{MonthlyTransactionList: *fr}
 }
 
 type deletedFixedResponse struct {

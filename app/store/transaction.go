@@ -2,6 +2,8 @@ package store
 
 import (
 	"MoneyHook/MoneyHook-API/model"
+	"slices"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -28,15 +30,27 @@ func (ts *TransactionStore) GetTimelineData(userId int, month string) *[]model.T
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_date BETWEEN ? AND LAST_DAY(?)", month, month).
 		Order("t.transaction_date DESC, t.transaction_id DESC").
-		Debug().
-		Find(&timeline_list)
+		Scan(&timeline_list)
 
 	return &timeline_list
+}
+
+func search_spending_data(data_list *[]model.MonthlySpendingData, key *string) *model.MonthlySpendingData {
+	var result model.MonthlySpendingData
+	result.Month = *key
+
+	for _, d := range *data_list {
+		if d.Month == *key {
+			result.TotalAmount = d.TotalAmount
+		}
+	}
+	return &result
 }
 
 func (ts *TransactionStore) GetMonthlySpendingData(userId int, month string) *[]model.MonthlySpendingData {
 	var result_list []model.MonthlySpendingData
 
+	var query_list []model.MonthlySpendingData
 	ts.db.Unscoped().
 		Select("SUM(transaction_amount) as total_amount", "DATE_FORMAT(transaction_date, '%Y-%m-01') as month").
 		Table("transaction").
@@ -45,7 +59,27 @@ func (ts *TransactionStore) GetMonthlySpendingData(userId int, month string) *[]
 		Where("transaction_date BETWEEN DATE_SUB(?, INTERVAL 5 MONTH) AND LAST_DAY(?)", month, month).
 		Group("month").
 		Order("month DESC").
-		Find(&result_list)
+		Find(&query_list)
+
+	// 取得できた月のリストを取得
+	var query_month_list []string
+	for _, q := range query_list {
+		query_month_list = append(query_month_list, q.Month)
+	}
+
+	// 6ヶ月分のデータを格納
+	for i := 0; i < 6; i++ {
+		s, _ := time.Parse("2006-01-02", month)
+		target_month := s.AddDate(0, -i, 0)
+		str_target_month := target_month.Format("2006-01-02")
+
+		if slices.Contains(query_month_list, str_target_month) {
+			result_list = append(result_list, *search_spending_data(&query_list, &str_target_month))
+			continue
+		}
+
+		result_list = append(result_list, model.MonthlySpendingData{TotalAmount: 0, Month: str_target_month})
+	}
 
 	return &result_list
 }

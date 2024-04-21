@@ -9,10 +9,18 @@ import (
 	"MoneyHook/MoneyHook-API/store"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
 	e := echo.New()
+
+	// e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+	// 	AllowOrigins: []string{"http://localhost:3000"},
+	// 	AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
+	// }))
+	e.Use(middleware.CORS())
+
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Success, running")
 	})
