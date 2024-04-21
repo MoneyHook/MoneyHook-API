@@ -94,7 +94,7 @@ type timelineResponse struct {
 }
 
 func getTimelineListResponse(data *[]model.Timeline) *timelineListResponse {
-	tll := &timelineListResponse{}
+	tll := &timelineListResponse{TimelineList: []timelineResponse{}}
 
 	for _, t := range *data {
 		tl := &timelineResponse{TransactionId: t.TransactionId,
@@ -230,7 +230,7 @@ type homeSubCategory struct {
 }
 
 func getHomeResponse(data *[]model.HomeCategory) *homeResponse {
-	hr := &homeResponse{}
+	hr := &homeResponse{HomeCategoryList: []homeCategory{}}
 
 	hcl := &[]homeCategory{}
 	for _, category := range *data {
@@ -251,7 +251,23 @@ func getHomeResponse(data *[]model.HomeCategory) *homeResponse {
 		hr.Balance += category.CategoryTotalAmount
 	}
 
-	hr.HomeCategoryList = *hcl
+	other_hc := &homeCategory{CategoryName: "その他"}
+	// 合計８カテゴリに統合
+	for i, hc := range *hcl {
+		if i > 6 {
+			other_hc.CategoryTotoalAmount += hc.CategoryTotoalAmount
+			other_hc.HomeSubCategoryList = append(other_hc.HomeSubCategoryList,
+				homeSubCategory{
+					SubCategoryName:        hc.CategoryName,
+					SubCategoryTotalAmount: hc.CategoryTotoalAmount})
+		} else {
+			hr.HomeCategoryList = append(hr.HomeCategoryList, hc)
+		}
+	}
+
+	if other_hc.CategoryTotoalAmount != 0 {
+		hr.HomeCategoryList = append(hr.HomeCategoryList, *other_hc)
+	}
 
 	return hr
 }
