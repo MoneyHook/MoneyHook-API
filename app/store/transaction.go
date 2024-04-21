@@ -267,6 +267,45 @@ func (ts *TransactionStore) GetTotalSpending(userId int, categoryId string, subC
 	return &total_spending_data
 }
 
+func (ts *TransactionStore) GetFrequentTransactionName(userId int) *[]model.FrequentTransactionName {
+	var frequest_transaction_name_list []model.FrequentTransactionName
+
+	subquery_1 := ts.db.Table("transaction tran").
+		Select("tran.transaction_name",
+			"tran.category_id",
+			"c.category_name",
+			"tran.sub_category_id",
+			"sc.sub_category_name",
+			"tran.fixed_flg",
+			"row_number() over(PARTITION BY tran.transaction_name ORDER BY count(tran.transaction_name) DESC) AS row_num").
+		Joins("INNER JOIN category c ON tran.category_id = c.category_id").
+		Joins("INNER JOIN sub_category sc ON tran.sub_category_id = sc.sub_category_id").
+		Where("tran.user_no = ?", userId).
+		Group("tran.transaction_name, tran.category_id, tran.sub_category_id, tran.fixed_flg").
+		Order("COUNT(tran.transaction_name) DESC")
+
+	subquery_2 := ts.db.Table("transaction tran").
+		Select("tran.transaction_name",
+			"tran.category_id",
+			"c.category_name",
+			"tran.sub_category_id",
+			"sc.sub_category_name",
+			"tran.fixed_flg",
+			"1 AS row_num").
+		Joins("INNER JOIN category c ON tran.category_id = c.category_id").
+		Joins("INNER JOIN sub_category sc ON tran.sub_category_id = sc.sub_category_id").
+		Where("tran.user_no = ?", userId).
+		Order("tran.transaction_id DESC").
+		Limit(3)
+
+	ts.db.
+		Raw("WITH tmp1 AS(?), tmp2 AS(?) (SELECT * FROM tmp1 WHERE row_num = 1 LIMIT 3) UNION (SELECT * FROM tmp2 LIMIT 3);",
+			subquery_1, subquery_2).
+		Scan(&frequest_transaction_name_list)
+
+	return &frequest_transaction_name_list
+}
+
 func (ts *TransactionStore) AddTransaction(transaction *model.AddTransaction) {
 	ts.db.Table("transaction").Create(map[string]interface{}{
 		"user_no":            transaction.UserId,

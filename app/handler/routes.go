@@ -17,6 +17,7 @@ func (h *Handler) Register(v1 *echo.Group) {
 	transaction.GET("/getHome", h.getHome)
 	transaction.GET("/getMonthlyVariableData", h.getMonthlyVariableData)
 	transaction.GET("/getTotalSpending", h.getTotalSpendingData)
+	transaction.GET("/getFrequentTransactionName", h.getFrequentTransactionName)
 	transaction.POST("/addTransaction", h.addTransaction)
 	transaction.PATCH("/editTransaction", h.editTransaction)
 	transaction.DELETE("/deleteTransaction/:transactionId", h.deleteTransaction)

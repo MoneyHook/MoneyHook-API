@@ -415,6 +415,36 @@ func getTotalSpendingResponse(data *[]model.TotalSpendingData) *totalSpendingRes
 	return tsr
 }
 
+type frequentTransactionResponse struct {
+	FrequentTransactionlist []frequentTransaction `json:"transaction_list"`
+}
+
+type frequentTransaction struct {
+	TransactionName string `json:"transaction_name"`
+	CategoryId      int    `json:"category_id"`
+	SubCategoryId   int    `json:"sub_category_id"`
+	FixedFlg        bool   `json:"fixed_flg"`
+	CategoryName    string `json:"category_name"`
+	SubCategoryName string `json:"sub_category_name"`
+}
+
+func getFrequentTransactionResponse(data *[]model.FrequentTransactionName) *frequentTransactionResponse {
+	ftr := &frequentTransactionResponse{}
+
+	for _, tran := range *data {
+		ftr.FrequentTransactionlist = append(ftr.FrequentTransactionlist, frequentTransaction{
+			TransactionName: tran.TransactionName,
+			CategoryId:      tran.CategoryId,
+			SubCategoryId:   tran.SubCategoryId,
+			FixedFlg:        tran.FixedFlg,
+			CategoryName:    tran.CategoryName,
+			SubCategoryName: tran.SubCategoryName,
+		})
+	}
+
+	return ftr
+}
+
 func containsTotalSpendingCategory(data_list *[]totalSpendingCategory, category_name *string) bool {
 	for _, v := range *data_list {
 		if v.CategoryName == *category_name {

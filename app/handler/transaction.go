@@ -102,6 +102,16 @@ func (h *Handler) getTotalSpendingData(c echo.Context) error {
 	return c.JSON(http.StatusOK, result_list)
 }
 
+func (h *Handler) getFrequentTransactionName(c echo.Context) error {
+	userId := getUserId(c)
+
+	result := h.transactionStore.GetFrequentTransactionName(userId)
+
+	result_list := getFrequentTransactionResponse(result)
+
+	return c.JSON(http.StatusOK, result_list)
+}
+
 func (h *Handler) addTransaction(c echo.Context) error {
 	userId := getUserId(c)
 	var addTran model.AddTransaction

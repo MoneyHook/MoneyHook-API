@@ -75,6 +75,16 @@ type TotalSpendingData struct {
 	TransactionDate        time.Time
 }
 
+type FrequentTransactionName struct {
+	TransactionName string
+	CategoryId      int
+	SubCategoryId   int
+	FixedFlg        bool
+	CategoryName    string
+	SubCategoryName string
+	RowNum          int
+}
+
 type AddTransaction struct {
 	UserId            int
 	TransactionDate   string
