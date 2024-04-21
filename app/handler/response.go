@@ -431,15 +431,23 @@ type frequentTransaction struct {
 func getFrequentTransactionResponse(data *[]model.FrequentTransactionName) *frequentTransactionResponse {
 	ftr := &frequentTransactionResponse{}
 
+	frequentMap := map[string]frequentTransaction{}
+
 	for _, tran := range *data {
-		ftr.FrequentTransactionlist = append(ftr.FrequentTransactionlist, frequentTransaction{
-			TransactionName: tran.TransactionName,
-			CategoryId:      tran.CategoryId,
-			SubCategoryId:   tran.SubCategoryId,
-			FixedFlg:        tran.FixedFlg,
-			CategoryName:    tran.CategoryName,
-			SubCategoryName: tran.SubCategoryName,
-		})
+		if _, exist := frequentMap[tran.TransactionName]; !exist {
+			frequentMap[tran.TransactionName] = frequentTransaction{
+				TransactionName: tran.TransactionName,
+				CategoryId:      tran.CategoryId,
+				SubCategoryId:   tran.SubCategoryId,
+				FixedFlg:        tran.FixedFlg,
+				CategoryName:    tran.CategoryName,
+				SubCategoryName: tran.SubCategoryName,
+			}
+		}
+	}
+
+	for _, tran := range frequentMap {
+		ftr.FrequentTransactionlist = append(ftr.FrequentTransactionlist, tran)
 	}
 
 	return ftr
