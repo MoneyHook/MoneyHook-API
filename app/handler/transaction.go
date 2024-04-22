@@ -124,7 +124,7 @@ func (h *Handler) addTransaction(c echo.Context) error {
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	if addTran.SubCategoryName != "" {
+	if addTran.SubCategoryId == 0 {
 		subCategory := model.SubCategoryModel{
 			UserNo:          addTran.UserId,
 			CategoryId:      addTran.CategoryId,
@@ -153,7 +153,7 @@ func (h *Handler) editTransaction(c echo.Context) error {
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	if editTran.SubCategoryName != "" {
+	if editTran.SubCategoryId == 0 {
 		subCategory := model.SubCategoryModel{
 			UserNo:          editTran.UserId,
 			CategoryId:      editTran.CategoryId,
