@@ -237,7 +237,6 @@ func (ts *TransactionStore) GetTotalSpending(userId int, categoryId string, subC
 		Table("transaction t").
 		Joins("INNER JOIN sub_category sc ON t.sub_category_id = sc.sub_category_id").
 		Where("t.user_no = ?", userId).
-		Where("t.fixed_flg = FALSE").
 		Where("transaction_date BETWEEN ? AND LAST_DAY(?)", startMonth, endMonth).
 		Group("t.sub_category_id")
 
