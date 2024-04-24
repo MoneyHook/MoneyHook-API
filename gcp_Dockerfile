@@ -16,6 +16,4 @@ ENV CGO_ENABLED=0 \
 	GOOS=linux \
 	GOARCH=arm64
 
-EXPOSE 8080
-
 ENTRYPOINT go run main.go
