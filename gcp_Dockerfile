@@ -10,7 +10,7 @@ COPY app .
 RUN apt-get update \
 	&& apt-get install -y
 
-RUN go build
+RUN go build main.go
 
 ENV CGO_ENABLED=0 \
 	GOOS=linux \
