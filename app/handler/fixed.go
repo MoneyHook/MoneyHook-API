@@ -9,7 +9,7 @@ import (
 )
 
 func (h *Handler) getFixed(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 
 	result := h.fixedStore.GetFixedData(userId)
 
@@ -19,7 +19,7 @@ func (h *Handler) getFixed(c echo.Context) error {
 }
 
 func (h *Handler) getDeletedFixed(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 
 	result := h.fixedStore.GetFixedDeletedData(userId)
 
@@ -29,7 +29,7 @@ func (h *Handler) getDeletedFixed(c echo.Context) error {
 }
 
 func (h *Handler) addFixed(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 	var addFixed model.AddFixed
 
 	addFixed.UserId = userId
@@ -58,7 +58,7 @@ func (h *Handler) addFixed(c echo.Context) error {
 }
 
 func (h *Handler) editFixed(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 	var editFixed model.EditFixed
 
 	editFixed.UserId = userId
@@ -87,7 +87,7 @@ func (h *Handler) editFixed(c echo.Context) error {
 }
 
 func (h *Handler) deleteFixed(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 	monthlyTransactionId, err := strconv.Atoi(c.Param("monthly_transaction_id"))
 	if err != nil {
 		return c.JSON(http.StatusOK, "hej")

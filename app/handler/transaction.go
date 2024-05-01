@@ -10,7 +10,7 @@ import (
 )
 
 func (h *Handler) getTimelineData(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 	month := c.QueryParam("month")
 
 	result := h.transactionStore.GetTimelineData(userId, month)
@@ -21,7 +21,7 @@ func (h *Handler) getTimelineData(c echo.Context) error {
 }
 
 func (h *Handler) getMonthlySpendingData(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 	month := c.QueryParam("month")
 
 	result := h.transactionStore.GetMonthlySpendingData(userId, month)
@@ -32,7 +32,7 @@ func (h *Handler) getMonthlySpendingData(c echo.Context) error {
 }
 
 func (h *Handler) getTransaction(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 	transactionId, err := strconv.Atoi(c.Param("transactionId"))
 	if err != nil {
 		return c.JSON(http.StatusOK, "hej")
@@ -45,7 +45,7 @@ func (h *Handler) getTransaction(c echo.Context) error {
 }
 
 func (h *Handler) getMonthlyFixedIncome(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 	month := c.QueryParam("month")
 
 	result := h.transactionStore.GetMonthlyFixedData(userId, month, false)
@@ -56,7 +56,7 @@ func (h *Handler) getMonthlyFixedIncome(c echo.Context) error {
 }
 
 func (h *Handler) getMonthlyFixedSpending(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 	month := c.QueryParam("month")
 
 	result := h.transactionStore.GetMonthlyFixedData(userId, month, true)
@@ -67,7 +67,7 @@ func (h *Handler) getMonthlyFixedSpending(c echo.Context) error {
 }
 
 func (h *Handler) getHome(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 	month := c.QueryParam("month")
 
 	result := h.transactionStore.GetHome(userId, month)
@@ -78,7 +78,7 @@ func (h *Handler) getHome(c echo.Context) error {
 }
 
 func (h *Handler) getMonthlyVariableData(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 	month := c.QueryParam("month")
 
 	result := h.transactionStore.GetMonthlyVariableData(userId, month)
@@ -89,7 +89,7 @@ func (h *Handler) getMonthlyVariableData(c echo.Context) error {
 }
 
 func (h *Handler) getTotalSpendingData(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 	categoryId := c.QueryParam("category_id")
 	subCategoryId := c.QueryParam("sub_category_id")
 	startMonth := c.QueryParam("start_month")
@@ -103,7 +103,7 @@ func (h *Handler) getTotalSpendingData(c echo.Context) error {
 }
 
 func (h *Handler) getFrequentTransactionName(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 
 	result := h.transactionStore.GetFrequentTransactionName(userId)
 
@@ -113,7 +113,7 @@ func (h *Handler) getFrequentTransactionName(c echo.Context) error {
 }
 
 func (h *Handler) addTransaction(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 	var addTran model.AddTransaction
 
 	addTran.UserId = userId
@@ -142,7 +142,7 @@ func (h *Handler) addTransaction(c echo.Context) error {
 }
 
 func (h *Handler) editTransaction(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 	var editTran model.EditTransaction
 
 	editTran.UserId = userId
@@ -171,7 +171,7 @@ func (h *Handler) editTransaction(c echo.Context) error {
 }
 
 func (h *Handler) deleteTransaction(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 	transactionId, err := strconv.Atoi(c.Param("transactionId"))
 	if err != nil {
 		return c.JSON(http.StatusOK, "hej")

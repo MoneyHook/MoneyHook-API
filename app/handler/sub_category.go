@@ -9,7 +9,7 @@ import (
 )
 
 func (h *Handler) GetSubCategoryList(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 	categoryId, err := strconv.Atoi(c.Param("categoryId"))
 	if err != nil {
 		return c.JSON(http.StatusOK, "hej")
@@ -23,7 +23,7 @@ func (h *Handler) GetSubCategoryList(c echo.Context) error {
 }
 
 func (h *Handler) EditSubCategory(c echo.Context) error {
-	userId := getUserId(c)
+	userId := h.GetUserId(c)
 	var editSubCategory model.EditSubCategoryModel
 
 	editSubCategory.UserId = userId

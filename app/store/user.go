@@ -18,7 +18,7 @@ func NewUserStore(db *gorm.DB) *UserStore {
 func (us *UserStore) UserExists(userId *string) *int {
 	var result int
 
-	us.db.Table("user").
+	us.db.Table("users").
 		Select("user_no").
 		Where("user_id = ?", userId).
 		Limit(1).
@@ -28,7 +28,7 @@ func (us *UserStore) UserExists(userId *string) *int {
 }
 
 func (us *UserStore) UpdateToken(googleSignIn *model.GoogleSignIn) {
-	subquery := us.db.Table("user").Select("user_no").Where("user_id = ?", googleSignIn.UserId)
+	subquery := us.db.Table("users").Select("user_no").Where("user_id = ?", googleSignIn.UserId)
 
 	us.db.Table("user_token").
 		Where("user_no = (?)", subquery).
@@ -36,13 +36,13 @@ func (us *UserStore) UpdateToken(googleSignIn *model.GoogleSignIn) {
 }
 
 func (us *UserStore) CreateUser(googleSignIn *model.GoogleSignIn) *model.GoogleSignIn {
-	us.db.Table("user").
+	us.db.Table("users").
 		Model(&googleSignIn).
 		Create(map[string]interface{}{
 			"user_id": googleSignIn.UserId,
 		})
 
-	result := us.db.Table("user").
+	result := us.db.Table("users").
 		Select("user_no").
 		Where("user_id = ?", googleSignIn.UserId).
 		Scan(&googleSignIn.UserNo)
@@ -60,4 +60,19 @@ func (us *UserStore) CreateToken(googleSignIn *model.GoogleSignIn) {
 		"user_no": googleSignIn.UserNo,
 		"token":   googleSignIn.Token,
 	})
+}
+
+func (us *UserStore) ExtractUserNoFromToken(userToken *string) *int{
+	model := model.GoogleSignIn{}
+	result := us.db.Table("user_token").
+		Select("user_no").
+		Where("token = ?", userToken).
+		Scan(&model)
+
+	if result == nil {
+		// エラー処理
+		fmt.Println("error")
+	}
+	
+	return &model.UserNo
 }

@@ -30,3 +30,13 @@ func (h *Handler) googleSignIn(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }
+
+func (h *Handler) GetUserId(c echo.Context) int {
+	// Authorizationヘッダからトークンを抽出
+	token := c.Request().Header["Authorization"][0]
+
+	// トークンからUserNoを抽出
+	userNo := h.userStore.ExtractUserNoFromToken(&token)
+
+	return *userNo
+}
