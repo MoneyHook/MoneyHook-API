@@ -62,7 +62,7 @@ func (us *UserStore) CreateToken(googleSignIn *model.GoogleSignIn) {
 	})
 }
 
-func (us *UserStore) ExtractUserNoFromToken(userToken *string) *int{
+func (us *UserStore) ExtractUserNoFromToken(userToken *string) *int {
 	model := model.GoogleSignIn{}
 	result := us.db.Table("user_token").
 		Select("user_no").
@@ -73,6 +73,19 @@ func (us *UserStore) ExtractUserNoFromToken(userToken *string) *int{
 		// エラー処理
 		fmt.Println("error")
 	}
-	
+	return &model.UserNo
+}
+
+func (us *UserStore) ExtractUserNoFromUserId(userId *string) *int {
+	model := model.GoogleSignIn{}
+	result := us.db.Table("users").
+		Select("user_no").
+		Where("user_id = ?", userId).
+		Scan(&model)
+
+	if result == nil {
+		// エラー処理
+		fmt.Println("error")
+	}
 	return &model.UserNo
 }

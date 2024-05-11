@@ -5,8 +5,11 @@ import (
 	"MoneyHook/MoneyHook-API/handler"
 	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/store"
+	"context"
+	"log"
 	"net/http"
 
+	firebase "firebase.google.com/go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -24,6 +27,15 @@ func main() {
 		return c.String(http.StatusOK, "Success, running")
 	})
 
+	app, err := firebase.NewApp(context.Background(), nil)
+	if err != nil {
+		log.Fatalf("error getting Auth client: %v\n", err)
+	}
+	client, err := app.Auth(context.Background())
+	if err != nil {
+		log.Fatalf("error getting Auth client: %v\n", err)
+	}
+
 	v1 := e.Group("/api")
 
 	d := db.New()
@@ -33,7 +45,7 @@ func main() {
 	fs := store.NewFixedStore(d)
 	cs := store.NewCategoryStore(d)
 	scs := store.NewSubCategoryStore(d)
-	h := handler.NewHandler(us, ts, fs, cs, scs)
+	h := handler.NewHandler(client, us, ts, fs, cs, scs)
 	h.Register(v1)
 
 	message.Read()

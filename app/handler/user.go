@@ -2,7 +2,13 @@ package handler
 
 import (
 	"MoneyHook/MoneyHook-API/model"
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 )
@@ -34,9 +40,44 @@ func (h *Handler) googleSignIn(c echo.Context) error {
 func (h *Handler) GetUserId(c echo.Context) int {
 	// Authorizationヘッダからトークンを抽出
 	token := c.Request().Header["Authorization"][0]
+	var userNo int
 
-	// トークンからUserNoを抽出
-	userNo := h.userStore.ExtractUserNoFromToken(&token)
+	if EnableFirebaseAuth() {
+		user, err := h.firebaseClient.VerifyIDToken(context.Background(), token)
+		if err != nil {
+			fmt.Println("firebase auth error!!")
+			return 3
+		}
+		email := user.Claims["email"]
 
-	return *userNo
+		user_id := convHash(email.(string))
+
+		userNo = *h.userStore.ExtractUserNoFromUserId(&user_id)
+	} else {
+		// トークンからUserNoを抽出(DBのハッシュかされたIDトークンを見る方法)
+		userNo = *h.userStore.ExtractUserNoFromToken(&token)
+	}
+
+	return userNo
+}
+
+/* 環境変数からFirebaseAuthを行うかどうかを取得 */
+func EnableFirebaseAuth() bool {
+
+	fa := os.Getenv("ENABLE_FIREBASE_AUTH")
+	if len(fa) == 0 {
+		// 設定されていない場合、True
+		return true
+	}
+
+	result, _ := strconv.ParseBool(fa)
+
+	return result
+}
+
+/* 受け取った文字列をハッシュ化 */
+func convHash(message string) string {
+	h := sha256.New()
+	h.Write([]byte(message))
+	return hex.EncodeToString(h.Sum(nil))
 }
