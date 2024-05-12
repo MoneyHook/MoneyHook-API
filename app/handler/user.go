@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -37,7 +36,7 @@ func (h *Handler) googleSignIn(c echo.Context) error {
 	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }
 
-func (h *Handler) GetUserId(c echo.Context) int {
+func (h *Handler) GetUserId(c echo.Context) (int, error) {
 	// Authorizationヘッダからトークンを抽出
 	token := c.Request().Header["Authorization"][0]
 	var userNo int
@@ -45,20 +44,27 @@ func (h *Handler) GetUserId(c echo.Context) int {
 	if EnableFirebaseAuth() {
 		user, err := h.firebaseClient.VerifyIDToken(context.Background(), token)
 		if err != nil {
-			fmt.Println("firebase auth error!!")
-			return 3
+			return 0, err
 		}
 		email := user.Claims["email"]
 
 		user_id := convHash(email.(string))
 
-		userNo = *h.userStore.ExtractUserNoFromUserId(&user_id)
+		result, err := h.userStore.ExtractUserNoFromUserId(&user_id)
+		if err != nil {
+			return 0, err
+		}
+		userNo = *result
 	} else {
 		// トークンからUserNoを抽出(DBのハッシュかされたIDトークンを見る方法)
-		userNo = *h.userStore.ExtractUserNoFromToken(&token)
+		result, err := h.userStore.ExtractUserNoFromToken(&token)
+		if err != nil {
+			return 0, err
+		}
+		userNo = *result
 	}
 
-	return userNo
+	return userNo, nil
 }
 
 /* 環境変数からFirebaseAuthを行うかどうかを取得 */

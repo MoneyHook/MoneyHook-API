@@ -7,6 +7,6 @@ type Store interface {
 	UpdateToken(googleSignIn *model.GoogleSignIn)
 	CreateUser(googleSignIn *model.GoogleSignIn) *model.GoogleSignIn
 	CreateToken(googleSignIn *model.GoogleSignIn)
-	ExtractUserNoFromToken(userToken *string) *int
-	ExtractUserNoFromUserId(userId *string) *int
+	ExtractUserNoFromToken(userToken *string) (*int, error)
+	ExtractUserNoFromUserId(userId *string) (*int, error)
 }

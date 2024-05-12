@@ -1,3 +1,4 @@
 {
-    "test_error_message": "テストエラーメッセージ"
+    "test_error_message": "テストエラーメッセージ",
+    "token_expired_error": "認証に失敗しました"
 }

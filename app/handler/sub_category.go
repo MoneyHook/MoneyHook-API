@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/model"
 	"net/http"
 	"strconv"
@@ -9,7 +10,11 @@ import (
 )
 
 func (h *Handler) GetSubCategoryList(c echo.Context) error {
-	userId := h.GetUserId(c)
+	userId, err := h.GetUserId(c)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
+	}
+
 	categoryId, err := strconv.Atoi(c.Param("categoryId"))
 	if err != nil {
 		return c.JSON(http.StatusOK, "hej")
@@ -23,7 +28,11 @@ func (h *Handler) GetSubCategoryList(c echo.Context) error {
 }
 
 func (h *Handler) EditSubCategory(c echo.Context) error {
-	userId := h.GetUserId(c)
+	userId, err := h.GetUserId(c)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
+	}
+
 	var editSubCategory model.EditSubCategoryModel
 
 	editSubCategory.UserId = userId

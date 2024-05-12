@@ -62,30 +62,28 @@ func (us *UserStore) CreateToken(googleSignIn *model.GoogleSignIn) {
 	})
 }
 
-func (us *UserStore) ExtractUserNoFromToken(userToken *string) *int {
+func (us *UserStore) ExtractUserNoFromToken(userToken *string) (*int, error) {
 	model := model.GoogleSignIn{}
 	result := us.db.Table("user_token").
 		Select("user_no").
 		Where("token = ?", userToken).
 		Scan(&model)
 
-	if result == nil {
-		// エラー処理
-		fmt.Println("error")
+	if result.Error == nil || model.UserNo == 0 {
+		return &model.UserNo, gorm.ErrRecordNotFound
 	}
-	return &model.UserNo
+	return &model.UserNo, nil
 }
 
-func (us *UserStore) ExtractUserNoFromUserId(userId *string) *int {
+func (us *UserStore) ExtractUserNoFromUserId(userId *string) (*int, error) {
 	model := model.GoogleSignIn{}
 	result := us.db.Table("users").
 		Select("user_no").
-		Where("user_id = ?", userId).
+		Where("user_id = ?", "userId").
 		Scan(&model)
 
-	if result == nil {
-		// エラー処理
-		fmt.Println("error")
+	if result.Error == nil || model.UserNo == 0 {
+		return &model.UserNo, gorm.ErrRecordNotFound
 	}
-	return &model.UserNo
+	return &model.UserNo, nil
 }

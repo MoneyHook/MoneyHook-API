@@ -12,14 +12,14 @@ var msgJSON []byte
 
 var msgs map[string]string
 
-// Read メッセージ一覧を読み込む
+/* Read メッセージ一覧を読み込む */
 func Read() {
 	if err := json.Unmarshal(msgJSON, &msgs); err != nil {
 		panic("Cannot read messages.json")
 	}
 }
 
-// Get keyからメッセージを取得する(keyがなければ空を返す)
+/* Get keyからメッセージを取得する(keyがなければ空を返す) */
 func Get(key string) *string {
 	msg, exists := msgs[key]
 	if !exists {
