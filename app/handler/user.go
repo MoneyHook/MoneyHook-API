@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -44,6 +45,7 @@ func (h *Handler) GetUserId(c echo.Context) (int, error) {
 	if EnableFirebaseAuth() {
 		user, err := h.firebaseClient.VerifyIDToken(context.Background(), token)
 		if err != nil {
+			log.Fatalf("error getting Auth client: %v\n", err)
 			return 0, err
 		}
 		email := user.Claims["email"]
@@ -52,6 +54,7 @@ func (h *Handler) GetUserId(c echo.Context) (int, error) {
 
 		result, err := h.userStore.ExtractUserNoFromUserId(&user_id)
 		if err != nil {
+			log.Fatalf("error getting Auth client: %v\n", err)
 			return 0, err
 		}
 		userNo = *result
@@ -59,6 +62,7 @@ func (h *Handler) GetUserId(c echo.Context) (int, error) {
 		// トークンからUserNoを抽出(DBのハッシュかされたIDトークンを見る方法)
 		result, err := h.userStore.ExtractUserNoFromToken(&token)
 		if err != nil {
+			log.Fatalf("error getting Auth client: %v\n", err)
 			return 0, err
 		}
 		userNo = *result

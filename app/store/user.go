@@ -79,10 +79,10 @@ func (us *UserStore) ExtractUserNoFromUserId(userId *string) (*int, error) {
 	model := model.GoogleSignIn{}
 	result := us.db.Table("users").
 		Select("user_no").
-		Where("user_id = ?", "userId").
+		Where("user_id = ?", userId).
 		Scan(&model)
 
-	if result.Error == nil || model.UserNo == 0 {
+	if result.Error != nil || model.UserNo == 0 {
 		return &model.UserNo, gorm.ErrRecordNotFound
 	}
 	return &model.UserNo, nil
