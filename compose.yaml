@@ -29,3 +29,5 @@ services:
       MYSQL_DATABASE: "moneyhook"
       MYSQL_USER: "moneyhook"
       MYSQL_PASSWORD: "password"
+      GOOGLE_APPLICATION_CREDENTIALS: "secret/firebase_secret.json"
+      ENABLE_FIREBASE_AUTH: flase

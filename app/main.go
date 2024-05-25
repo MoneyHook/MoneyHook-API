@@ -1,6 +1,11 @@
 package main
 
 import (
+	"MoneyHook/MoneyHook-API/db"
+	"MoneyHook/MoneyHook-API/handler"
+	"MoneyHook/MoneyHook-API/message"
+	"MoneyHook/MoneyHook-API/router"
+	"MoneyHook/MoneyHook-API/store"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -20,19 +25,21 @@ func main() {
 		return c.String(http.StatusOK, "Success, running")
 	})
 
-	// v1 := e.Group("/api")
+	client := router.NewFirebaseAuth()
 
-	// d := db.New()
+	v1 := e.Group("/api")
 
-	// us := store.NewUserStore(d)
-	// ts := store.NewTransactionStore(d)
-	// fs := store.NewFixedStore(d)
-	// cs := store.NewCategoryStore(d)
-	// scs := store.NewSubCategoryStore(d)
-	// h := handler.NewHandler(us, ts, fs, cs, scs)
-	// h.Register(v1)
+	d := db.New()
 
-	// message.Read()
+	us := store.NewUserStore(d)
+	ts := store.NewTransactionStore(d)
+	fs := store.NewFixedStore(d)
+	cs := store.NewCategoryStore(d)
+	scs := store.NewSubCategoryStore(d)
+	h := handler.NewHandler(client, us, ts, fs, cs, scs)
+	h.Register(v1)
+
+	message.Read()
 
 	e.Logger.Fatal(e.Start(":8080"))
 }

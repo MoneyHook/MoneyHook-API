@@ -2,3 +2,4 @@ sql/settings
 
 app/tmp
 app/MoneyHook-API
+app/secret

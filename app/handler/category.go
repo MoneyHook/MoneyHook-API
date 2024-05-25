@@ -1,19 +1,12 @@
 package handler
 
 import (
+	"MoneyHook/MoneyHook-API/message"
+	"MoneyHook/MoneyHook-API/model"
 	"net/http"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 )
-
-func getUserId(c echo.Context) int {
-	userId, error := strconv.Atoi(c.Request().Header["Authorization"][0])
-	if error != nil {
-		return 1
-	}
-	return userId
-}
 
 func (h *Handler) GetCategoryList(c echo.Context) error {
 	result := h.categoryStore.GetCategoryList()
@@ -24,7 +17,11 @@ func (h *Handler) GetCategoryList(c echo.Context) error {
 }
 
 func (h *Handler) GetCategoryWithSubCategoryList(c echo.Context) error {
-	userId := getUserId(c)
+	userId, err := h.GetUserId(c)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
+	}
+
 	result := h.categoryStore.GetCategoryWithSubCategoryList(userId)
 
 	result_list := getCategoryWithSubCategoryListResponse(result)
