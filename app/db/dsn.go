@@ -15,14 +15,15 @@ func getConfig() string {
 	}
 
 	dsn := mysql.Config{
-		DBName:    os.Getenv("MYSQL_DATABASE"),
-		User:      os.Getenv("MYSQL_USER"),
-		Passwd:    os.Getenv("MYSQL_PASSWORD"),
-		Addr:      os.Getenv("MYSQL_HOST") + ":3306",
-		Net:       "tcp",
-		ParseTime: true,
-		Collation: "utf8mb4_unicode_ci",
-		Loc:       jst,
+		DBName:               os.Getenv("MYSQL_DATABASE"),
+		User:                 os.Getenv("MYSQL_USER"),
+		Passwd:               os.Getenv("MYSQL_PASSWORD"),
+		Addr:                 os.Getenv("MYSQL_HOST"),
+		Net:                  os.Getenv("NET"),
+		ParseTime:            true,
+		Collation:            "utf8mb4_unicode_ci",
+		Loc:                  jst,
+		AllowNativePasswords: true,
 	}
 	return dsn.FormatDSN()
 }

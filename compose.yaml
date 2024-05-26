@@ -25,9 +25,10 @@ services:
     ports:
       - 8080:8080
     environment:
-      MYSQL_HOST: "sql"
+      MYSQL_HOST: "sql:3306"
       MYSQL_DATABASE: "moneyhook"
       MYSQL_USER: "moneyhook"
       MYSQL_PASSWORD: "password"
+      NET: "tcp" # "unix" or "tcp"
       GOOGLE_APPLICATION_CREDENTIALS: "secret/firebase_secret.json"
-      ENABLE_FIREBASE_AUTH: flase
+      ENABLE_FIREBASE_AUTH: false
