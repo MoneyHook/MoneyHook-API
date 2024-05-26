@@ -70,7 +70,7 @@ func (us *UserStore) ExtractUserNoFromToken(userToken *string) (*int, error) {
 		Where("token = ?", userToken).
 		Scan(&model)
 
-	if result.Error == nil || model.UserNo == 0 {
+	if result.Error != nil || model.UserNo == 0 {
 		log.Printf("database error: %v\n", result.Error)
 		log.Printf("user_no, user_token: %v, %v\n", model.UserNo, *userToken)
 		return &model.UserNo, gorm.ErrRecordNotFound
