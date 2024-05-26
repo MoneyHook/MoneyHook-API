@@ -9,6 +9,7 @@ import (
 )
 
 func NewFirebaseAuth() *auth.Client {
+	log.Printf("Start Firebase Setup")
 	app, err := firebase.NewApp(context.Background(), nil)
 	if err != nil {
 		log.Fatalf("error getting Auth client: %v\n", err)
@@ -18,6 +19,7 @@ func NewFirebaseAuth() *auth.Client {
 	if err != nil {
 		log.Fatalf("error getting Auth client: %v\n", err)
 	}
+	log.Printf("Finish Firebase Setup")
 
 	return client
 }
