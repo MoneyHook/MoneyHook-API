@@ -6,7 +6,7 @@ steps:
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: gcloud
   args: ['run', 'deploy', 'moneyhooks', 
-  '--image', 'gcr.io/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA', 
+  '--image', 'asia.gcr.io/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA', 
   '--region', 'global', 
   '--platform', 'managed']
 images:
