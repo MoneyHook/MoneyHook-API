@@ -30,5 +30,5 @@ services:
       MYSQL_USER: "moneyhook"
       MYSQL_PASSWORD: "password"
       NET: "tcp" # "unix" or "tcp"
-      GOOGLE_APPLICATION_CREDENTIALS: "secret/firebase_secret.json"
+      SECRET_PATH: "secret/firebase_secret.json"
       ENABLE_FIREBASE_AUTH: false
