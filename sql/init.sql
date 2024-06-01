@@ -4,8 +4,7 @@ category,
 sub_category,
 hidden_sub_category,
 transaction,
-monthly_transaction,
-inquiry_data;
+monthly_transaction;
 
 CREATE TABLE users (
         user_id VARCHAR(64) NOT NULL,
@@ -46,6 +45,14 @@ CREATE TABLE hidden_sub_category (
         UNIQUE (user_no, sub_category_id)
     );
 
+CREATE TABLE payment_resource (
+        payment_resource_id BIGINT UNSIGNED AUTO_INCREMENT,
+        user_no BIGINT UNSIGNED NOT NULL,
+        payment_name VARCHAR(32) NOT NULL,
+        PRIMARY KEY (payment_resource_id),
+        FOREIGN KEY user_no (user_no) REFERENCES users (user_no)
+    );
+
 CREATE TABLE transaction (
         transaction_id BIGINT UNSIGNED AUTO_INCREMENT,
         user_no BIGINT UNSIGNED NOT NULL,
@@ -55,10 +62,12 @@ CREATE TABLE transaction (
         category_id BIGINT UNSIGNED NOT NULL,
         sub_category_id BIGINT UNSIGNED NOT NULL,
         fixed_flg BOOLEAN NOT NULL,
+        payment_resource_id BIGINT UNSIGNED,
         PRIMARY KEY (transaction_id),
         FOREIGN KEY user_no (user_no) REFERENCES users (user_no),
         FOREIGN KEY category_id (category_id) REFERENCES category (category_id),
-        FOREIGN KEY sub_category_id (sub_category_id) REFERENCES sub_category (sub_category_id)
+        FOREIGN KEY sub_category_id (sub_category_id) REFERENCES sub_category (sub_category_id),
+        FOREIGN KEY payment_resource_id (payment_resource_id) REFERENCES payment_resource (payment_resource_id)
     );
 
 CREATE TABLE monthly_transaction (
@@ -70,8 +79,10 @@ CREATE TABLE monthly_transaction (
         category_id BIGINT UNSIGNED NOT NULL,
         sub_category_id BIGINT UNSIGNED NOT NULL,
         include_flg BOOLEAN NOT NULL,
+        payment_resource_id BIGINT UNSIGNED,
         PRIMARY KEY (monthly_transaction_id),
         FOREIGN KEY user_no (user_no) REFERENCES users (user_no),
         FOREIGN KEY category_id (category_id) REFERENCES category (category_id),
-        FOREIGN KEY sub_category_id (sub_category_id) REFERENCES sub_category (sub_category_id)
+        FOREIGN KEY sub_category_id (sub_category_id) REFERENCES sub_category (sub_category_id),
+        FOREIGN KEY payment_resource_id (payment_resource_id) REFERENCES payment_resource (payment_resource_id)
     );

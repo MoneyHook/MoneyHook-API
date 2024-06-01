@@ -51,7 +51,7 @@ func (h *Handler) addFixed(c echo.Context) error {
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	if addFixed.SubCategoryName != "" {
+	if addFixed.SubCategoryId == 0 {
 		subCategory := model.SubCategoryModel{
 			UserNo:          addFixed.UserId,
 			CategoryId:      addFixed.CategoryId,
@@ -84,7 +84,7 @@ func (h *Handler) editFixed(c echo.Context) error {
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	if editFixed.SubCategoryName != "" {
+	if editFixed.SubCategoryId == 0 {
 		subCategory := model.SubCategoryModel{
 			UserNo:          editFixed.UserId,
 			CategoryId:      editFixed.CategoryId,
