@@ -36,9 +36,10 @@ func main() {
 	fs := store.NewFixedStore(d)
 	cs := store.NewCategoryStore(d)
 	scs := store.NewSubCategoryStore(d)
+	pr := store.NewPaymentResourceStore(d)
 
 	client := router.NewFirebaseAuth()
-	h := handler.NewHandler(client, us, ts, fs, cs, scs)
+	h := handler.NewHandler(client, us, ts, fs, cs, scs, pr)
 	h.Register(v1)
 
 	message.Read()

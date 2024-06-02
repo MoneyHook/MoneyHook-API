@@ -36,4 +36,7 @@ func (h *Handler) Register(v1 *echo.Group) {
 	sub_category := v1.Group("/subCategory")
 	sub_category.GET("/getSubCategoryList/:categoryId", h.GetSubCategoryList)
 	sub_category.POST("/editSubCategory", h.EditSubCategory)
+
+	payment_resource := v1.Group("/payment")
+	payment_resource.GET("/getPayment", h.GetPaymentResourceList)
 }
