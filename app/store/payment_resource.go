@@ -18,6 +18,7 @@ func (pr *PaymentResourceStore) GetPaymentResourceList(userId int) *[]model.Paym
 	var payment_resource_list []model.PaymentResource
 	pr.db.Table("payment_resource").
 		Where("user_no = ?", userId).
+		Order("payment_id").
 		Find(&payment_resource_list)
 
 	return &payment_resource_list
