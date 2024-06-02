@@ -51,6 +51,7 @@ CREATE TABLE payment_resource (
         payment_name VARCHAR(32) NOT NULL,
         PRIMARY KEY (payment_id),
         FOREIGN KEY user_no (user_no) REFERENCES users (user_no)
+        UNIQUE (user_no, payment_name)
     );
 
 CREATE TABLE transaction (

@@ -22,3 +22,15 @@ func (pr *PaymentResourceStore) GetPaymentResourceList(userId int) *[]model.Paym
 
 	return &payment_resource_list
 }
+
+func (pr *PaymentResourceStore) AddPaymentResource(addPayment *model.AddPaymentResource) error {
+	return pr.db.Table("payment_resource").Create(&addPayment).Error
+}
+
+func (pr *PaymentResourceStore) DeletePaymentResource(deletePayment *model.DeletePaymentResource) error {
+	return pr.db.Table("payment_resource").
+		Where("payment_id = ?", deletePayment.PaymentId).
+		Where("user_no = ?", deletePayment.UserNo).
+		Delete(&model.DeletePaymentResource{}).
+		Error
+}

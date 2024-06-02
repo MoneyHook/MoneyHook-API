@@ -6,6 +6,9 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+/*
+収支取引
+*/
 type addTransactionRequest struct {
 	Transaction struct {
 		TransactionDate   string `json:"transaction_date" validate:"required"`
@@ -74,6 +77,9 @@ func (r *editTransactionRequest) bind(c echo.Context, u *model.EditTransaction) 
 	return nil
 }
 
+/*
+サブカテゴリ
+*/
 type editSubCategoryRequest struct {
 	SubCategoryId int  `json:"sub_category_id" validate:"required"`
 	IsEnable      bool `json:"is_enable"  validate:"required"`
@@ -94,6 +100,9 @@ func (r *editSubCategoryRequest) bind(c echo.Context, u *model.EditSubCategoryMo
 	return nil
 }
 
+/*
+月次費用
+*/
 type addFixedRequest struct {
 	MonthlyTransaction struct {
 		MonthlyTransactionName   string `json:"monthly_transaction_name"  validate:"required"`
@@ -160,6 +169,30 @@ func (r *editFixedRequest) bind(c echo.Context, u *model.EditFixed) error {
 	return nil
 }
 
+/*
+支払い方法
+*/
+type AddPaymentRequest struct {
+	PaymentName string `json:"payment_name"`
+}
+
+func (r *AddPaymentRequest) bind(c echo.Context, u *model.AddPaymentResource) error {
+	if err := c.Bind(r); err != nil {
+		return err
+	}
+	// TODO バリデーション
+	// if err := c.Validate(r); err != nil {
+	// 	return err
+	// }
+
+	u.PaymentName = r.PaymentName
+
+	return nil
+}
+
+/*
+ユーザー
+*/
 type GoogleSignInRequest struct {
 	UserId string `json:"user_id"`
 	Token  string `json:"token"`
