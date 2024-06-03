@@ -305,8 +305,8 @@ func (ts *TransactionStore) GetFrequentTransactionName(userId int) *[]model.Freq
 	return &frequest_transaction_name_list
 }
 
-func (ts *TransactionStore) AddTransaction(transaction *model.AddTransaction) {
-	ts.db.Table("transaction").Create(map[string]interface{}{
+func (ts *TransactionStore) AddTransaction(transaction *model.AddTransaction) error {
+	return ts.db.Table("transaction").Create(map[string]interface{}{
 		"user_no":            transaction.UserId,
 		"transaction_name":   transaction.TransactionName,
 		"transaction_amount": transaction.TransactionAmount,
@@ -314,11 +314,13 @@ func (ts *TransactionStore) AddTransaction(transaction *model.AddTransaction) {
 		"category_id":        transaction.CategoryId,
 		"sub_category_id":    transaction.SubCategoryId,
 		"fixed_flg":          transaction.FixedFlg,
-	})
+		"payment_id":         transaction.PaymentId,
+	}).Error
+
 }
 
-func (ts *TransactionStore) EditTransaction(transaction *model.EditTransaction) {
-	ts.db.Table("transaction").
+func (ts *TransactionStore) EditTransaction(transaction *model.EditTransaction) error {
+	return ts.db.Table("transaction").
 		Where("transaction_id = ?", transaction.TransactionId).
 		Where("user_no = ?", transaction.UserId).
 		Updates(map[string]interface{}{
@@ -328,7 +330,8 @@ func (ts *TransactionStore) EditTransaction(transaction *model.EditTransaction) 
 			"category_id":        transaction.CategoryId,
 			"sub_category_id":    transaction.SubCategoryId,
 			"fixed_flg":          transaction.FixedFlg,
-		})
+			"payment_id":         transaction.PaymentId,
+		}).Error
 }
 
 func (ts *TransactionStore) DeleteTransaction(transaction *model.DeleteTransaction) {

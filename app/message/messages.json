@@ -1,4 +1,7 @@
 {
     "test_error_message": "テストエラーメッセージ",
-    "token_expired_error": "認証に失敗しました"
+    "token_expired_error": "認証に失敗しました",
+    "add_failed": "追加に失敗しました",
+    "edit_failed": "編集に失敗しました",
+    "delete_failed": "削除に失敗しました"
 }

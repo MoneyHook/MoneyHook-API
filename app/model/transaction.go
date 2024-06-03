@@ -94,6 +94,7 @@ type AddTransaction struct {
 	SubCategoryId     int
 	SubCategoryName   string
 	FixedFlg          bool
+	PaymentId         int
 }
 
 type EditTransaction struct {
@@ -106,6 +107,7 @@ type EditTransaction struct {
 	SubCategoryId     int
 	SubCategoryName   string
 	FixedFlg          bool
+	PaymentId         int
 }
 
 type DeleteTransaction struct {

@@ -19,6 +19,7 @@ type addTransactionRequest struct {
 		SubCategoryId     int    `json:"sub_category_id"`
 		SubCategoryName   string `json:"sub_category_name"`
 		FixedFlg          bool   `json:"fixed_flg"  validate:"required"`
+		PaymentId         int    `json:"payment_id"`
 	} `json:"transaction"`
 }
 
@@ -38,6 +39,7 @@ func (r *addTransactionRequest) bind(c echo.Context, u *model.AddTransaction) er
 	u.SubCategoryId = r.Transaction.SubCategoryId
 	u.SubCategoryName = r.Transaction.SubCategoryName
 	u.FixedFlg = r.Transaction.FixedFlg
+	u.PaymentId = r.Transaction.PaymentId
 
 	return nil
 }
@@ -53,6 +55,7 @@ type editTransactionRequest struct {
 		SubCategoryId     int    `json:"sub_category_id"`
 		SubCategoryName   string `json:"sub_category_name"`
 		FixedFlg          bool   `json:"fixed_flg"  validate:"required"`
+		PaymentId         int    `json:"payment_id"`
 	} `json:"transaction"`
 }
 
@@ -73,6 +76,7 @@ func (r *editTransactionRequest) bind(c echo.Context, u *model.EditTransaction) 
 	u.SubCategoryId = r.Transaction.SubCategoryId
 	u.SubCategoryName = r.Transaction.SubCategoryName
 	u.FixedFlg = r.Transaction.FixedFlg
+	u.PaymentId = r.Transaction.PaymentId
 
 	return nil
 }
