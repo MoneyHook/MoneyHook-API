@@ -203,6 +203,7 @@ func getMonthlyFixedResponse(data *[]model.MonthlyFixedData) *montylyFixedRepons
 		}
 
 		*mfid_l = append(*mfid_l, *mfid)
+		mfir.DisposableIncome += category.TotalCategoryAmount
 
 	}
 	mfir.MontylyFixedList = *mfid_l
