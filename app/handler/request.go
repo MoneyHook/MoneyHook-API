@@ -116,6 +116,7 @@ type addFixedRequest struct {
 		CategoryId               int    `json:"category_id"  validate:"required"`
 		SubCategoryId            int    `json:"sub_category_id"`
 		SubCategoryName          string `json:"sub_category_name"`
+		PaymentId                int    `json:"payment_id"`
 	} `json:"monthly_transaction"`
 }
 
@@ -134,6 +135,7 @@ func (r *addFixedRequest) bind(c echo.Context, u *model.AddFixed) error {
 	u.CategoryId = r.MonthlyTransaction.CategoryId
 	u.SubCategoryId = r.MonthlyTransaction.SubCategoryId
 	u.SubCategoryName = r.MonthlyTransaction.SubCategoryName
+	u.PaymentId = r.MonthlyTransaction.PaymentId
 
 	return nil
 }
@@ -149,6 +151,7 @@ type editFixedRequest struct {
 		SubCategoryId            int    `json:"sub_category_id"`
 		SubCategoryName          string `json:"sub_category_name"`
 		IncludeFlg               bool   `json:"include_flg"`
+		PaymentId                int    `json:"payment_id"`
 	} `json:"monthly_transaction"`
 }
 
@@ -169,6 +172,7 @@ func (r *editFixedRequest) bind(c echo.Context, u *model.EditFixed) error {
 	u.SubCategoryId = r.MonthlyTransaction.SubCategoryId
 	u.SubCategoryName = r.MonthlyTransaction.SubCategoryName
 	u.IncludeFlg = r.MonthlyTransaction.IncludeFlg
+	u.PaymentId = r.MonthlyTransaction.PaymentId
 
 	return nil
 }

@@ -57,8 +57,8 @@ func (fs *FixedStore) GetFixedDeletedData(userId int) *[]model.GetDeletedFixed {
 	return &fixed_list
 }
 
-func (ts *FixedStore) AddFixed(monthlyTransaction *model.AddFixed) {
-	ts.db.Table("monthly_transaction").Create(map[string]interface{}{
+func (ts *FixedStore) AddFixed(monthlyTransaction *model.AddFixed) error {
+	return ts.db.Table("monthly_transaction").Create(map[string]interface{}{
 		"user_no":                    monthlyTransaction.UserId,
 		"monthly_transaction_name":   monthlyTransaction.MonthlyTransactionName,
 		"monthly_transaction_amount": monthlyTransaction.MonthlyTransactionAmount,
@@ -66,11 +66,12 @@ func (ts *FixedStore) AddFixed(monthlyTransaction *model.AddFixed) {
 		"category_id":                monthlyTransaction.CategoryId,
 		"sub_category_id":            monthlyTransaction.SubCategoryId,
 		"include_flg":                true,
-	})
+		"payment_id":                 monthlyTransaction.PaymentId,
+	}).Error
 }
 
-func (ts *FixedStore) EditFixed(monthlyTransaction *model.EditFixed) {
-	ts.db.Table("monthly_transaction").
+func (ts *FixedStore) EditFixed(monthlyTransaction *model.EditFixed) error {
+	return ts.db.Table("monthly_transaction").
 		Where("monthly_transaction_id = ?", monthlyTransaction.MonthlyTransactionId).
 		Where("user_no = ?", monthlyTransaction.UserId).
 		Updates(map[string]interface{}{
@@ -80,7 +81,8 @@ func (ts *FixedStore) EditFixed(monthlyTransaction *model.EditFixed) {
 			"category_id":                monthlyTransaction.CategoryId,
 			"sub_category_id":            monthlyTransaction.SubCategoryId,
 			"include_flg":                monthlyTransaction.IncludeFlg,
-		})
+			"payment_id":                 monthlyTransaction.PaymentId,
+		}).Error
 }
 
 func (ts *FixedStore) DeleteFixed(monthlyTransaction *model.DeleteFixed) {
