@@ -58,6 +58,11 @@ func (fs *FixedStore) GetFixedDeletedData(userId int) *[]model.GetDeletedFixed {
 }
 
 func (ts *FixedStore) AddFixed(monthlyTransaction *model.AddFixed) error {
+	paymentId := interface{}(monthlyTransaction.PaymentId)
+	if monthlyTransaction.PaymentId == 0 {
+		paymentId = nil
+	}
+
 	return ts.db.Table("monthly_transaction").Create(map[string]interface{}{
 		"user_no":                    monthlyTransaction.UserId,
 		"monthly_transaction_name":   monthlyTransaction.MonthlyTransactionName,
@@ -66,11 +71,16 @@ func (ts *FixedStore) AddFixed(monthlyTransaction *model.AddFixed) error {
 		"category_id":                monthlyTransaction.CategoryId,
 		"sub_category_id":            monthlyTransaction.SubCategoryId,
 		"include_flg":                true,
-		"payment_id":                 monthlyTransaction.PaymentId,
+		"payment_id":                 paymentId,
 	}).Error
 }
 
 func (ts *FixedStore) EditFixed(monthlyTransaction *model.EditFixed) error {
+	paymentId := interface{}(monthlyTransaction.PaymentId)
+	if monthlyTransaction.PaymentId == 0 {
+		paymentId = nil
+	}
+
 	return ts.db.Table("monthly_transaction").
 		Where("monthly_transaction_id = ?", monthlyTransaction.MonthlyTransactionId).
 		Where("user_no = ?", monthlyTransaction.UserId).
@@ -81,7 +91,7 @@ func (ts *FixedStore) EditFixed(monthlyTransaction *model.EditFixed) error {
 			"category_id":                monthlyTransaction.CategoryId,
 			"sub_category_id":            monthlyTransaction.SubCategoryId,
 			"include_flg":                monthlyTransaction.IncludeFlg,
-			"payment_id":                 monthlyTransaction.PaymentId,
+			"payment_id":                 paymentId,
 		}).Error
 }
 

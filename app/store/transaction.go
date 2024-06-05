@@ -23,10 +23,12 @@ func (ts *TransactionStore) GetTimelineData(userId int, month string) *[]model.T
 		Preload("SubCategory").
 		Select("t.transaction_id", "t.transaction_name", "ABS(t.transaction_amount) AS transaction_amount",
 			"CASE WHEN t.transaction_amount > 0 THEN 1 ELSE -1 END AS transaction_sign",
-			"t.transaction_date", "c.category_name", "t.category_id", "sc.sub_category_name", "t.sub_category_id", "t.fixed_flg").
+			"t.transaction_date", "c.category_name", "t.category_id", "sc.sub_category_name",
+			"t.sub_category_id", "t.fixed_flg", "t.payment_id", "pr.payment_name").
 		Table("transaction t").
 		Joins("INNER JOIN category c ON c.category_id = t.category_id").
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
+		Joins("LEFT JOIN payment_resource pr ON pr.payment_id = t.payment_id").
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_date BETWEEN ? AND LAST_DAY(?)", month, month).
 		Order("t.transaction_date DESC, t.transaction_id DESC").
@@ -306,6 +308,11 @@ func (ts *TransactionStore) GetFrequentTransactionName(userId int) *[]model.Freq
 }
 
 func (ts *TransactionStore) AddTransaction(transaction *model.AddTransaction) error {
+	paymentId := interface{}(transaction.PaymentId)
+	if transaction.PaymentId == 0 {
+		paymentId = nil
+	}
+
 	return ts.db.Table("transaction").Create(map[string]interface{}{
 		"user_no":            transaction.UserId,
 		"transaction_name":   transaction.TransactionName,
@@ -314,12 +321,16 @@ func (ts *TransactionStore) AddTransaction(transaction *model.AddTransaction) er
 		"category_id":        transaction.CategoryId,
 		"sub_category_id":    transaction.SubCategoryId,
 		"fixed_flg":          transaction.FixedFlg,
-		"payment_id":         transaction.PaymentId,
+		"payment_id":         paymentId,
 	}).Error
-
 }
 
 func (ts *TransactionStore) EditTransaction(transaction *model.EditTransaction) error {
+	paymentId := interface{}(transaction.PaymentId)
+	if transaction.PaymentId == 0 {
+		paymentId = nil
+	}
+
 	return ts.db.Table("transaction").
 		Where("transaction_id = ?", transaction.TransactionId).
 		Where("user_no = ?", transaction.UserId).
@@ -330,7 +341,7 @@ func (ts *TransactionStore) EditTransaction(transaction *model.EditTransaction) 
 			"category_id":        transaction.CategoryId,
 			"sub_category_id":    transaction.SubCategoryId,
 			"fixed_flg":          transaction.FixedFlg,
-			"payment_id":         transaction.PaymentId,
+			"payment_id":         paymentId,
 		}).Error
 }
 

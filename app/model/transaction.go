@@ -18,6 +18,8 @@ type Timeline struct {
 	SubCategoryId     int
 	SubCategoryName   string
 	FixedFlg          bool
+	PaymentId         int
+	PaymentName       string
 }
 
 type MonthlySpendingData struct {

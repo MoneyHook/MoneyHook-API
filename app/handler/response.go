@@ -97,12 +97,19 @@ type timelineResponse struct {
 	SubCategoryId     int    `json:"sub_category_id"`
 	SubCategoryName   string `json:"sub_category_name"`
 	FixedFlg          bool   `json:"fixed_flg"`
+	PaymentId         *int   `json:"payment_id"`
+	PaymentName       string `json:"payment_name"`
 }
 
 func getTimelineListResponse(data *[]model.Timeline) *timelineListResponse {
 	tll := &timelineListResponse{TimelineList: []timelineResponse{}}
 
 	for _, t := range *data {
+		var paymentId *int
+		if t.PaymentId != 0 {
+			paymentId = &t.PaymentId
+		}
+
 		tl := &timelineResponse{TransactionId: t.TransactionId,
 			TransactionName:   t.TransactionName,
 			TransactionAmount: t.TransactionAmount,
@@ -112,7 +119,9 @@ func getTimelineListResponse(data *[]model.Timeline) *timelineListResponse {
 			CategoryName:      t.CategoryName,
 			SubCategoryId:     t.SubCategoryId,
 			SubCategoryName:   t.SubCategoryName,
-			FixedFlg:          t.FixedFlg}
+			FixedFlg:          t.FixedFlg,
+			PaymentId:         paymentId,
+			PaymentName:       t.PaymentName}
 		tll.TimelineList = append(tll.TimelineList, *tl)
 	}
 
