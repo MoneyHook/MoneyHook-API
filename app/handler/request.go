@@ -6,6 +6,9 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+/*
+収支取引
+*/
 type addTransactionRequest struct {
 	Transaction struct {
 		TransactionDate   string `json:"transaction_date" validate:"required"`
@@ -16,6 +19,7 @@ type addTransactionRequest struct {
 		SubCategoryId     int    `json:"sub_category_id"`
 		SubCategoryName   string `json:"sub_category_name"`
 		FixedFlg          bool   `json:"fixed_flg"  validate:"required"`
+		PaymentId         int    `json:"payment_id"`
 	} `json:"transaction"`
 }
 
@@ -35,6 +39,7 @@ func (r *addTransactionRequest) bind(c echo.Context, u *model.AddTransaction) er
 	u.SubCategoryId = r.Transaction.SubCategoryId
 	u.SubCategoryName = r.Transaction.SubCategoryName
 	u.FixedFlg = r.Transaction.FixedFlg
+	u.PaymentId = r.Transaction.PaymentId
 
 	return nil
 }
@@ -50,6 +55,7 @@ type editTransactionRequest struct {
 		SubCategoryId     int    `json:"sub_category_id"`
 		SubCategoryName   string `json:"sub_category_name"`
 		FixedFlg          bool   `json:"fixed_flg"  validate:"required"`
+		PaymentId         int    `json:"payment_id"`
 	} `json:"transaction"`
 }
 
@@ -70,10 +76,14 @@ func (r *editTransactionRequest) bind(c echo.Context, u *model.EditTransaction) 
 	u.SubCategoryId = r.Transaction.SubCategoryId
 	u.SubCategoryName = r.Transaction.SubCategoryName
 	u.FixedFlg = r.Transaction.FixedFlg
+	u.PaymentId = r.Transaction.PaymentId
 
 	return nil
 }
 
+/*
+サブカテゴリ
+*/
 type editSubCategoryRequest struct {
 	SubCategoryId int  `json:"sub_category_id" validate:"required"`
 	IsEnable      bool `json:"is_enable"  validate:"required"`
@@ -94,6 +104,9 @@ func (r *editSubCategoryRequest) bind(c echo.Context, u *model.EditSubCategoryMo
 	return nil
 }
 
+/*
+月次費用
+*/
 type addFixedRequest struct {
 	MonthlyTransaction struct {
 		MonthlyTransactionName   string `json:"monthly_transaction_name"  validate:"required"`
@@ -103,6 +116,7 @@ type addFixedRequest struct {
 		CategoryId               int    `json:"category_id"  validate:"required"`
 		SubCategoryId            int    `json:"sub_category_id"`
 		SubCategoryName          string `json:"sub_category_name"`
+		PaymentId                int    `json:"payment_id"`
 	} `json:"monthly_transaction"`
 }
 
@@ -121,6 +135,7 @@ func (r *addFixedRequest) bind(c echo.Context, u *model.AddFixed) error {
 	u.CategoryId = r.MonthlyTransaction.CategoryId
 	u.SubCategoryId = r.MonthlyTransaction.SubCategoryId
 	u.SubCategoryName = r.MonthlyTransaction.SubCategoryName
+	u.PaymentId = r.MonthlyTransaction.PaymentId
 
 	return nil
 }
@@ -136,6 +151,7 @@ type editFixedRequest struct {
 		SubCategoryId            int    `json:"sub_category_id"`
 		SubCategoryName          string `json:"sub_category_name"`
 		IncludeFlg               bool   `json:"include_flg"`
+		PaymentId                int    `json:"payment_id"`
 	} `json:"monthly_transaction"`
 }
 
@@ -156,10 +172,35 @@ func (r *editFixedRequest) bind(c echo.Context, u *model.EditFixed) error {
 	u.SubCategoryId = r.MonthlyTransaction.SubCategoryId
 	u.SubCategoryName = r.MonthlyTransaction.SubCategoryName
 	u.IncludeFlg = r.MonthlyTransaction.IncludeFlg
+	u.PaymentId = r.MonthlyTransaction.PaymentId
 
 	return nil
 }
 
+/*
+支払い方法
+*/
+type AddPaymentRequest struct {
+	PaymentName string `json:"payment_name"`
+}
+
+func (r *AddPaymentRequest) bind(c echo.Context, u *model.AddPaymentResource) error {
+	if err := c.Bind(r); err != nil {
+		return err
+	}
+	// TODO バリデーション
+	// if err := c.Validate(r); err != nil {
+	// 	return err
+	// }
+
+	u.PaymentName = r.PaymentName
+
+	return nil
+}
+
+/*
+ユーザー
+*/
 type GoogleSignInRequest struct {
 	UserId string `json:"user_id"`
 	Token  string `json:"token"`

@@ -3,6 +3,7 @@ package handler
 import (
 	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/model"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -174,8 +175,11 @@ func (h *Handler) addTransaction(c echo.Context) error {
 		addTran.SubCategoryId = subCategory.SubCategoryId
 	}
 
-	// err := h.transactionStore.AddTransaction(&addTran)
-	h.transactionStore.AddTransaction(&addTran)
+	err = h.transactionStore.AddTransaction(&addTran)
+	if err != nil {
+		log.Printf("database insert error: %v\n", err)
+		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("add_failed")))
+	}
 
 	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }
@@ -183,6 +187,7 @@ func (h *Handler) addTransaction(c echo.Context) error {
 func (h *Handler) editTransaction(c echo.Context) error {
 	userId, err := h.GetUserId(c)
 	if err != nil {
+		log.Printf("database update error: %v\n", err)
 		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
 	}
 
@@ -207,8 +212,10 @@ func (h *Handler) editTransaction(c echo.Context) error {
 		editTran.SubCategoryId = subCategory.SubCategoryId
 	}
 
-	// err := h.transactionStore.EditTransaction(&addTran)
-	h.transactionStore.EditTransaction(&editTran)
+	err = h.transactionStore.EditTransaction(&editTran)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("edit_failed")))
+	}
 
 	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }

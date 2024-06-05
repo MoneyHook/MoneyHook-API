@@ -4,6 +4,9 @@ import (
 	"MoneyHook/MoneyHook-API/model"
 )
 
+/*
+カテゴリ・サブカテゴリ
+*/
 type categoryResponse struct {
 	Category_id   int    `json:"category_id"`
 	Category_name string `json:"category_name"`
@@ -76,6 +79,9 @@ func getSubCategoryListResponse(data *[]model.SubCategory) *subCategoryListRespo
 	return scl
 }
 
+/*
+収支取引
+*/
 type timelineListResponse struct {
 	TimelineList []timelineResponse `json:"transaction_list"`
 }
@@ -197,6 +203,7 @@ func getMonthlyFixedResponse(data *[]model.MonthlyFixedData) *montylyFixedRepons
 		}
 
 		*mfid_l = append(*mfid_l, *mfid)
+		mfir.DisposableIncome += category.TotalCategoryAmount
 
 	}
 	mfir.MontylyFixedList = *mfid_l
@@ -487,6 +494,9 @@ func containsTotalSpendingSubCategory(data_list *[]totalSpendingSubCategory, sub
 	return false
 }
 
+/*
+月次費用
+*/
 type fixedResponse struct {
 	MonthlyTransactionList []fixedResponseData `json:"monthly_transaction_list"`
 }
@@ -547,4 +557,26 @@ func GetFixedDeletedResponse(data_list *[]model.GetDeletedFixed) *[]deletedFixed
 	}
 
 	return dfr
+}
+
+/*
+支払い方法
+*/
+type paymentResourceListResponse struct {
+	PaymentResourceList []paymentResourceResponse `json:"payment_list"`
+}
+type paymentResourceResponse struct {
+	PaymentId   int    `json:"payment_id"`
+	PaymentName string `json:"payment_name"`
+}
+
+func getPaymentResourceListResponse(data *[]model.PaymentResource) *paymentResourceListResponse {
+	prl := &paymentResourceListResponse{}
+
+	for _, payment_resource := range *data {
+		scr := &paymentResourceResponse{PaymentId: payment_resource.PaymentId, PaymentName: payment_resource.PaymentName}
+		prl.PaymentResourceList = append(prl.PaymentResourceList, *scr)
+	}
+
+	return prl
 }

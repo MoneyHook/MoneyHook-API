@@ -35,6 +35,7 @@ type AddFixed struct {
 	CategoryId               int
 	SubCategoryId            int
 	SubCategoryName          string
+	PaymentId                int
 }
 
 type EditFixed struct {
@@ -47,6 +48,7 @@ type EditFixed struct {
 	SubCategoryId            int
 	SubCategoryName          string
 	IncludeFlg               bool
+	PaymentId                int
 }
 
 type DeleteFixed struct {
