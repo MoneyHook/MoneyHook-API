@@ -4,7 +4,8 @@ category,
 sub_category,
 hidden_sub_category,
 transaction,
-monthly_transaction;
+monthly_transaction,
+payment_resource;
 
 CREATE TABLE users (
         user_id VARCHAR(64) NOT NULL,
@@ -50,7 +51,7 @@ CREATE TABLE payment_resource (
         user_no BIGINT UNSIGNED NOT NULL,
         payment_name VARCHAR(32) NOT NULL,
         PRIMARY KEY (payment_id),
-        FOREIGN KEY user_no (user_no) REFERENCES users (user_no)
+        FOREIGN KEY user_no (user_no) REFERENCES users (user_no),
         UNIQUE (user_no, payment_name)
     );
 

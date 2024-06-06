@@ -7,7 +7,7 @@ COPY . .
 
 RUN apt-get update \
 	&& apt-get install -y \
-	&& go install github.com/cosmtrek/air@latest \
+	&& go install github.com/air-verse/air@latest \
 	&& go install -v golang.org/x/tools/gopls@latest \
 	&& go install -v github.com/cweill/gotests/gotests@v1.6.0 \
 	&& go install -v github.com/fatih/gomodifytags@v1.16.0 \

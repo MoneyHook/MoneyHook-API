@@ -18,7 +18,8 @@
 				"ms-vsliveshare.vsliveshare",
 				"vscode-icons-team.vscode-icons",
 				"ms-azuretools.vscode-docker",
-				"intellsmi.deepl-translate"
+				"intellsmi.deepl-translate",
+				"shawtung.vscode-commentlinedown"
 			]
 		}
 	},
