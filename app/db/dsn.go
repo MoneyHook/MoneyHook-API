@@ -1,8 +1,9 @@
 package db
 
 import (
-	"os"
 	"time"
+
+	common "MoneyHook/MoneyHook-API/common"
 
 	"github.com/go-sql-driver/mysql"
 )
@@ -15,11 +16,11 @@ func getConfig() string {
 	}
 
 	dsn := mysql.Config{
-		DBName:               os.Getenv("MYSQL_DATABASE"),
-		User:                 os.Getenv("MYSQL_USER"),
-		Passwd:               os.Getenv("MYSQL_PASSWORD"),
-		Addr:                 os.Getenv("MYSQL_HOST"),
-		Net:                  os.Getenv("NET"),
+		DBName:               common.GetEnv("MYSQL_DATABASE", ""),
+		User:                 common.GetEnv("MYSQL_USER", ""),
+		Passwd:               common.GetEnv("MYSQL_PASSWORD", ""),
+		Addr:                 common.GetEnv("MYSQL_HOST", ""),
+		Net:                  common.GetEnv("NET", ""),
 		ParseTime:            true,
 		Collation:            "utf8mb4_unicode_ci",
 		Loc:                  jst,
