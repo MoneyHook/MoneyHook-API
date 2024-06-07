@@ -1,13 +1,13 @@
 package handler
 
 import (
+	common "MoneyHook/MoneyHook-API/common"
 	"MoneyHook/MoneyHook-API/model"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
@@ -74,11 +74,7 @@ func (h *Handler) GetUserId(c echo.Context) (int, error) {
 /* 環境変数からFirebaseAuthを行うかどうかを取得 */
 func EnableFirebaseAuth() bool {
 
-	fa := os.Getenv("ENABLE_FIREBASE_AUTH")
-	if len(fa) == 0 {
-		// 設定されていない場合、True
-		return true
-	}
+	fa := common.GetEnv("ENABLE_FIREBASE_AUTH", "true")
 
 	result, _ := strconv.ParseBool(fa)
 

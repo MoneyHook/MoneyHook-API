@@ -1,9 +1,9 @@
 package router
 
 import (
+	common "MoneyHook/MoneyHook-API/common"
 	"context"
 	"log"
-	"os"
 
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/auth"
@@ -12,7 +12,7 @@ import (
 
 func NewFirebaseAuth() *auth.Client {
 	log.Printf("Start Firebase Setup")
-	creds := os.Getenv("SECRET_PATH")
+	creds := common.GetEnv("SECRET_PATH", "")
 	if creds == "" {
 		log.Fatalf("'SECRET_PATH' is not found.")
 	}

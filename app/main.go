@@ -1,6 +1,7 @@
 package main
 
 import (
+	common "MoneyHook/MoneyHook-API/common"
 	"MoneyHook/MoneyHook-API/db"
 	"MoneyHook/MoneyHook-API/handler"
 	"MoneyHook/MoneyHook-API/message"
@@ -18,8 +19,8 @@ func main() {
 	e := echo.New()
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:  []string{"*"},
-		AllowMethods:  []string{echo.GET, echo.HEAD, echo.PUT, echo.PATCH, echo.POST, echo.DELETE, echo.OPTIONS},
+		AllowOrigins:  []string{common.GetEnv("FRONT_URL", "http://localhost:3000")},
+		AllowMethods:  []string{echo.GET, echo.PATCH, echo.POST, echo.DELETE},
 		AllowHeaders:  []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 		ExposeHeaders: []string{"Content-Length"},
 	}))
