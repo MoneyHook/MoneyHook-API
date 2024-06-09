@@ -28,6 +28,13 @@ func (pr *PaymentResourceStore) AddPaymentResource(addPayment *model.AddPaymentR
 	return pr.db.Table("payment_resource").Create(&addPayment).Error
 }
 
+func (pr *PaymentResourceStore) UpdatePaymentResource(updatePayment *model.UpdatePaymentResource) error {
+	return pr.db.Table("payment_resource").
+		Where("payment_id = ?", updatePayment.PaymentId).
+		Where("user_no =?", updatePayment.UserNo).
+		Update("payment_name", updatePayment.PaymentName).Error
+}
+
 func (pr *PaymentResourceStore) DeletePaymentResource(deletePayment *model.DeletePaymentResource) error {
 	return pr.db.Table("payment_resource").
 		Where("payment_id = ?", deletePayment.PaymentId).

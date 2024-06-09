@@ -3,6 +3,7 @@ package handler
 import (
 	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/model"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -38,6 +39,31 @@ func (h *Handler) AddPaymentResource(c echo.Context) error {
 	}
 
 	err = h.paymentResourceStore.AddPaymentResource(&addPaymentResource)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, "error")
+	}
+
+	return c.JSON(http.StatusOK, model.Success.Create(nil))
+}
+
+func (h *Handler) UpdatePaymentResource(c echo.Context) error {
+	userId, err := h.GetUserId(c)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
+	}
+
+	var updatePaymentResource model.UpdatePaymentResource
+
+	updatePaymentResource.UserNo = userId
+
+	req := &UpdatePaymentRequest{}
+	if err := req.bind(c, &updatePaymentResource); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, "error")
+	}
+
+	fmt.Println("matsumoto")
+
+	err = h.paymentResourceStore.UpdatePaymentResource(&updatePaymentResource)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, "error")
 	}

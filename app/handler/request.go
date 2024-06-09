@@ -198,6 +198,26 @@ func (r *AddPaymentRequest) bind(c echo.Context, u *model.AddPaymentResource) er
 	return nil
 }
 
+type UpdatePaymentRequest struct {
+	PaymentId   int    `json:"payment_id"`
+	PaymentName string `json:"payment_name"`
+}
+
+func (r *UpdatePaymentRequest) bind(c echo.Context, u *model.UpdatePaymentResource) error {
+	if err := c.Bind(r); err != nil {
+		return err
+	}
+	// TODO バリデーション
+	// if err := c.Validate(r); err != nil {
+	// 	return err
+	// }
+
+	u.PaymentId = r.PaymentId
+	u.PaymentName = r.PaymentName
+
+	return nil
+}
+
 /*
 ユーザー
 */
