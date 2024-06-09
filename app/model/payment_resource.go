@@ -10,6 +10,12 @@ type AddPaymentResource struct {
 	PaymentName string
 }
 
+type EditPaymentResource struct {
+	UserNo      int
+	PaymentId   int
+	PaymentName string
+}
+
 type DeletePaymentResource struct {
 	UserNo    int
 	PaymentId int

@@ -45,6 +45,29 @@ func (h *Handler) AddPaymentResource(c echo.Context) error {
 	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }
 
+func (h *Handler) EditPaymentResource(c echo.Context) error {
+	userId, err := h.GetUserId(c)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
+	}
+
+	var editPaymentResource model.EditPaymentResource
+
+	editPaymentResource.UserNo = userId
+
+	req := &EditPaymentRequest{}
+	if err := req.bind(c, &editPaymentResource); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, "error")
+	}
+
+	err = h.paymentResourceStore.EditPaymentResource(&editPaymentResource)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, "error")
+	}
+
+	return c.JSON(http.StatusOK, model.Success.Create(nil))
+}
+
 func (h *Handler) DeletePaymentResource(c echo.Context) error {
 	userId, err := h.GetUserId(c)
 	if err != nil {
