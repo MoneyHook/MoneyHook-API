@@ -198,12 +198,12 @@ func (r *AddPaymentRequest) bind(c echo.Context, u *model.AddPaymentResource) er
 	return nil
 }
 
-type UpdatePaymentRequest struct {
+type EditPaymentRequest struct {
 	PaymentId   int    `json:"payment_id"`
 	PaymentName string `json:"payment_name"`
 }
 
-func (r *UpdatePaymentRequest) bind(c echo.Context, u *model.UpdatePaymentResource) error {
+func (r *EditPaymentRequest) bind(c echo.Context, u *model.EditPaymentResource) error {
 	if err := c.Bind(r); err != nil {
 		return err
 	}
