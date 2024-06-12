@@ -26,9 +26,8 @@ func (cs *SubCategoryStore) GetSubCategoryList(userId int, categoryId int) *[]mo
 	return &sub_category_list
 }
 
-func (cs *SubCategoryStore) CreateSubCategory(subCategory *model.SubCategoryModel) *model.SubCategoryModel {
-	cs.db.Table("sub_category").Create(&subCategory)
-	return subCategory
+func (cs *SubCategoryStore) CreateSubCategory(subCategory *model.SubCategoryModel) error {
+	return cs.db.Table("sub_category").Create(&subCategory).Error
 }
 
 func (cs *SubCategoryStore) HideSubCategory(subCategory *model.EditSubCategoryModel) {
@@ -43,4 +42,14 @@ func (cs *SubCategoryStore) ExposeSubCategory(subCategory *model.EditSubCategory
 		Where("user_no = ?", subCategory.UserId).
 		Where("sub_category_id = ?", subCategory.SubCategoryId).
 		Delete(&subCategory)
+}
+
+func (cs *SubCategoryStore) FindByName(subCategory *model.SubCategoryModel) bool {
+	cs.db.Table("sub_category").
+		Where("sub_category_name = ?", subCategory.SubCategoryName).
+		Where("category_id = ?", subCategory.CategoryId).
+		Where("user_no = ?", subCategory.UserNo).
+		Find(&subCategory)
+
+	return subCategory.SubCategoryId != 0
 }

@@ -325,6 +325,30 @@ func (ts *TransactionStore) AddTransaction(transaction *model.AddTransaction) er
 	}).Error
 }
 
+func (ts *TransactionStore) AddTransactionList(transaction *model.AddTransactionList) error {
+	var insert_val []map[string]any
+
+	for _, tran := range transaction.TransactionList {
+		paymentId := interface{}(tran.PaymentId)
+		if tran.PaymentId == 0 {
+			paymentId = nil
+		}
+		insert_val = append(insert_val, map[string]any{
+			"user_no":            transaction.UserId,
+			"transaction_name":   tran.TransactionName,
+			"transaction_amount": tran.TransactionAmount,
+			"transaction_date":   tran.TransactionDate,
+			"category_id":        tran.CategoryId,
+			"sub_category_id":    tran.SubCategoryId,
+			"fixed_flg":          tran.FixedFlg,
+			"payment_id":         paymentId,
+		})
+	}
+
+	return ts.db.Table("transaction").
+		Create(insert_val).Error
+}
+
 func (ts *TransactionStore) EditTransaction(transaction *model.EditTransaction) error {
 	paymentId := interface{}(transaction.PaymentId)
 	if transaction.PaymentId == 0 {

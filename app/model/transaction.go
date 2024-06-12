@@ -99,6 +99,11 @@ type AddTransaction struct {
 	PaymentId         int
 }
 
+type AddTransactionList struct {
+	UserId          int
+	TransactionList []AddTransaction
+}
+
 type EditTransaction struct {
 	TransactionId     int
 	UserId            int

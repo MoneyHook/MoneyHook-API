@@ -12,6 +12,7 @@ type Store interface {
 	GetTotalSpending(userId int, categoryId string, subCategoryId string, startMonth string, endMonth string) *[]model.TotalSpendingData
 	GetFrequentTransactionName(userId int) *[]model.FrequentTransactionName
 	AddTransaction(*model.AddTransaction) error
+	AddTransactionList(*model.AddTransactionList) error
 	EditTransaction(*model.EditTransaction) error
 	DeleteTransaction(*model.DeleteTransaction)
 }
