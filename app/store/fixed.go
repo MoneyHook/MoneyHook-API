@@ -32,6 +32,9 @@ func (fs *FixedStore) GetFixedData(userId int) *[]model.GetFixed {
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = mt.sub_category_id").
 		Where("mt.user_no = ?", userId).
 		Where("include_flg = TRUE").
+		Order("mt.monthly_transaction_date").
+		Order("monthly_transaction_sign").
+		Order("monthly_transaction_amount").
 		Find(&fixed_list)
 
 	return &fixed_list
