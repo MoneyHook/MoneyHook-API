@@ -135,6 +135,21 @@ func (h *Handler) getTotalSpendingData(c echo.Context) error {
 	return c.JSON(http.StatusOK, result_list)
 }
 
+func (h *Handler) groupByPayment(c echo.Context) error {
+	userId, err := h.GetUserId(c)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
+	}
+
+	month := c.QueryParam("month")
+
+	result := h.transactionStore.GetGroupByPayment(userId, month)
+
+	result_list := getPaymentGroupResponse(result)
+
+	return c.JSON(http.StatusOK, result_list)
+}
+
 func (h *Handler) getFrequentTransactionName(c echo.Context) error {
 	userId, err := h.GetUserId(c)
 	if err != nil {

@@ -447,6 +447,73 @@ func getTotalSpendingResponse(data *[]model.TotalSpendingData) *totalSpendingRes
 	return tsr
 }
 
+type paymentGroupResponse struct {
+	TotalSpending int           `json:"total_spending"`
+	PaymentList   []paymentList `json:"payment_list"`
+}
+
+type paymentList struct {
+	PaymentName            string               `json:"payment_name"`
+	PaymentAmount          int                  `json:"payment_amount"`
+	PaymentTransactionList []paymentTransaction `json:"transaction_list"`
+}
+
+type paymentTransaction struct {
+	TransactionId     int    `json:"transaction_id"`
+	TransactionName   string `json:"transaction_name"`
+	TransactionAmount int    `json:"transaction_amount"`
+	CategoryName      string `json:"category_name"`
+	SubCategoryName   string `json:"sub_category_name"`
+	FixedFlg          bool   `json:"fixed_flg"`
+}
+
+func getPaymentGroupResponse(data *[]model.PaymentGroupTransaction) *paymentGroupResponse {
+	pgr := &paymentGroupResponse{PaymentList: []paymentList{}}
+
+	pll := &[]paymentList{}
+	for _, payment := range *data {
+		if containsPaymentList(pll, &payment.PaymentName) {
+			continue
+		}
+
+		pl := &paymentList{PaymentName: payment.PaymentName, PaymentAmount: payment.PaymentAmount}
+
+		for _, tran := range *data {
+			if pl.PaymentName == tran.PaymentName {
+				pl.PaymentTransactionList = append(pl.PaymentTransactionList, paymentTransaction{
+					TransactionId:     tran.TransactionId,
+					TransactionName:   tran.TransactionName,
+					TransactionAmount: tran.TransactionAmount,
+					CategoryName:      tran.CategoryName,
+					SubCategoryName:   tran.SubCategoryName,
+					FixedFlg:          tran.FixedFlg})
+			}
+		}
+
+		*pll = append(*pll, *pl)
+		pgr.TotalSpending += payment.PaymentAmount
+	}
+
+	for i, pl := range *pll {
+		if pl.PaymentName == "" {
+			(*pll)[i].PaymentName = "未分類"
+		}
+	}
+
+	pgr.PaymentList = *pll
+
+	return pgr
+}
+
+func containsPaymentList(data_list *[]paymentList, payment_name *string) bool {
+	for _, v := range *data_list {
+		if v.PaymentName == *payment_name {
+			return true
+		}
+	}
+	return false
+}
+
 type frequentTransactionResponse struct {
 	FrequentTransactionlist []frequentTransaction `json:"transaction_list"`
 }
