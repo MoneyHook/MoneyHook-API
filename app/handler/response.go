@@ -647,7 +647,7 @@ type paymentResourceResponse struct {
 }
 
 func getPaymentResourceListResponse(data *[]model.PaymentResource) *paymentResourceListResponse {
-	prl := &paymentResourceListResponse{}
+	prl := &paymentResourceListResponse{PaymentResourceList: []paymentResourceResponse{}}
 
 	for _, payment_resource := range *data {
 		scr := &paymentResourceResponse{PaymentId: payment_resource.PaymentId, PaymentName: payment_resource.PaymentName}

@@ -98,9 +98,9 @@ func (ts *FixedStore) EditFixed(monthlyTransaction *model.EditFixed) error {
 		}).Error
 }
 
-func (ts *FixedStore) DeleteFixed(monthlyTransaction *model.DeleteFixed) {
-	ts.db.Table("monthly_transaction").
+func (ts *FixedStore) DeleteFixed(monthlyTransaction *model.DeleteFixed) error {
+	return ts.db.Table("monthly_transaction").
 		Where("monthly_transaction_id = ?", monthlyTransaction.MonthlyTransactionId).
 		Where("user_no = ?", monthlyTransaction.UserId).
-		Delete(&model.DeleteFixed{})
+		Delete(&model.DeleteFixed{}).Error
 }

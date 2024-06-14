@@ -65,7 +65,7 @@ func (h *Handler) addFixed(c echo.Context) error {
 
 	err = h.fixedStore.AddFixed(&addFixed)
 	if err != nil {
-		log.Printf("database insert error: %v\n", err)
+		log.Printf("AddFixed: %v\n", err)
 		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("add_failed")))
 	}
 
@@ -101,7 +101,7 @@ func (h *Handler) editFixed(c echo.Context) error {
 
 	err = h.fixedStore.EditFixed(&editFixed)
 	if err != nil {
-		log.Printf("database update error: %v\n", err)
+		log.Printf("EditFixed: %v\n", err)
 		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("edit_failed")))
 	}
 
@@ -120,8 +120,11 @@ func (h *Handler) deleteFixed(c echo.Context) error {
 	}
 	deleteFixed := model.DeleteFixed{UserId: userId, MonthlyTransactionId: monthlyTransactionId}
 
-	// err := h.transactionStore.EditFixed(&addTran)
-	h.fixedStore.DeleteFixed(&deleteFixed)
+	err = h.fixedStore.DeleteFixed(&deleteFixed)
+	if err != nil {
+		log.Printf("DeleteFixed: %v\n", err)
+		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("delete_failed")))
+	}
 
 	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }

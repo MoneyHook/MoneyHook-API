@@ -201,7 +201,7 @@ func (h *Handler) addTransaction(c echo.Context) error {
 
 	err = h.transactionStore.AddTransaction(&addTran)
 	if err != nil {
-		log.Printf("database insert error: %v\n", err)
+		log.Printf("AddTransaction: %v\n", err)
 		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("add_failed")))
 	}
 
@@ -236,7 +236,7 @@ func (h *Handler) addTransactionList(c echo.Context) error {
 				// サブカテゴリ作成
 				error := h.subCategoryStore.CreateSubCategory(&subCategory)
 				if error != nil {
-					log.Printf("database insert error: %v\n", error)
+					log.Printf("CreateSubCategory: %v\n", error)
 					log.Printf("'%v' is exist: %v\n", subCategory.SubCategoryName, subCategory.SubCategoryId != 0)
 					return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("sub_category_create_failed")))
 				}
@@ -248,7 +248,7 @@ func (h *Handler) addTransactionList(c echo.Context) error {
 
 	err = h.transactionStore.AddTransactionList(&addTranList)
 	if err != nil {
-		log.Printf("database insert error: %v\n", err)
+		log.Printf("AddTransactionList: %v\n", err)
 		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("add_failed")))
 	}
 
@@ -258,7 +258,6 @@ func (h *Handler) addTransactionList(c echo.Context) error {
 func (h *Handler) editTransaction(c echo.Context) error {
 	userId, err := h.GetUserId(c)
 	if err != nil {
-		log.Printf("database update error: %v\n", err)
 		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
 	}
 
@@ -285,6 +284,7 @@ func (h *Handler) editTransaction(c echo.Context) error {
 
 	err = h.transactionStore.EditTransaction(&editTran)
 	if err != nil {
+		log.Printf("EditTransaction: %v/n", err)
 		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("edit_failed")))
 	}
 
@@ -303,8 +303,11 @@ func (h *Handler) deleteTransaction(c echo.Context) error {
 	}
 	deleteTransaction := model.DeleteTransaction{UserId: userId, TransactionId: transactionId}
 
-	// err := h.transactionStore.EditFixed(&addTran)
-	h.transactionStore.DeleteTransaction(&deleteTransaction)
+	err = h.transactionStore.DeleteTransaction(&deleteTransaction)
+	if err != nil {
+		log.Printf("DeleteTransaction: %v/n", err)
+		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("delete_failed")))
+	}
 
 	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }

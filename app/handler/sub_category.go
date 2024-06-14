@@ -3,6 +3,7 @@ package handler
 import (
 	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/model"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -44,11 +45,17 @@ func (h *Handler) EditSubCategory(c echo.Context) error {
 	}
 
 	if editSubCategory.IsEnable {
-		// err := h.subCategoryStore.ExposeSubCategory(&editSubCategory)
-		h.subCategoryStore.ExposeSubCategory(&editSubCategory)
+		err = h.subCategoryStore.ExposeSubCategory(&editSubCategory)
+		if err != nil {
+			log.Printf("ExposeSubCategory: %v/n", err)
+			return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("delete_failed")))
+		}
 	} else {
-		// err := h.subCategoryStore.HideSubCategory(&editSubCategory)
-		h.subCategoryStore.HideSubCategory(&editSubCategory)
+		err = h.subCategoryStore.HideSubCategory(&editSubCategory)
+		if err != nil {
+			log.Printf("HideSubCategory: %v/n", err)
+			return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("add_failed")))
+		}
 	}
 
 	return c.JSON(http.StatusOK, model.Success.Create(nil))

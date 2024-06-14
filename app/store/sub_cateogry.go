@@ -30,18 +30,18 @@ func (cs *SubCategoryStore) CreateSubCategory(subCategory *model.SubCategoryMode
 	return cs.db.Table("sub_category").Create(&subCategory).Error
 }
 
-func (cs *SubCategoryStore) HideSubCategory(subCategory *model.EditSubCategoryModel) {
-	cs.db.Table("hidden_sub_category").Create(map[string]interface{}{
+func (cs *SubCategoryStore) HideSubCategory(subCategory *model.EditSubCategoryModel) error {
+	return cs.db.Table("hidden_sub_category").Create(map[string]interface{}{
 		"user_no":         subCategory.UserId,
 		"sub_category_id": subCategory.SubCategoryId,
-	})
+	}).Error
 }
 
-func (cs *SubCategoryStore) ExposeSubCategory(subCategory *model.EditSubCategoryModel) {
-	cs.db.Table("hidden_sub_category").
+func (cs *SubCategoryStore) ExposeSubCategory(subCategory *model.EditSubCategoryModel) error {
+	return cs.db.Table("hidden_sub_category").
 		Where("user_no = ?", subCategory.UserId).
 		Where("sub_category_id = ?", subCategory.SubCategoryId).
-		Delete(&subCategory)
+		Delete(&subCategory).Error
 }
 
 func (cs *SubCategoryStore) FindByName(subCategory *model.SubCategoryModel) bool {

@@ -15,5 +15,5 @@ type Store interface {
 	AddTransaction(*model.AddTransaction) error
 	AddTransactionList(*model.AddTransactionList) error
 	EditTransaction(*model.EditTransaction) error
-	DeleteTransaction(*model.DeleteTransaction)
+	DeleteTransaction(*model.DeleteTransaction) error
 }
