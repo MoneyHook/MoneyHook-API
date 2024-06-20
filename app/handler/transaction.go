@@ -135,6 +135,21 @@ func (h *Handler) getTotalSpendingData(c echo.Context) error {
 	return c.JSON(http.StatusOK, result_list)
 }
 
+func (h *Handler) groupByPayment(c echo.Context) error {
+	userId, err := h.GetUserId(c)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
+	}
+
+	month := c.QueryParam("month")
+
+	result := h.transactionStore.GetGroupByPayment(userId, month)
+
+	result_list := getPaymentGroupResponse(result)
+
+	return c.JSON(http.StatusOK, result_list)
+}
+
 func (h *Handler) getFrequentTransactionName(c echo.Context) error {
 	userId, err := h.GetUserId(c)
 	if err != nil {
@@ -170,14 +185,70 @@ func (h *Handler) addTransaction(c echo.Context) error {
 			CategoryId:      addTran.CategoryId,
 			SubCategoryName: addTran.SubCategoryName,
 		}
-		// TODO Createの前に、同じユーザー、同じカテゴリIDに紐づくサブカテゴリ名が存在するか確認
-		h.subCategoryStore.CreateSubCategory(&subCategory)
+		// Createの前に、同じユーザー、同じカテゴリIDに紐づくサブカテゴリ名が存在するか確認
+		if !h.subCategoryStore.FindByName(&subCategory) {
+			// サブカテゴリ作成
+			error := h.subCategoryStore.CreateSubCategory(&subCategory)
+			if error != nil {
+				log.Printf("database insert error: %v\n", err)
+				log.Printf("'%v' is exist: %v\n", subCategory.SubCategoryName, subCategory.SubCategoryId != 0)
+				return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("sub_category_create_failed")))
+			}
+		}
+
 		addTran.SubCategoryId = subCategory.SubCategoryId
 	}
 
 	err = h.transactionStore.AddTransaction(&addTran)
 	if err != nil {
-		log.Printf("database insert error: %v\n", err)
+		log.Printf("AddTransaction: %v\n", err)
+		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("add_failed")))
+	}
+
+	return c.JSON(http.StatusOK, model.Success.Create(nil))
+}
+
+func (h *Handler) addTransactionList(c echo.Context) error {
+	userId, err := h.GetUserId(c)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
+	}
+
+	var addTranList model.AddTransactionList
+
+	addTranList.UserId = userId
+
+	req := &addTransactionListRequest{}
+	if err := req.bind(c, &addTranList); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("test_error_message")))
+		// return c.JSON(http.StatusUnprocessableEntity, err)
+	}
+
+	for i, addTran := range addTranList.TransactionList {
+		if addTran.SubCategoryId == 0 {
+			subCategory := model.SubCategoryModel{
+				UserNo:          addTranList.UserId,
+				CategoryId:      addTran.CategoryId,
+				SubCategoryName: addTran.SubCategoryName,
+			}
+			// Createの前に、同じユーザー、同じカテゴリIDに紐づくサブカテゴリ名が存在するか確認
+			if !h.subCategoryStore.FindByName(&subCategory) {
+				// サブカテゴリ作成
+				error := h.subCategoryStore.CreateSubCategory(&subCategory)
+				if error != nil {
+					log.Printf("CreateSubCategory: %v\n", error)
+					log.Printf("'%v' is exist: %v\n", subCategory.SubCategoryName, subCategory.SubCategoryId != 0)
+					return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("sub_category_create_failed")))
+				}
+			}
+
+			addTranList.TransactionList[i].SubCategoryId = subCategory.SubCategoryId
+		}
+	}
+
+	err = h.transactionStore.AddTransactionList(&addTranList)
+	if err != nil {
+		log.Printf("AddTransactionList: %v\n", err)
 		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("add_failed")))
 	}
 
@@ -187,7 +258,6 @@ func (h *Handler) addTransaction(c echo.Context) error {
 func (h *Handler) editTransaction(c echo.Context) error {
 	userId, err := h.GetUserId(c)
 	if err != nil {
-		log.Printf("database update error: %v\n", err)
 		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
 	}
 
@@ -214,6 +284,7 @@ func (h *Handler) editTransaction(c echo.Context) error {
 
 	err = h.transactionStore.EditTransaction(&editTran)
 	if err != nil {
+		log.Printf("EditTransaction: %v/n", err)
 		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("edit_failed")))
 	}
 
@@ -232,8 +303,11 @@ func (h *Handler) deleteTransaction(c echo.Context) error {
 	}
 	deleteTransaction := model.DeleteTransaction{UserId: userId, TransactionId: transactionId}
 
-	// err := h.transactionStore.EditFixed(&addTran)
-	h.transactionStore.DeleteTransaction(&deleteTransaction)
+	err = h.transactionStore.DeleteTransaction(&deleteTransaction)
+	if err != nil {
+		log.Printf("DeleteTransaction: %v/n", err)
+		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("delete_failed")))
+	}
 
 	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }

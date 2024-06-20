@@ -3,6 +3,7 @@ package handler
 import (
 	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/model"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -39,7 +40,8 @@ func (h *Handler) AddPaymentResource(c echo.Context) error {
 
 	err = h.paymentResourceStore.AddPaymentResource(&addPaymentResource)
 	if err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, "error")
+		log.Printf("AddPaymentResource: %v/n", err)
+		return c.JSON(http.StatusUnprocessableEntity, message.Get("add_failed"))
 	}
 
 	return c.JSON(http.StatusOK, model.Success.Create(nil))
@@ -62,7 +64,8 @@ func (h *Handler) EditPaymentResource(c echo.Context) error {
 
 	err = h.paymentResourceStore.EditPaymentResource(&editPaymentResource)
 	if err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, "error")
+		log.Printf("EditPaymentResource: %v/n", err)
+		return c.JSON(http.StatusUnprocessableEntity, message.Get("edit_failed"))
 	}
 
 	return c.JSON(http.StatusOK, model.Success.Create(nil))
@@ -83,7 +86,8 @@ func (h *Handler) DeletePaymentResource(c echo.Context) error {
 
 	err = h.paymentResourceStore.DeletePaymentResource(&deletePaymentResource)
 	if err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, "error")
+		log.Printf("DeletePaymentResource: %v/n", err)
+		return c.JSON(http.StatusUnprocessableEntity, message.Get("delete_failed"))
 	}
 
 	return c.JSON(http.StatusOK, model.Success.Create(nil))

@@ -32,6 +32,9 @@ func (fs *FixedStore) GetFixedData(userId int) *[]model.GetFixed {
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = mt.sub_category_id").
 		Where("mt.user_no = ?", userId).
 		Where("include_flg = TRUE").
+		Order("mt.monthly_transaction_date").
+		Order("monthly_transaction_sign").
+		Order("monthly_transaction_amount").
 		Find(&fixed_list)
 
 	return &fixed_list
@@ -95,9 +98,9 @@ func (ts *FixedStore) EditFixed(monthlyTransaction *model.EditFixed) error {
 		}).Error
 }
 
-func (ts *FixedStore) DeleteFixed(monthlyTransaction *model.DeleteFixed) {
-	ts.db.Table("monthly_transaction").
+func (ts *FixedStore) DeleteFixed(monthlyTransaction *model.DeleteFixed) error {
+	return ts.db.Table("monthly_transaction").
 		Where("monthly_transaction_id = ?", monthlyTransaction.MonthlyTransactionId).
 		Where("user_no = ?", monthlyTransaction.UserId).
-		Delete(&model.DeleteFixed{})
+		Delete(&model.DeleteFixed{}).Error
 }

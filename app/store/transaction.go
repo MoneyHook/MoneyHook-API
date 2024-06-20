@@ -206,7 +206,7 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId int, month string) *[]
 		Where("t.user_no = ?", userId).
 		Where("0 > t.transaction_amount").
 		Where("t.fixed_flg = FALSE").
-		Where("transaction_date BETWEEN ? AND LAST_DAY  (?)", month, month).
+		Where("transaction_date BETWEEN ? AND LAST_DAY(?)", month, month).
 		Order("category_total_amount").
 		Order("sub_category_total_amount").
 		Order("transaction_amount").
@@ -259,13 +259,39 @@ func (ts *TransactionStore) GetTotalSpending(userId int, categoryId string, subC
 		Where("t.user_no = ?", userId).
 		Where("0 > t.transaction_amount").
 		Where(condition).
-		Where("transaction_date BETWEEN ? AND LAST_DAY  (?)", startMonth, endMonth).
+		Where("transaction_date BETWEEN ? AND LAST_DAY(?)", startMonth, endMonth).
 		Order("category_total_amount").
 		Order("sub_category_total_amount").
 		Order("transaction_amount").
 		Scan(&total_spending_data)
 
 	return &total_spending_data
+}
+
+func (ts *TransactionStore) GetGroupByPayment(userId int, month string) *[]model.PaymentGroupTransaction {
+	var payment_group_transaction []model.PaymentGroupTransaction
+
+	ts.db.Select(
+		"pr.payment_id",
+		"pr.payment_name",
+		"SUM(t.transaction_amount) OVER (PARTITION BY pr.payment_name) AS payment_amount",
+		"t.transaction_id",
+		"t.transaction_name",
+		"t.transaction_amount",
+		"c.category_name",
+		"sc.sub_category_name",
+		"t.fixed_flg").
+		Table("transaction t").
+		Joins("LEFT JOIN payment_resource pr ON t.payment_id = pr.payment_id").
+		Joins("JOIN category c ON c.category_id = t.category_id").
+		Joins("JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
+		Where("t.user_no = ?", userId).
+		Where("t.transaction_amount < 0").
+		Where("t.transaction_date BETWEEN ? AND LAST_DAY(?)", month, month).
+		Order("payment_amount").
+		Scan(&payment_group_transaction)
+
+	return &payment_group_transaction
 }
 
 func (ts *TransactionStore) GetFrequentTransactionName(userId int) *[]model.FrequentTransactionName {
@@ -325,6 +351,30 @@ func (ts *TransactionStore) AddTransaction(transaction *model.AddTransaction) er
 	}).Error
 }
 
+func (ts *TransactionStore) AddTransactionList(transaction *model.AddTransactionList) error {
+	var insert_val []map[string]any
+
+	for _, tran := range transaction.TransactionList {
+		paymentId := interface{}(tran.PaymentId)
+		if tran.PaymentId == 0 {
+			paymentId = nil
+		}
+		insert_val = append(insert_val, map[string]any{
+			"user_no":            transaction.UserId,
+			"transaction_name":   tran.TransactionName,
+			"transaction_amount": tran.TransactionAmount,
+			"transaction_date":   tran.TransactionDate,
+			"category_id":        tran.CategoryId,
+			"sub_category_id":    tran.SubCategoryId,
+			"fixed_flg":          tran.FixedFlg,
+			"payment_id":         paymentId,
+		})
+	}
+
+	return ts.db.Table("transaction").
+		Create(insert_val).Error
+}
+
 func (ts *TransactionStore) EditTransaction(transaction *model.EditTransaction) error {
 	paymentId := interface{}(transaction.PaymentId)
 	if transaction.PaymentId == 0 {
@@ -345,9 +395,9 @@ func (ts *TransactionStore) EditTransaction(transaction *model.EditTransaction) 
 		}).Error
 }
 
-func (ts *TransactionStore) DeleteTransaction(transaction *model.DeleteTransaction) {
-	ts.db.Table("transaction").
+func (ts *TransactionStore) DeleteTransaction(transaction *model.DeleteTransaction) error {
+	return ts.db.Table("transaction").
 		Where("transaction_id = ?", transaction.TransactionId).
 		Where("user_no = ?", transaction.UserId).
-		Delete(&model.DeleteTransaction{})
+		Delete(&model.DeleteTransaction{}).Error
 }

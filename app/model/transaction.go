@@ -77,6 +77,18 @@ type TotalSpendingData struct {
 	TransactionDate        time.Time
 }
 
+type PaymentGroupTransaction struct {
+	PaymentId         int
+	PaymentName       string
+	PaymentAmount     int
+	TransactionId     int
+	TransactionName   string
+	TransactionAmount int
+	CategoryName      string
+	SubCategoryName   string
+	FixedFlg          bool
+}
+
 type FrequentTransactionName struct {
 	TransactionName string
 	CategoryId      int
@@ -97,6 +109,11 @@ type AddTransaction struct {
 	SubCategoryName   string
 	FixedFlg          bool
 	PaymentId         int
+}
+
+type AddTransactionList struct {
+	UserId          int
+	TransactionList []AddTransaction
 }
 
 type EditTransaction struct {
