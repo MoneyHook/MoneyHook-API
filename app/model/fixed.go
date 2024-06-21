@@ -15,6 +15,7 @@ type GetFixed struct {
 	CategoryName             string
 	SubCategoryId            int
 	SubCategoryName          string
+	PaymentId                int
 }
 
 type GetDeletedFixed struct {

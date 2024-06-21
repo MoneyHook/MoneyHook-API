@@ -26,7 +26,8 @@ func (fs *FixedStore) GetFixedData(userId int) *[]model.GetFixed {
 			"mt.category_id",
 			"c.category_name",
 			"mt.sub_category_id",
-			"sc.sub_category_name").
+			"sc.sub_category_name",
+			"mt.payment_id").
 		Table("monthly_transaction mt").
 		Joins("INNER JOIN category c ON c.category_id = mt.category_id").
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = mt.sub_category_id").
