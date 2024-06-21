@@ -587,12 +587,18 @@ type fixedResponseData struct {
 	CategoryName             string `json:"category_name"`
 	SubCategoryId            int    `json:"sub_category_id"`
 	SubCategoryName          string `json:"sub_category_name"`
+	PaymentId                *int   `json:"payment_id"`
 }
 
 func GetFixedResponse(data_list *[]model.GetFixed) *fixedResponse {
 	fr := &[]fixedResponseData{}
 
 	for _, data := range *data_list {
+
+		var paymentId *int
+		if data.PaymentId != 0 {
+			paymentId = &data.PaymentId
+		}
 		*fr = append(*fr,
 			fixedResponseData{MonthlyTransactionId: data.MonthlyTransactionId,
 				MonthlyTransactionName:   data.MonthlyTransactionName,
@@ -603,6 +609,7 @@ func GetFixedResponse(data_list *[]model.GetFixed) *fixedResponse {
 				CategoryName:             data.CategoryName,
 				SubCategoryId:            data.SubCategoryId,
 				SubCategoryName:          data.SubCategoryName,
+				PaymentId:                paymentId,
 			})
 	}
 
