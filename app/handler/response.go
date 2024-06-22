@@ -523,6 +523,7 @@ type frequentTransaction struct {
 	CategoryId      int    `json:"category_id"`
 	SubCategoryId   int    `json:"sub_category_id"`
 	FixedFlg        bool   `json:"fixed_flg"`
+	PaymentId       *int   `json:"payment_id"`
 	CategoryName    string `json:"category_name"`
 	SubCategoryName string `json:"sub_category_name"`
 }
@@ -533,12 +534,18 @@ func getFrequentTransactionResponse(data *[]model.FrequentTransactionName) *freq
 	frequentMap := map[string]frequentTransaction{}
 
 	for _, tran := range *data {
+
+		var paymentId *int
+		if tran.PaymentId != 0 {
+			paymentId = &tran.PaymentId
+		}
 		if _, exist := frequentMap[tran.TransactionName]; !exist {
 			frequentMap[tran.TransactionName] = frequentTransaction{
 				TransactionName: tran.TransactionName,
 				CategoryId:      tran.CategoryId,
 				SubCategoryId:   tran.SubCategoryId,
 				FixedFlg:        tran.FixedFlg,
+				PaymentId:       paymentId,
 				CategoryName:    tran.CategoryName,
 				SubCategoryName: tran.SubCategoryName,
 			}
