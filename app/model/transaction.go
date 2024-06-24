@@ -94,6 +94,7 @@ type FrequentTransactionName struct {
 	CategoryId      int
 	SubCategoryId   int
 	FixedFlg        bool
+	PaymentId       int
 	CategoryName    string
 	SubCategoryName string
 	RowNum          int

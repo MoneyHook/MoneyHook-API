@@ -304,11 +304,12 @@ func (ts *TransactionStore) GetFrequentTransactionName(userId int) *[]model.Freq
 			"tran.sub_category_id",
 			"sc.sub_category_name",
 			"tran.fixed_flg",
+			"tran.payment_id",
 			"row_number() over(PARTITION BY tran.transaction_name ORDER BY count(tran.transaction_name) DESC) AS row_num").
 		Joins("INNER JOIN category c ON tran.category_id = c.category_id").
 		Joins("INNER JOIN sub_category sc ON tran.sub_category_id = sc.sub_category_id").
 		Where("tran.user_no = ?", userId).
-		Group("tran.transaction_name, tran.category_id, tran.sub_category_id, tran.fixed_flg").
+		Group("tran.transaction_name, tran.category_id, tran.sub_category_id, tran.fixed_flg, tran.payment_id").
 		Order("COUNT(tran.transaction_name) DESC")
 
 	subquery_2 := ts.db.Table("transaction tran").
@@ -318,6 +319,7 @@ func (ts *TransactionStore) GetFrequentTransactionName(userId int) *[]model.Freq
 			"tran.sub_category_id",
 			"sc.sub_category_name",
 			"tran.fixed_flg",
+			"tran.payment_id",
 			"1 AS row_num").
 		Joins("INNER JOIN category c ON tran.category_id = c.category_id").
 		Joins("INNER JOIN sub_category sc ON tran.sub_category_id = sc.sub_category_id").
