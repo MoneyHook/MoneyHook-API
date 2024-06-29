@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -145,7 +146,14 @@ func (h *Handler) groupByPayment(c echo.Context) error {
 
 	result := h.transactionStore.GetGroupByPayment(userId, month)
 
-	result_list := getPaymentGroupResponse(result)
+	last_month, err := time.Parse("2006-01-02", month)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("date_parse_error")))
+	}
+
+	last_month_result := h.transactionStore.GetLastMonthGroupByPayment(userId, last_month.AddDate(0, -1, 0).Format("2006-01-02"))
+
+	result_list := getPaymentGroupResponse(result, last_month_result)
 
 	return c.JSON(http.StatusOK, result_list)
 }

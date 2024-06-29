@@ -2,6 +2,7 @@ package handler
 
 import (
 	"MoneyHook/MoneyHook-API/model"
+	"math"
 )
 
 /*
@@ -455,6 +456,8 @@ type paymentGroupResponse struct {
 type paymentList struct {
 	PaymentName            string               `json:"payment_name"`
 	PaymentAmount          int                  `json:"payment_amount"`
+	LastMonthSum           *int                 `json:"last_month_sum"`
+	MonthOverMonth         *float64             `json:"month_over_month"`
 	PaymentTransactionList []paymentTransaction `json:"transaction_list"`
 }
 
@@ -467,7 +470,7 @@ type paymentTransaction struct {
 	FixedFlg          bool   `json:"fixed_flg"`
 }
 
-func getPaymentGroupResponse(data *[]model.PaymentGroupTransaction) *paymentGroupResponse {
+func getPaymentGroupResponse(data *[]model.PaymentGroupTransaction, last_month_data *[]model.PaymentGroupTransaction) *paymentGroupResponse {
 	pgr := &paymentGroupResponse{PaymentList: []paymentList{}}
 
 	pll := &[]paymentList{}
@@ -476,7 +479,16 @@ func getPaymentGroupResponse(data *[]model.PaymentGroupTransaction) *paymentGrou
 			continue
 		}
 
-		pl := &paymentList{PaymentName: payment.PaymentName, PaymentAmount: payment.PaymentAmount}
+		pl := &paymentList{PaymentName: payment.PaymentName, PaymentAmount: payment.PaymentAmount, LastMonthSum: nil, MonthOverMonth: nil}
+
+		for _, last_payment := range *last_month_data {
+			if payment.PaymentId == last_payment.PaymentId {
+				pl.LastMonthSum = &last_payment.PaymentAmount
+				mom := (float64(last_payment.PaymentAmount-payment.PaymentAmount) * 100) / float64(payment.PaymentAmount)
+				round_mom := math.Round(mom*100) / 100
+				pl.MonthOverMonth = &round_mom
+			}
+		}
 
 		for _, tran := range *data {
 			if pl.PaymentName == tran.PaymentName {

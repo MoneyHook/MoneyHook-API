@@ -4,5 +4,6 @@
     "add_failed": "追加に失敗しました",
     "edit_failed": "編集に失敗しました",
     "delete_failed": "削除に失敗しました",
-    "sub_category_create_failed": "サブカテゴリの作成に失敗しました"
+    "sub_category_create_failed": "サブカテゴリの作成に失敗しました",
+    "date_parse_error": "日付の変換に失敗しました"
 }
