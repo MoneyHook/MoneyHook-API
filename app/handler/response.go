@@ -484,7 +484,7 @@ func getPaymentGroupResponse(data *[]model.PaymentGroupTransaction, last_month_d
 		for _, last_payment := range *last_month_data {
 			if payment.PaymentId == last_payment.PaymentId {
 				pl.LastMonthSum = &last_payment.PaymentAmount
-				mom := (float64(last_payment.PaymentAmount-payment.PaymentAmount) * 100) / float64(payment.PaymentAmount)
+				mom := (float64(payment.PaymentAmount-last_payment.PaymentAmount) * 100) / float64(last_payment.PaymentAmount)
 				round_mom := math.Round(mom*100) / 100
 				pl.MonthOverMonth = &round_mom
 			}
