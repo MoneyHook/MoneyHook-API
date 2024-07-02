@@ -112,11 +112,13 @@ func (ts *TransactionStore) GetTransactionData(userId int, transactionId int) *m
 func (ts *TransactionStore) GetMonthlyFixedData(userId int, month string, isSpending bool) *[]model.MonthlyFixedData {
 	var result_list []model.MonthlyFixedData
 
-	var conditions string
+	var amount_condition string
+	fixed_condition := ""
 	if isSpending {
-		conditions = "0 > t.transaction_amount"
+		amount_condition = "0 > t.transaction_amount"
+		fixed_condition = "t.fixed_flg = TRUE"
 	} else {
-		conditions = "0 < t.transaction_amount"
+		amount_condition = "0 < t.transaction_amount"
 	}
 
 	ts.db.Unscoped().
@@ -131,8 +133,8 @@ func (ts *TransactionStore) GetMonthlyFixedData(userId int, month string, isSpen
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_date BETWEEN ?", month).
 		Where("LAST_DAY(?)", month).
-		Where(conditions).
-		Where("t.fixed_flg = TRUE").
+		Where(amount_condition).
+		Where(fixed_condition).
 		Order("total_category_amount").
 		Find(&result_list)
 
@@ -288,6 +290,23 @@ func (ts *TransactionStore) GetGroupByPayment(userId int, month string) *[]model
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_amount < 0").
 		Where("t.transaction_date BETWEEN ? AND LAST_DAY(?)", month, month).
+		Order("payment_amount").
+		Scan(&payment_group_transaction)
+
+	return &payment_group_transaction
+}
+
+func (ts *TransactionStore) GetLastMonthGroupByPayment(userId int, month string) *[]model.PaymentGroupTransaction {
+	var payment_group_transaction []model.PaymentGroupTransaction
+
+	ts.db.Select(
+		"t.payment_id",
+		"SUM(t.transaction_amount) payment_amount").
+		Table("transaction t").
+		Where("t.user_no = ?", userId).
+		Where("t.transaction_amount < 0").
+		Where("t.transaction_date BETWEEN ? AND LAST_DAY(?)", month, month).
+		Group("t.payment_id").
 		Order("payment_amount").
 		Scan(&payment_group_transaction)
 
