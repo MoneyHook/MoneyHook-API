@@ -1,14 +1,22 @@
-FROM golang:1.22rc1-bullseye
+# Build stage
+FROM golang:1.22rc1-alpine AS builder
 
 WORKDIR /app
 
 COPY app .
 
-RUN apt-get update \
-	&& apt-get install -y
+RUN go mod tidy \
+	&& go build -o main .
 
-RUN go build main.go
+# Run stage
+FROM alpine:latest
+
+WORKDIR /app
+
+RUN apk add --no-cache tzdata
+
+COPY --from=builder /app/main .
 
 EXPOSE 8080
 
-ENTRYPOINT go run main.go
+ENTRYPOINT ["./main"]
