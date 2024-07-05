@@ -449,8 +449,10 @@ func getTotalSpendingResponse(data *[]model.TotalSpendingData) *totalSpendingRes
 }
 
 type paymentGroupResponse struct {
-	TotalSpending int           `json:"total_spending"`
-	PaymentList   []paymentList `json:"payment_list"`
+	TotalSpending       int           `json:"total_spending"`
+	LastMonthTotalSpend int           `json:"last_month_total_spending"`
+	MonthOverMonthSum   *float64      `json:"month_over_month_sum"`
+	PaymentList         []paymentList `json:"payment_list"`
 }
 
 type paymentList struct {
@@ -504,6 +506,18 @@ func getPaymentGroupResponse(data *[]model.PaymentGroupTransaction, last_month_d
 
 		*pll = append(*pll, *pl)
 		pgr.TotalSpending += payment.PaymentAmount
+	}
+
+	// 前月合計の計算
+	for _, last_payment := range *last_month_data {
+		pgr.LastMonthTotalSpend += last_payment.PaymentAmount
+	}
+
+	// 前月比の計算
+	if pgr.TotalSpending != 0 && pgr.LastMonthTotalSpend != 0 {
+		moms := (float64(pgr.TotalSpending-pgr.LastMonthTotalSpend) * 100) / float64(pgr.LastMonthTotalSpend)
+		round_mom := math.Round(moms*100) / 100
+		pgr.MonthOverMonthSum = &round_mom
 	}
 
 	for i, pl := range *pll {
