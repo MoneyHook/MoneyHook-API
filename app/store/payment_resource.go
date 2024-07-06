@@ -32,7 +32,10 @@ func (pr *PaymentResourceStore) EditPaymentResource(editPayment *model.EditPayme
 	return pr.db.Table("payment_resource").
 		Where("payment_id = ?", editPayment.PaymentId).
 		Where("user_no =?", editPayment.UserNo).
-		Update("payment_name", editPayment.PaymentName).Error
+		Update("payment_name", editPayment.PaymentName).
+		Update("payment_type_id", editPayment.PaymentTypeId).
+		Update("payment_date", editPayment.PaymentDate).
+		Error
 }
 
 func (pr *PaymentResourceStore) DeletePaymentResource(deletePayment *model.DeletePaymentResource) error {
@@ -41,4 +44,13 @@ func (pr *PaymentResourceStore) DeletePaymentResource(deletePayment *model.Delet
 		Where("user_no = ?", deletePayment.UserNo).
 		Delete(&model.DeletePaymentResource{}).
 		Error
+}
+
+func (pr *PaymentResourceStore) GetPaymentTypeList() *[]model.PaymentType {
+	var payment_type_list []model.PaymentType
+	pr.db.Table("payment_type").
+		Order("order_num").
+		Find(&payment_type_list)
+
+	return &payment_type_list
 }

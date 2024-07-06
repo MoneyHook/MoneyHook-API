@@ -81,6 +81,9 @@ type PaymentGroupTransaction struct {
 	PaymentId         int
 	PaymentName       string
 	PaymentAmount     int
+	PaymentTypeId     int
+	PaymentTypeName   string
+	IsPaymentDueLater bool
 	TransactionId     int
 	TransactionName   string
 	TransactionAmount int

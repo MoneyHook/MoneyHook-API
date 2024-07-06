@@ -6,17 +6,27 @@ type PaymentResource struct {
 }
 
 type AddPaymentResource struct {
-	UserNo      int
-	PaymentName string
+	UserNo        int
+	PaymentName   string
+	PaymentTypeId int
+	PaymentDate   *int
 }
 
 type EditPaymentResource struct {
-	UserNo      int
-	PaymentId   int
-	PaymentName string
+	UserNo        int
+	PaymentId     int
+	PaymentName   string
+	PaymentTypeId int
+	PaymentDate   *int
 }
 
 type DeletePaymentResource struct {
 	UserNo    int
 	PaymentId int
+}
+
+type PaymentType struct {
+	PaymentTypeId     int
+	PaymentTypeName   string
+	IsPaymentDueLater bool
 }

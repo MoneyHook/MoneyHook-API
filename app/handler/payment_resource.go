@@ -92,3 +92,11 @@ func (h *Handler) DeletePaymentResource(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }
+
+func (h *Handler) GetPaymentTypeList(c echo.Context) error {
+	result := h.paymentResourceStore.GetPaymentTypeList()
+
+	result_list := getPaymentTypeListResponse(result)
+
+	return c.JSON(http.StatusOK, *result_list)
+}

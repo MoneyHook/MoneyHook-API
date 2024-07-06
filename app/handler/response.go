@@ -458,6 +458,9 @@ type paymentGroupResponse struct {
 type paymentList struct {
 	PaymentName            string               `json:"payment_name"`
 	PaymentAmount          int                  `json:"payment_amount"`
+	PaymentTypeId          *int                 `json:"payment_type_id"`
+	PaymentTypeName        string               `json:"payment_type_name"`
+	IsPaymentDueLater      bool                 `json:"is_payment_due_later"`
 	LastMonthSum           *int                 `json:"last_month_sum"`
 	MonthOverMonth         *float64             `json:"month_over_month"`
 	PaymentTransactionList []paymentTransaction `json:"transaction_list"`
@@ -481,7 +484,13 @@ func getPaymentGroupResponse(data *[]model.PaymentGroupTransaction, last_month_d
 			continue
 		}
 
-		pl := &paymentList{PaymentName: payment.PaymentName, PaymentAmount: payment.PaymentAmount, LastMonthSum: nil, MonthOverMonth: nil}
+		var paymentTypeId *int
+		if payment.PaymentTypeId != 0 {
+			paymentTypeId = &payment.PaymentTypeId
+		}
+		pl := &paymentList{PaymentName: payment.PaymentName, PaymentAmount: payment.PaymentAmount,
+			PaymentTypeId: paymentTypeId, PaymentTypeName: payment.PaymentTypeName,
+			IsPaymentDueLater: payment.IsPaymentDueLater, LastMonthSum: nil, MonthOverMonth: nil}
 
 		for _, last_payment := range *last_month_data {
 			if payment.PaymentId == last_payment.PaymentId {
@@ -695,4 +704,30 @@ func getPaymentResourceListResponse(data *[]model.PaymentResource) *paymentResou
 	}
 
 	return prl
+}
+
+/*
+支払い方法
+*/
+type paymentTypeListResponse struct {
+	PaymentTypeList []paymentTypeResponse `json:"payment_type_list"`
+}
+type paymentTypeResponse struct {
+	PaymentTypeId     int    `json:"payment_type_id"`
+	PaymentTypeName   string `json:"payment_type_name"`
+	IsPaymentDueLater bool   `json:"is_payment_due_later"`
+}
+
+func getPaymentTypeListResponse(data *[]model.PaymentType) *paymentTypeListResponse {
+	ptl := &paymentTypeListResponse{PaymentTypeList: []paymentTypeResponse{}}
+
+	for _, payment_type := range *data {
+		ptr := &paymentTypeResponse{
+			PaymentTypeId:     payment_type.PaymentTypeId,
+			PaymentTypeName:   payment_type.PaymentTypeName,
+			IsPaymentDueLater: payment_type.IsPaymentDueLater}
+		ptl.PaymentTypeList = append(ptl.PaymentTypeList, *ptr)
+	}
+
+	return ptl
 }

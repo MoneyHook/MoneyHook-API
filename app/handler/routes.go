@@ -44,4 +44,5 @@ func (h *Handler) Register(v1 *echo.Group) {
 	payment_resource.POST("/addPayment", h.AddPaymentResource)
 	payment_resource.PATCH("/editPayment", h.EditPaymentResource)
 	payment_resource.DELETE("/deletePayment/:paymentId", h.DeletePaymentResource)
+	payment_resource.GET("/getPaymentType", h.GetPaymentTypeList)
 }

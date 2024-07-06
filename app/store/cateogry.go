@@ -18,7 +18,9 @@ func (cs *CategoryStore) GetCategoryList() *[]model.Category {
 	var category_list []model.Category
 
 	cs.db.Model(&model.Category{})
-	cs.db.Table("category").Find(&category_list)
+	cs.db.Table("category").
+		Order("order_num").
+		Find(&category_list)
 
 	return &category_list
 }
@@ -26,7 +28,7 @@ func (cs *CategoryStore) GetCategoryList() *[]model.Category {
 func (cs *CategoryStore) GetCategoryWithSubCategoryList(userId int) *[]model.CategoryWithSubCategory {
 	var result []model.CategoryWithSubCategory
 
-	cs.db.Table("category").Select("category_id", "category_name").Find(&result)
+	cs.db.Table("category").Select("category_id", "category_name").Order("order_num").Find(&result)
 
 	for i, v := range result {
 		cs.db.Table("sub_category sc").

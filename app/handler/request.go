@@ -212,7 +212,9 @@ func (r *editFixedRequest) bind(c echo.Context, u *model.EditFixed) error {
 支払い方法
 */
 type AddPaymentRequest struct {
-	PaymentName string `json:"payment_name"`
+	PaymentName   string `json:"payment_name"`
+	PaymentTypeId *int   `json:"payment_type_id"`
+	PaymentDate   *int   `json:"payment_date"`
 }
 
 func (r *AddPaymentRequest) bind(c echo.Context, u *model.AddPaymentResource) error {
@@ -225,13 +227,20 @@ func (r *AddPaymentRequest) bind(c echo.Context, u *model.AddPaymentResource) er
 	// }
 
 	u.PaymentName = r.PaymentName
+	u.PaymentTypeId = 1
+	if r.PaymentTypeId != nil {
+		u.PaymentTypeId = *r.PaymentTypeId
+		u.PaymentDate = r.PaymentDate
+	}
 
 	return nil
 }
 
 type EditPaymentRequest struct {
-	PaymentId   int    `json:"payment_id"`
-	PaymentName string `json:"payment_name"`
+	PaymentId     int    `json:"payment_id"`
+	PaymentName   string `json:"payment_name"`
+	PaymentTypeId *int   `json:"payment_type_id"`
+	PaymentDate   *int   `json:"payment_date"`
 }
 
 func (r *EditPaymentRequest) bind(c echo.Context, u *model.EditPaymentResource) error {
@@ -245,6 +254,11 @@ func (r *EditPaymentRequest) bind(c echo.Context, u *model.EditPaymentResource) 
 
 	u.PaymentId = r.PaymentId
 	u.PaymentName = r.PaymentName
+	u.PaymentTypeId = 1
+	if r.PaymentTypeId != nil {
+		u.PaymentTypeId = *r.PaymentTypeId
+		u.PaymentDate = r.PaymentDate
+	}
 
 	return nil
 }
