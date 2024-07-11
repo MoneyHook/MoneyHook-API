@@ -92,6 +92,13 @@ type PaymentGroupTransaction struct {
 	FixedFlg          bool
 }
 
+type MonthlyWithdrawalAmountList struct {
+	PaymentId        int
+	PaymentName      string
+	PaymentDate      int
+	WithdrawalAmount int
+}
+
 type FrequentTransactionName struct {
 	TransactionName string
 	CategoryId      int

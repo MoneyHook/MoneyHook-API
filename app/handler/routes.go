@@ -18,6 +18,7 @@ func (h *Handler) Register(v1 *echo.Group) {
 	transaction.GET("/getMonthlyVariableData", h.getMonthlyVariableData)
 	transaction.GET("/getTotalSpending", h.getTotalSpendingData)
 	transaction.GET("/groupByPayment", h.groupByPayment)
+	transaction.GET("/getMonthlyWithdrawalAmount", h.getMonthlyWithdrawalAmount)
 	transaction.GET("/getFrequentTransactionName", h.getFrequentTransactionName)
 	transaction.POST("/addTransaction", h.addTransaction)
 	transaction.POST("/addTransactionList", h.addTransactionList)

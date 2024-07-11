@@ -1,8 +1,10 @@
 package model
 
 type PaymentResource struct {
-	PaymentId   int
-	PaymentName string
+	PaymentId     int
+	PaymentName   string
+	PaymentTypeId int
+	PaymentDate   int
 }
 
 type AddPaymentResource struct {

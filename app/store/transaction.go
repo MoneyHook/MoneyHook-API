@@ -317,6 +317,25 @@ func (ts *TransactionStore) GetLastMonthGroupByPayment(userId int, month string)
 	return &payment_group_transaction
 }
 
+func (ts *TransactionStore) GetMonthlyWithdrawalAmount(userId int, month string) *[]model.MonthlyWithdrawalAmountList {
+	var monthlyWithdrawalAmount []model.MonthlyWithdrawalAmountList
+
+	ts.db.Select(
+		"t.payment_id",
+		"pr.payment_name",
+		"pr.payment_date",
+		"SUM(t.transaction_amount) withdrawal_amount").
+		Table("transaction t").
+		Joins("LEFT JOIN payment_resource pr ON t.payment_id = pr.payment_id").
+		Where("t.user_no = ?", userId).
+		Where("pr.payment_date IS NOT NULL").
+		Where("t.transaction_date BETWEEN ? AND LAST_DAY  (?)", month, month).
+		Group("t.payment_id").
+		Scan(&monthlyWithdrawalAmount)
+
+	return &monthlyWithdrawalAmount
+}
+
 func (ts *TransactionStore) GetFrequentTransactionName(userId int) *[]model.FrequentTransactionName {
 	var frequest_transaction_name_list []model.FrequentTransactionName
 

@@ -158,6 +158,26 @@ func (h *Handler) groupByPayment(c echo.Context) error {
 	return c.JSON(http.StatusOK, result_list)
 }
 
+func (h *Handler) getMonthlyWithdrawalAmount(c echo.Context) error {
+	userId, err := h.GetUserId(c)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
+	}
+
+	month := c.QueryParam("month")
+
+	last_month, err := time.Parse("2006-01-02", month)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("date_parse_error")))
+	}
+
+	result := h.transactionStore.GetMonthlyWithdrawalAmount(userId, last_month.AddDate(0, -1, 0).Format("2006-01-02"))
+
+	result_list := getMonthlyWithdrawalAmount(result)
+
+	return c.JSON(http.StatusOK, result_list)
+}
+
 func (h *Handler) getFrequentTransactionName(c echo.Context) error {
 	userId, err := h.GetUserId(c)
 	if err != nil {

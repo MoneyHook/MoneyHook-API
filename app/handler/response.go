@@ -540,6 +540,31 @@ func getPaymentGroupResponse(data *[]model.PaymentGroupTransaction, last_month_d
 	return pgr
 }
 
+type monthlyWithdrawalAmountResponse struct {
+	WithdrawalList []monthlyWithdrawalAmount `json:"withdrawal_list"`
+}
+
+type monthlyWithdrawalAmount struct {
+	PaymentId        int    `json:"payment_id"`
+	PaymentName      string `json:"payment_name"`
+	PaymentDate      int    `json:"payment_date"`
+	WithdrawalAmount int    `json:"withdrawal_amount"`
+}
+
+func getMonthlyWithdrawalAmount(data *[]model.MonthlyWithdrawalAmountList) *monthlyWithdrawalAmountResponse {
+	mwal := &monthlyWithdrawalAmountResponse{WithdrawalList: []monthlyWithdrawalAmount{}}
+
+	for _, item := range *data {
+		mwal.WithdrawalList = append(mwal.WithdrawalList,
+			monthlyWithdrawalAmount{
+				PaymentId:        item.PaymentId,
+				PaymentName:      item.PaymentName,
+				PaymentDate:      item.PaymentDate,
+				WithdrawalAmount: item.WithdrawalAmount})
+	}
+	return mwal
+}
+
 func containsPaymentList(data_list *[]paymentList, payment_name *string) bool {
 	for _, v := range *data_list {
 		if v.PaymentName == *payment_name {
@@ -691,15 +716,26 @@ type paymentResourceListResponse struct {
 	PaymentResourceList []paymentResourceResponse `json:"payment_list"`
 }
 type paymentResourceResponse struct {
-	PaymentId   int    `json:"payment_id"`
-	PaymentName string `json:"payment_name"`
+	PaymentId     int    `json:"payment_id"`
+	PaymentName   string `json:"payment_name"`
+	PaymentTypeId int    `json:"payment_type_id"`
+	PaymentDate   *int   `json:"payment_date"`
 }
 
 func getPaymentResourceListResponse(data *[]model.PaymentResource) *paymentResourceListResponse {
 	prl := &paymentResourceListResponse{PaymentResourceList: []paymentResourceResponse{}}
 
 	for _, payment_resource := range *data {
-		scr := &paymentResourceResponse{PaymentId: payment_resource.PaymentId, PaymentName: payment_resource.PaymentName}
+		var paymentDate *int
+		if payment_resource.PaymentDate != 0 {
+			paymentDate = &payment_resource.PaymentDate
+		}
+		scr := &paymentResourceResponse{
+			PaymentId:     payment_resource.PaymentId,
+			PaymentName:   payment_resource.PaymentName,
+			PaymentTypeId: payment_resource.PaymentTypeId,
+			PaymentDate:   paymentDate,
+		}
 		prl.PaymentResourceList = append(prl.PaymentResourceList, *scr)
 	}
 
