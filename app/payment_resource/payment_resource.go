@@ -7,4 +7,5 @@ type Store interface {
 	AddPaymentResource(*model.AddPaymentResource) error
 	EditPaymentResource(*model.EditPaymentResource) error
 	DeletePaymentResource(*model.DeletePaymentResource) error
+	GetPaymentTypeList() *[]model.PaymentType
 }

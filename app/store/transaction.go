@@ -277,6 +277,9 @@ func (ts *TransactionStore) GetGroupByPayment(userId int, month string) *[]model
 		"pr.payment_id",
 		"pr.payment_name",
 		"SUM(t.transaction_amount) OVER (PARTITION BY pr.payment_name) AS payment_amount",
+		"pt.payment_type_id",
+		"pt.payment_type_name",
+		"pr.payment_date IS NOT NULL AS is_payment_due_later",
 		"t.transaction_id",
 		"t.transaction_name",
 		"t.transaction_amount",
@@ -285,6 +288,7 @@ func (ts *TransactionStore) GetGroupByPayment(userId int, month string) *[]model
 		"t.fixed_flg").
 		Table("transaction t").
 		Joins("LEFT JOIN payment_resource pr ON t.payment_id = pr.payment_id").
+		Joins("LEFT JOIN payment_type pt ON pr.payment_type_id = pt.payment_type_id").
 		Joins("JOIN category c ON c.category_id = t.category_id").
 		Joins("JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
 		Where("t.user_no = ?", userId).
@@ -311,6 +315,25 @@ func (ts *TransactionStore) GetLastMonthGroupByPayment(userId int, month string)
 		Scan(&payment_group_transaction)
 
 	return &payment_group_transaction
+}
+
+func (ts *TransactionStore) GetMonthlyWithdrawalAmount(userId int, month string) *[]model.MonthlyWithdrawalAmountList {
+	var monthlyWithdrawalAmount []model.MonthlyWithdrawalAmountList
+
+	ts.db.Select(
+		"t.payment_id",
+		"pr.payment_name",
+		"pr.payment_date",
+		"SUM(t.transaction_amount) withdrawal_amount").
+		Table("transaction t").
+		Joins("LEFT JOIN payment_resource pr ON t.payment_id = pr.payment_id").
+		Where("t.user_no = ?", userId).
+		Where("pr.payment_date IS NOT NULL").
+		Where("t.transaction_date BETWEEN ? AND LAST_DAY  (?)", month, month).
+		Group("t.payment_id").
+		Scan(&monthlyWithdrawalAmount)
+
+	return &monthlyWithdrawalAmount
 }
 
 func (ts *TransactionStore) GetFrequentTransactionName(userId int) *[]model.FrequentTransactionName {

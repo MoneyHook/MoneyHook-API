@@ -81,12 +81,22 @@ type PaymentGroupTransaction struct {
 	PaymentId         int
 	PaymentName       string
 	PaymentAmount     int
+	PaymentTypeId     int
+	PaymentTypeName   string
+	IsPaymentDueLater bool
 	TransactionId     int
 	TransactionName   string
 	TransactionAmount int
 	CategoryName      string
 	SubCategoryName   string
 	FixedFlg          bool
+}
+
+type MonthlyWithdrawalAmountList struct {
+	PaymentId        int
+	PaymentName      string
+	PaymentDate      int
+	WithdrawalAmount int
 }
 
 type FrequentTransactionName struct {
