@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"MoneyHook/MoneyHook-API/handler/request"
+	"MoneyHook/MoneyHook-API/handler/response"
 	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/model"
 	"log"
@@ -23,7 +25,7 @@ func (h *Handler) GetSubCategoryList(c echo.Context) error {
 
 	result := h.subCategoryStore.GetSubCategoryList(userId, categoryId)
 
-	result_list := getSubCategoryListResponse(result)
+	result_list := response.GetSubCategoryListResponse(result)
 
 	return c.JSON(http.StatusOK, *result_list)
 }
@@ -38,8 +40,8 @@ func (h *Handler) EditSubCategory(c echo.Context) error {
 
 	editSubCategory.UserId = userId
 
-	req := &editSubCategoryRequest{}
-	if err := req.bind(c, &editSubCategory); err != nil {
+	req := &request.EditSubCategoryRequest{}
+	if err := req.Bind(c, &editSubCategory); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, "error")
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}

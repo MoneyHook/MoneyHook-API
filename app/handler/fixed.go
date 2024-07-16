@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"MoneyHook/MoneyHook-API/handler/request"
+	"MoneyHook/MoneyHook-API/handler/response"
 	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/model"
 	"log"
@@ -18,7 +20,7 @@ func (h *Handler) getFixed(c echo.Context) error {
 
 	result := h.fixedStore.GetFixedData(userId)
 
-	result_list := GetFixedResponse(result)
+	result_list := response.GetFixedResponse(result)
 
 	return c.JSON(http.StatusOK, result_list)
 }
@@ -31,7 +33,7 @@ func (h *Handler) getDeletedFixed(c echo.Context) error {
 
 	result := h.fixedStore.GetFixedDeletedData(userId)
 
-	result_list := GetFixedDeletedResponse(result)
+	result_list := response.GetFixedDeletedResponse(result)
 
 	return c.JSON(http.StatusOK, result_list)
 }
@@ -46,8 +48,8 @@ func (h *Handler) addFixed(c echo.Context) error {
 
 	addFixed.UserId = userId
 
-	req := &addFixedRequest{}
-	if err := req.bind(c, &addFixed); err != nil {
+	req := &request.AddFixedRequest{}
+	if err := req.Bind(c, &addFixed); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, "error")
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
@@ -82,8 +84,8 @@ func (h *Handler) editFixed(c echo.Context) error {
 
 	editFixed.UserId = userId
 
-	req := &editFixedRequest{}
-	if err := req.bind(c, &editFixed); err != nil {
+	req := &request.EditFixedRequest{}
+	if err := req.Bind(c, &editFixed); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, "error")
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}

@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"MoneyHook/MoneyHook-API/handler/request"
+	"MoneyHook/MoneyHook-API/handler/response"
 	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/model"
 	"log"
@@ -18,7 +20,7 @@ func (h *Handler) GetPaymentResourceList(c echo.Context) error {
 
 	result := h.paymentResourceStore.GetPaymentResourceList(userId)
 
-	result_list := getPaymentResourceListResponse(result)
+	result_list := response.GetPaymentResourceListResponse(result)
 
 	return c.JSON(http.StatusOK, *result_list)
 }
@@ -33,8 +35,8 @@ func (h *Handler) AddPaymentResource(c echo.Context) error {
 
 	addPaymentResource.UserNo = userId
 
-	req := &AddPaymentRequest{}
-	if err := req.bind(c, &addPaymentResource); err != nil {
+	req := &request.AddPaymentRequest{}
+	if err := req.Bind(c, &addPaymentResource); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, "error")
 	}
 
@@ -57,8 +59,8 @@ func (h *Handler) EditPaymentResource(c echo.Context) error {
 
 	editPaymentResource.UserNo = userId
 
-	req := &EditPaymentRequest{}
-	if err := req.bind(c, &editPaymentResource); err != nil {
+	req := &request.EditPaymentRequest{}
+	if err := req.Bind(c, &editPaymentResource); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, "error")
 	}
 
@@ -96,7 +98,7 @@ func (h *Handler) DeletePaymentResource(c echo.Context) error {
 func (h *Handler) GetPaymentTypeList(c echo.Context) error {
 	result := h.paymentResourceStore.GetPaymentTypeList()
 
-	result_list := getPaymentTypeListResponse(result)
+	result_list := response.GetPaymentTypeListResponse(result)
 
 	return c.JSON(http.StatusOK, *result_list)
 }

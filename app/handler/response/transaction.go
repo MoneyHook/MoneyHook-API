@@ -1,88 +1,10 @@
-package handler
+package response
 
 import (
 	"MoneyHook/MoneyHook-API/model"
 	"math"
 )
 
-/*
-カテゴリ・サブカテゴリ
-*/
-type categoryResponse struct {
-	Category_id   int    `json:"category_id"`
-	Category_name string `json:"category_name"`
-}
-
-type categoryListResponse struct {
-	CategoryList []categoryResponse `json:"category_list"`
-}
-
-func getCategoryListResponse(data *[]model.Category) *categoryListResponse {
-	cl := &categoryListResponse{}
-
-	for _, category := range *data {
-		cr := &categoryResponse{Category_id: category.CategoryId, Category_name: category.CategoryName}
-		cl.CategoryList = append(cl.CategoryList, *cr)
-	}
-
-	return cl
-}
-
-type categoryWithSubCategoryListResponse struct {
-	CategoryList []categoryWithSubCategory `json:"category_list"`
-}
-
-type categoryWithSubCategory struct {
-	CategoryId              int                                 `json:"category_id"`
-	CategoryName            string                              `json:"category_name"`
-	SubCategoryListResponse []subCategoryListWithEnableResponse `json:"sub_category_list"`
-}
-
-type subCategoryListWithEnableResponse struct {
-	SubCategoryId   int    `json:"sub_category_id"`
-	SubCategoryName string `json:"sub_category_name"`
-	Enable          bool   `json:"enable"`
-}
-
-func getCategoryWithSubCategoryListResponse(data *[]model.CategoryWithSubCategory) *categoryWithSubCategoryListResponse {
-	cl := &categoryWithSubCategoryListResponse{}
-
-	for _, category := range *data {
-		scl := []subCategoryListWithEnableResponse{}
-		for _, sub_category := range category.SubCategoryList {
-			scl = append(scl, subCategoryListWithEnableResponse{SubCategoryId: sub_category.SubCategoryId, SubCategoryName: sub_category.SubCategoryName, Enable: sub_category.Enable})
-		}
-
-		cr := &categoryWithSubCategory{CategoryId: category.CategoryId, CategoryName: category.CategoryName, SubCategoryListResponse: scl}
-		cl.CategoryList = append(cl.CategoryList, *cr)
-	}
-
-	return cl
-}
-
-type subCategoryListResponse struct {
-	SubCategoryList []subCategoryResponse `json:"sub_category_list"`
-}
-
-type subCategoryResponse struct {
-	SubCategoryId   int    `json:"sub_category_id"`
-	SubCategoryName string `json:"sub_category_name"`
-}
-
-func getSubCategoryListResponse(data *[]model.SubCategory) *subCategoryListResponse {
-	scl := &subCategoryListResponse{}
-
-	for _, sub_category := range *data {
-		scr := &subCategoryResponse{SubCategoryId: sub_category.SubCategoryId, SubCategoryName: sub_category.SubCategoryName}
-		scl.SubCategoryList = append(scl.SubCategoryList, *scr)
-	}
-
-	return scl
-}
-
-/*
-収支取引
-*/
 type timelineListResponse struct {
 	TimelineList []timelineResponse `json:"transaction_list"`
 }
@@ -102,7 +24,7 @@ type timelineResponse struct {
 	PaymentName       string `json:"payment_name"`
 }
 
-func getTimelineListResponse(data *[]model.Timeline) *timelineListResponse {
+func GetTimelineListResponse(data *[]model.Timeline) *timelineListResponse {
 	tll := &timelineListResponse{TimelineList: []timelineResponse{}}
 
 	for _, t := range *data {
@@ -138,7 +60,7 @@ type monthlyTotalAmount struct {
 	Month       string `json:"month"`
 }
 
-func getmonthlySpendingDataResponse(data *[]model.MonthlySpendingData) *monthlySpendingDataResponse {
+func GetmonthlySpendingDataResponse(data *[]model.MonthlySpendingData) *monthlySpendingDataResponse {
 	msdr := &monthlySpendingDataResponse{}
 
 	for _, m := range *data {
@@ -163,7 +85,7 @@ type transactionData struct {
 	FixedFlg          bool   `json:"fixed_flg"`
 }
 
-func getTransactionResponse(data *model.TransactionData) *transactionResponse {
+func GetTransactionResponse(data *model.TransactionData) *transactionResponse {
 	tr := &transactionResponse{}
 
 	tr.Transaction = transactionData{
@@ -195,7 +117,7 @@ type montylyFixedTransaction struct {
 	TransactionAmount int    `json:"transaction_amount"`
 }
 
-func getMonthlyFixedResponse(data *[]model.MonthlyFixedData) *montylyFixedReponse {
+func GetMonthlyFixedResponse(data *[]model.MonthlyFixedData) *montylyFixedReponse {
 	mfir := &montylyFixedReponse{}
 
 	mfid_l := &[]montylyFixedData{}
@@ -246,7 +168,7 @@ type homeSubCategory struct {
 	SubCategoryTotalAmount int    `json:"sub_category_total_amount"`
 }
 
-func getHomeResponse(data *[]model.HomeCategory) *homeResponse {
+func GetHomeResponse(data *[]model.HomeCategory) *homeResponse {
 	hr := &homeResponse{HomeCategoryList: []homeCategory{}}
 
 	hcl := &[]homeCategory{}
@@ -322,7 +244,7 @@ type monthlyVariableTransaction struct {
 	TransactionAmount int    `json:"transaction_amount"`
 }
 
-func getMonthlyVariableResponse(data *[]model.MonthlyVariableData) *monthlyVariableResponse {
+func GetMonthlyVariableResponse(data *[]model.MonthlyVariableData) *monthlyVariableResponse {
 	mvr := &monthlyVariableResponse{}
 
 	mvcl := &[]monthlyVariableCategory{}
@@ -406,7 +328,7 @@ type totalSpendingTransaction struct {
 	TransactionAmount int    `json:"transaction_amount"`
 }
 
-func getTotalSpendingResponse(data *[]model.TotalSpendingData) *totalSpendingResponse {
+func GetTotalSpendingResponse(data *[]model.TotalSpendingData) *totalSpendingResponse {
 	tsr := &totalSpendingResponse{}
 
 	mvcl := &[]totalSpendingCategory{}
@@ -475,7 +397,7 @@ type paymentTransaction struct {
 	FixedFlg          bool   `json:"fixed_flg"`
 }
 
-func getPaymentGroupResponse(data *[]model.PaymentGroupTransaction, last_month_data *[]model.PaymentGroupTransaction) *paymentGroupResponse {
+func GetPaymentGroupResponse(data *[]model.PaymentGroupTransaction, last_month_data *[]model.PaymentGroupTransaction) *paymentGroupResponse {
 	pgr := &paymentGroupResponse{PaymentList: []paymentList{}}
 
 	pll := &[]paymentList{}
@@ -551,7 +473,7 @@ type monthlyWithdrawalAmount struct {
 	WithdrawalAmount int    `json:"withdrawal_amount"`
 }
 
-func getMonthlyWithdrawalAmount(data *[]model.MonthlyWithdrawalAmountList) *monthlyWithdrawalAmountResponse {
+func GetMonthlyWithdrawalAmount(data *[]model.MonthlyWithdrawalAmountList) *monthlyWithdrawalAmountResponse {
 	mwal := &monthlyWithdrawalAmountResponse{WithdrawalList: []monthlyWithdrawalAmount{}}
 
 	for _, item := range *data {
@@ -588,7 +510,7 @@ type frequentTransaction struct {
 	SubCategoryName string `json:"sub_category_name"`
 }
 
-func getFrequentTransactionResponse(data *[]model.FrequentTransactionName) *frequentTransactionResponse {
+func GetFrequentTransactionResponse(data *[]model.FrequentTransactionName) *frequentTransactionResponse {
 	ftr := &frequentTransactionResponse{}
 
 	frequentMap := map[string]frequentTransaction{}
@@ -635,135 +557,4 @@ func containsTotalSpendingSubCategory(data_list *[]totalSpendingSubCategory, sub
 		}
 	}
 	return false
-}
-
-/*
-月次費用
-*/
-type fixedResponse struct {
-	MonthlyTransactionList []fixedResponseData `json:"monthly_transaction_list"`
-}
-
-type fixedResponseData struct {
-	MonthlyTransactionId     int    `json:"monthly_transaction_id"`
-	MonthlyTransactionName   string `json:"monthly_transaction_name"`
-	MonthlyTransactionAmount int    `json:"monthly_transaction_amount"`
-	MonthlyTransactionSign   int    `json:"monthly_transaction_sign"`
-	MonthlyTransactionDate   int    `json:"monthly_transaction_date"`
-	CategoryId               int    `json:"category_id"`
-	CategoryName             string `json:"category_name"`
-	SubCategoryId            int    `json:"sub_category_id"`
-	SubCategoryName          string `json:"sub_category_name"`
-	PaymentId                *int   `json:"payment_id"`
-}
-
-func GetFixedResponse(data_list *[]model.GetFixed) *fixedResponse {
-	fr := &[]fixedResponseData{}
-
-	for _, data := range *data_list {
-
-		var paymentId *int
-		if data.PaymentId != 0 {
-			paymentId = &data.PaymentId
-		}
-		*fr = append(*fr,
-			fixedResponseData{MonthlyTransactionId: data.MonthlyTransactionId,
-				MonthlyTransactionName:   data.MonthlyTransactionName,
-				MonthlyTransactionAmount: data.MonthlyTransactionAmount,
-				MonthlyTransactionSign:   data.MonthlyTransactionSign,
-				MonthlyTransactionDate:   data.MonthlyTransactionDate,
-				CategoryId:               data.CategoryId,
-				CategoryName:             data.CategoryName,
-				SubCategoryId:            data.SubCategoryId,
-				SubCategoryName:          data.SubCategoryName,
-				PaymentId:                paymentId,
-			})
-	}
-
-	return &fixedResponse{MonthlyTransactionList: *fr}
-}
-
-type deletedFixedResponse struct {
-	MonthlyTransactionId     int    `json:"monthly_transaction_id"`
-	MonthlyTransactionName   string `json:"monthly_transaction_name"`
-	MonthlyTransactionAmount int    `json:"monthly_transaction_amount"`
-	MonthlyTransactionDate   int    `json:"monthly_transaction_date"`
-	CategoryName             string `json:"category_name"`
-	SubCategoryName          string `json:"sub_category_name"`
-}
-
-func GetFixedDeletedResponse(data_list *[]model.GetDeletedFixed) *[]deletedFixedResponse {
-	dfr := &[]deletedFixedResponse{}
-
-	for _, data := range *data_list {
-		*dfr = append(*dfr,
-			deletedFixedResponse{MonthlyTransactionId: data.MonthlyTransactionId,
-				MonthlyTransactionName:   data.MonthlyTransactionName,
-				MonthlyTransactionAmount: data.MonthlyTransactionAmount,
-				MonthlyTransactionDate:   data.MonthlyTransactionDate,
-				CategoryName:             data.CategoryName,
-				SubCategoryName:          data.SubCategoryName,
-			})
-	}
-
-	return dfr
-}
-
-/*
-支払い方法
-*/
-type paymentResourceListResponse struct {
-	PaymentResourceList []paymentResourceResponse `json:"payment_list"`
-}
-type paymentResourceResponse struct {
-	PaymentId     int    `json:"payment_id"`
-	PaymentName   string `json:"payment_name"`
-	PaymentTypeId int    `json:"payment_type_id"`
-	PaymentDate   *int   `json:"payment_date"`
-}
-
-func getPaymentResourceListResponse(data *[]model.PaymentResource) *paymentResourceListResponse {
-	prl := &paymentResourceListResponse{PaymentResourceList: []paymentResourceResponse{}}
-
-	for _, payment_resource := range *data {
-		var paymentDate *int
-		if payment_resource.PaymentDate != 0 {
-			paymentDate = &payment_resource.PaymentDate
-		}
-		scr := &paymentResourceResponse{
-			PaymentId:     payment_resource.PaymentId,
-			PaymentName:   payment_resource.PaymentName,
-			PaymentTypeId: payment_resource.PaymentTypeId,
-			PaymentDate:   paymentDate,
-		}
-		prl.PaymentResourceList = append(prl.PaymentResourceList, *scr)
-	}
-
-	return prl
-}
-
-/*
-支払い方法
-*/
-type paymentTypeListResponse struct {
-	PaymentTypeList []paymentTypeResponse `json:"payment_type_list"`
-}
-type paymentTypeResponse struct {
-	PaymentTypeId     int    `json:"payment_type_id"`
-	PaymentTypeName   string `json:"payment_type_name"`
-	IsPaymentDueLater bool   `json:"is_payment_due_later"`
-}
-
-func getPaymentTypeListResponse(data *[]model.PaymentType) *paymentTypeListResponse {
-	ptl := &paymentTypeListResponse{PaymentTypeList: []paymentTypeResponse{}}
-
-	for _, payment_type := range *data {
-		ptr := &paymentTypeResponse{
-			PaymentTypeId:     payment_type.PaymentTypeId,
-			PaymentTypeName:   payment_type.PaymentTypeName,
-			IsPaymentDueLater: payment_type.IsPaymentDueLater}
-		ptl.PaymentTypeList = append(ptl.PaymentTypeList, *ptr)
-	}
-
-	return ptl
 }
