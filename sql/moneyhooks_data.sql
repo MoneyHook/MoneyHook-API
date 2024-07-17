@@ -306,7 +306,8 @@ INSERT INTO
         payment_type_id,
         user_no,
         payment_name,
-        payment_date
+        payment_date,
+        closing_date
     )
 VALUES
     (1, 2, 2, '楽天カード', 27);

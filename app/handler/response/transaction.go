@@ -473,10 +473,10 @@ type monthlyWithdrawalAmount struct {
 	WithdrawalAmount int    `json:"withdrawal_amount"`
 }
 
-func GetMonthlyWithdrawalAmount(data *[]model.MonthlyWithdrawalAmountList) *monthlyWithdrawalAmountResponse {
+func GetMonthlyWithdrawalAmount(data []*model.MonthlyWithdrawalAmountList) *monthlyWithdrawalAmountResponse {
 	mwal := &monthlyWithdrawalAmountResponse{WithdrawalList: []monthlyWithdrawalAmount{}}
 
-	for _, item := range *data {
+	for _, item := range data {
 		mwal.WithdrawalList = append(mwal.WithdrawalList,
 			monthlyWithdrawalAmount{
 				PaymentId:        item.PaymentId,

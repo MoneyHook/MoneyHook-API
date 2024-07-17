@@ -70,6 +70,7 @@ CREATE TABLE
         user_no BIGINT UNSIGNED NOT NULL,
         payment_name VARCHAR(32) NOT NULL,
         payment_date INT,
+        closing_date INT,
         PRIMARY KEY (payment_id),
         FOREIGN KEY user_no (user_no) REFERENCES users (user_no),
         FOREIGN KEY payment_type_id (payment_type_id) REFERENCES payment_type (payment_type_id),

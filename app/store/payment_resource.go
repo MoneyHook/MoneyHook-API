@@ -35,6 +35,7 @@ func (pr *PaymentResourceStore) EditPaymentResource(editPayment *model.EditPayme
 		Update("payment_name", editPayment.PaymentName).
 		Update("payment_type_id", editPayment.PaymentTypeId).
 		Update("payment_date", editPayment.PaymentDate).
+		Update("closing_date", editPayment.ClosingDate).
 		Error
 }
 

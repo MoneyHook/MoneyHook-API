@@ -13,6 +13,7 @@ type paymentResourceResponse struct {
 	PaymentName   string `json:"payment_name"`
 	PaymentTypeId int    `json:"payment_type_id"`
 	PaymentDate   *int   `json:"payment_date"`
+	ClosingDate   *int   `json:"closing_date"`
 }
 
 func GetPaymentResourceListResponse(data *[]model.PaymentResource) *paymentResourceListResponse {
@@ -23,11 +24,17 @@ func GetPaymentResourceListResponse(data *[]model.PaymentResource) *paymentResou
 		if payment_resource.PaymentDate != 0 {
 			paymentDate = &payment_resource.PaymentDate
 		}
+		var closingDate *int
+		if payment_resource.ClosingDate != 0 {
+			closingDate = &payment_resource.ClosingDate
+		}
+
 		scr := &paymentResourceResponse{
 			PaymentId:     payment_resource.PaymentId,
 			PaymentName:   payment_resource.PaymentName,
 			PaymentTypeId: payment_resource.PaymentTypeId,
 			PaymentDate:   paymentDate,
+			ClosingDate:   closingDate,
 		}
 		prl.PaymentResourceList = append(prl.PaymentResourceList, *scr)
 	}
@@ -35,9 +42,6 @@ func GetPaymentResourceListResponse(data *[]model.PaymentResource) *paymentResou
 	return prl
 }
 
-/*
-支払い方法
-*/
 type paymentTypeListResponse struct {
 	PaymentTypeList []paymentTypeResponse `json:"payment_type_list"`
 }
