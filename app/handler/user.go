@@ -40,7 +40,8 @@ func (h *Handler) googleSignIn(c echo.Context) error {
 
 func (h *Handler) GetUserId(c echo.Context) (int, error) {
 	// Authorizationヘッダからトークンを抽出
-	token := c.Request().Header["Authorization"][0]
+	token := c.Request().Header.Get(echo.HeaderAuthorization)
+
 	var userNo int
 
 	if EnableFirebaseAuth() {

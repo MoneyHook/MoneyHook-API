@@ -25,9 +25,15 @@ func main() {
 		ExposeHeaders: []string{"Content-Length"},
 	}))
 
+	// e.Use(middleware.KeyAuthWithConfig(router.ValidateJwt()))
+
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Success, running")
 	})
+
+	// e.GET("/generateKey", func(c echo.Context) error {
+	// return router.GenerateJWT(c)
+	// })
 
 	v1 := e.Group("/api")
 
