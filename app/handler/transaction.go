@@ -167,47 +167,45 @@ func (h *Handler) getMonthlyWithdrawalAmount(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
 	}
 
-	month := c.QueryParam("month")
+	str_month := c.QueryParam("month")
 
-	last_month, err := time.Parse("2006-01-02", month)
+	month, err := time.Parse("2006-01-02", str_month)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("date_parse_error")))
 	}
-	last_month = last_month.AddDate(0, -1, 0)
 
 	var result []*model.MonthlyWithdrawalAmountList
 
 	payment_list := h.paymentResourceStore.GetPaymentResourceList(userId)
 	for _, payment := range *payment_list {
 		if payment.PaymentDate != 0 {
-			var startMonth string
-			var endMonth string
+			var startMonth time.Time
+			var endMonth time.Time
 
-			if last_month.AddDate(0, 1, -1).Day() <= payment.ClosingDate {
-
+			if month.AddDate(0, 0, -1).Day() <= payment.ClosingDate {
 				/*
 					前月の末日 <= 登録した締日 の場合、前月の初日から前月末までが対象
 					例
-						締日        : 31日
-						前月の末尾   : 29日(2024-02-29)
-						startMonth : 2024-02-01
-						endMonth   : 2024-02-29
+					締日        : 31日
+					前月の末尾   : 29日(2024-02-29)
+					startMonth : 2024-02-01
+					endMonth   : 2024-02-29
 				*/
-				startMonth = last_month.Format("2006-01-02")
-				endMonth = last_month.AddDate(0, 1, -1).Format("2006-01-02")
+				startMonth = month.AddDate(0, -1, 0)
+				endMonth = month.AddDate(0, 0, -1)
 			} else {
 				/*
 					上記以外の場合、「前々月の締日+1日」から「前月の締日」までが対象
 					例
-						締日        : 10日
-						startMonth : 2024-01-11
-						endMonth   : 2024-02-10
+					締日        : 10日
+					startMonth : 2024-01-11
+					endMonth   : 2024-02-10
 				*/
-				startMonth = last_month.AddDate(0, -1, payment.ClosingDate).Format("2006-01-02")
-				endMonth = last_month.AddDate(0, 0, payment.ClosingDate-1).Format("2006-01-02")
+				startMonth = month.AddDate(0, -2, payment.ClosingDate)
+				endMonth = month.AddDate(0, -1, payment.ClosingDate-1)
 			}
 
-			monthlyWithdrawalAmount := h.transactionStore.GetMonthlyWithdrawalAmount(userId, payment.PaymentId, startMonth, endMonth)
+			monthlyWithdrawalAmount := h.transactionStore.GetMonthlyWithdrawalAmount(userId, payment.PaymentId, startMonth.Format("2006-01-02"), endMonth.Format("2006-01-02"))
 			if monthlyWithdrawalAmount.PaymentId != 0 {
 				result = append(result, monthlyWithdrawalAmount)
 			}

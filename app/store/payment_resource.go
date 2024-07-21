@@ -21,6 +21,12 @@ func (pr *PaymentResourceStore) GetPaymentResourceList(userId int) *[]model.Paym
 		Order("payment_id").
 		Find(&payment_resource_list)
 
+	for i, item := range payment_resource_list {
+		if item.ClosingDate == 0 {
+			payment_resource_list[i].ClosingDate = 31
+		}
+	}
+
 	return &payment_resource_list
 }
 
