@@ -310,7 +310,7 @@ INSERT INTO
         closing_date
     )
 VALUES
-    (1, 2, 2, '楽天カード', 27);
+    (1, 2, 2, '楽天カード', 27, 31);
 
 INSERT INTO
     payment_resource (

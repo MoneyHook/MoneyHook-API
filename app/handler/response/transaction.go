@@ -467,10 +467,12 @@ type monthlyWithdrawalAmountResponse struct {
 }
 
 type monthlyWithdrawalAmount struct {
-	PaymentId        int    `json:"payment_id"`
-	PaymentName      string `json:"payment_name"`
-	PaymentDate      int    `json:"payment_date"`
-	WithdrawalAmount int    `json:"withdrawal_amount"`
+	PaymentId            int    `json:"payment_id"`
+	PaymentName          string `json:"payment_name"`
+	PaymentDate          int    `json:"payment_date"`
+	AggregationStartDate string `json:"aggregation_start_date"`
+	AggregationEndDate   string `json:"aggregation_end_date"`
+	WithdrawalAmount     int    `json:"withdrawal_amount"`
 }
 
 func GetMonthlyWithdrawalAmount(data []*model.MonthlyWithdrawalAmountList) *monthlyWithdrawalAmountResponse {
@@ -479,10 +481,12 @@ func GetMonthlyWithdrawalAmount(data []*model.MonthlyWithdrawalAmountList) *mont
 	for _, item := range data {
 		mwal.WithdrawalList = append(mwal.WithdrawalList,
 			monthlyWithdrawalAmount{
-				PaymentId:        item.PaymentId,
-				PaymentName:      item.PaymentName,
-				PaymentDate:      item.PaymentDate,
-				WithdrawalAmount: item.WithdrawalAmount})
+				PaymentId:            item.PaymentId,
+				PaymentName:          item.PaymentName,
+				PaymentDate:          item.PaymentDate,
+				AggregationStartDate: item.AggregationStartDate,
+				AggregationEndDate:   item.AggregationEndDate,
+				WithdrawalAmount:     item.WithdrawalAmount})
 	}
 	return mwal
 }
@@ -511,7 +515,7 @@ type frequentTransaction struct {
 }
 
 func GetFrequentTransactionResponse(data *[]model.FrequentTransactionName) *frequentTransactionResponse {
-	ftr := &frequentTransactionResponse{}
+	ftr := &frequentTransactionResponse{FrequentTransactionlist: []frequentTransaction{}}
 
 	frequentMap := map[string]frequentTransaction{}
 
