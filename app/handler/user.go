@@ -2,6 +2,7 @@ package handler
 
 import (
 	common "MoneyHook/MoneyHook-API/common"
+	"MoneyHook/MoneyHook-API/handler/request"
 	"MoneyHook/MoneyHook-API/model"
 	"context"
 	"crypto/sha256"
@@ -16,8 +17,8 @@ import (
 func (h *Handler) googleSignIn(c echo.Context) error {
 	var googleSignIn model.GoogleSignIn
 
-	req := &GoogleSignInRequest{}
-	if err := req.bind(c, &googleSignIn); err != nil {
+	req := &request.GoogleSignInRequest{}
+	if err := req.Bind(c, &googleSignIn); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, "error")
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
@@ -39,7 +40,8 @@ func (h *Handler) googleSignIn(c echo.Context) error {
 
 func (h *Handler) GetUserId(c echo.Context) (int, error) {
 	// Authorizationヘッダからトークンを抽出
-	token := c.Request().Header["Authorization"][0]
+	token := c.Request().Header.Get(echo.HeaderAuthorization)
+
 	var userNo int
 
 	if EnableFirebaseAuth() {

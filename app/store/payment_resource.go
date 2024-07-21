@@ -21,6 +21,12 @@ func (pr *PaymentResourceStore) GetPaymentResourceList(userId int) *[]model.Paym
 		Order("payment_id").
 		Find(&payment_resource_list)
 
+	for i, item := range payment_resource_list {
+		if item.ClosingDate == 0 {
+			payment_resource_list[i].ClosingDate = 31
+		}
+	}
+
 	return &payment_resource_list
 }
 
@@ -35,6 +41,7 @@ func (pr *PaymentResourceStore) EditPaymentResource(editPayment *model.EditPayme
 		Update("payment_name", editPayment.PaymentName).
 		Update("payment_type_id", editPayment.PaymentTypeId).
 		Update("payment_date", editPayment.PaymentDate).
+		Update("closing_date", editPayment.ClosingDate).
 		Error
 }
 

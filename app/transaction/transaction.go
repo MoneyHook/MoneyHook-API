@@ -12,7 +12,7 @@ type Store interface {
 	GetTotalSpending(userId int, categoryId string, subCategoryId string, startMonth string, endMonth string) *[]model.TotalSpendingData
 	GetGroupByPayment(userId int, month string) *[]model.PaymentGroupTransaction
 	GetLastMonthGroupByPayment(userId int, month string) *[]model.PaymentGroupTransaction
-	GetMonthlyWithdrawalAmount(userId int, month string) *[]model.MonthlyWithdrawalAmountList
+	GetMonthlyWithdrawalAmount(userId int, paymentId int, startMonth string, endMonth string) *model.MonthlyWithdrawalAmountList
 	GetFrequentTransactionName(userId int) *[]model.FrequentTransactionName
 	AddTransaction(*model.AddTransaction) error
 	AddTransactionList(*model.AddTransactionList) error

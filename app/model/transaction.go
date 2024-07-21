@@ -93,10 +93,12 @@ type PaymentGroupTransaction struct {
 }
 
 type MonthlyWithdrawalAmountList struct {
-	PaymentId        int
-	PaymentName      string
-	PaymentDate      int
-	WithdrawalAmount int
+	PaymentId            int
+	PaymentName          string
+	PaymentDate          int
+	AggregationStartDate string
+	AggregationEndDate   string
+	WithdrawalAmount     int
 }
 
 type FrequentTransactionName struct {

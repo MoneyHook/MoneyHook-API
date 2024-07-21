@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"MoneyHook/MoneyHook-API/handler/response"
 	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/model"
 	"net/http"
@@ -11,7 +12,7 @@ import (
 func (h *Handler) GetCategoryList(c echo.Context) error {
 	result := h.categoryStore.GetCategoryList()
 
-	result_list := getCategoryListResponse(result)
+	result_list := response.GetCategoryListResponse(result)
 
 	return c.JSON(http.StatusOK, *result_list)
 }
@@ -24,7 +25,7 @@ func (h *Handler) GetCategoryWithSubCategoryList(c echo.Context) error {
 
 	result := h.categoryStore.GetCategoryWithSubCategoryList(userId)
 
-	result_list := getCategoryWithSubCategoryListResponse(result)
+	result_list := response.GetCategoryWithSubCategoryListResponse(result)
 
 	return c.JSON(http.StatusOK, *result_list)
 }

@@ -5,6 +5,7 @@ type PaymentResource struct {
 	PaymentName   string
 	PaymentTypeId int
 	PaymentDate   int
+	ClosingDate   int
 }
 
 type AddPaymentResource struct {
@@ -12,6 +13,7 @@ type AddPaymentResource struct {
 	PaymentName   string
 	PaymentTypeId int
 	PaymentDate   *int
+	ClosingDate   *int
 }
 
 type EditPaymentResource struct {
@@ -20,6 +22,7 @@ type EditPaymentResource struct {
 	PaymentName   string
 	PaymentTypeId int
 	PaymentDate   *int
+	ClosingDate   *int
 }
 
 type DeletePaymentResource struct {
