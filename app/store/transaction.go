@@ -296,6 +296,7 @@ func (ts *TransactionStore) GetGroupByPayment(userId int, month string) *[]model
 		Where("t.transaction_date BETWEEN ? AND LAST_DAY(?)", month, month).
 		Order("payment_amount").
 		Order("t.transaction_date DESC").
+		Order("t.transaction_id DESC").
 		Scan(&payment_group_transaction)
 
 	return &payment_group_transaction
