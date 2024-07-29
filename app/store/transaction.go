@@ -126,7 +126,8 @@ func (ts *TransactionStore) GetMonthlyFixedData(userId int, month string, isSpen
 			"c.category_name",
 			"sum(t.transaction_amount) OVER(PARTITION BY c.category_name) AS total_category_amount",
 			"t.transaction_name",
-			"t.transaction_amount").
+			"t.transaction_amount",
+			"t.transaction_date").
 		Table("transaction t").
 		Joins("INNER JOIN category c ON c.category_id = t.category_id").
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
@@ -178,7 +179,8 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId int, month string) *[]
 
 	subquery_1 := ts.db.Select("transaction_id",
 		"transaction_name",
-		"transaction_amount").
+		"transaction_amount",
+		"transaction_date").
 		Table("transaction").
 		Where("user_no = ?", userId).
 		Where("transaction_date BETWEEN ? AND LAST_DAY(?)", month, month)
@@ -200,7 +202,8 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId int, month string) *[]
 		"sub_clist.sub_category_total_amount",
 		"tran_list.transaction_id",
 		"tran_list.transaction_name",
-		"tran_list.transaction_amount").
+		"tran_list.transaction_amount",
+		"tran_list.transaction_date").
 		Table("transaction t").
 		Joins("INNER JOIN category c ON c.category_id = t.category_id").
 		Joins("RIGHT JOIN (?) tran_list ON tran_list.transaction_id = t.transaction_id", subquery_1).
@@ -208,7 +211,7 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId int, month string) *[]
 		Where("t.user_no = ?", userId).
 		Where("0 > t.transaction_amount").
 		Where("t.fixed_flg = FALSE").
-		Where("transaction_date BETWEEN ? AND LAST_DAY(?)", month, month).
+		Where("t.transaction_date BETWEEN ? AND LAST_DAY(?)", month, month).
 		Order("category_total_amount").
 		Order("sub_category_total_amount").
 		Order("transaction_amount").

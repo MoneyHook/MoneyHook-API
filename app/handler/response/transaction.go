@@ -115,6 +115,7 @@ type montylyFixedData struct {
 type montylyFixedTransaction struct {
 	TransactionName   string `json:"transaction_name"`
 	TransactionAmount int    `json:"transaction_amount"`
+	TransactionDate   string `json:"transaction_date"`
 }
 
 func GetMonthlyFixedResponse(data *[]model.MonthlyFixedData) *montylyFixedReponse {
@@ -130,7 +131,10 @@ func GetMonthlyFixedResponse(data *[]model.MonthlyFixedData) *montylyFixedRepons
 		for _, transaction := range *data {
 			if mfid.CategoryName == transaction.CategoryName {
 				mfid.TransactionList = append(mfid.TransactionList,
-					montylyFixedTransaction{TransactionName: transaction.TransactionName, TransactionAmount: transaction.TransactionAmount})
+					montylyFixedTransaction{
+						TransactionName:   transaction.TransactionName,
+						TransactionAmount: transaction.TransactionAmount,
+						TransactionDate:   transaction.TransactionDate.Format("2006-01-02")})
 			}
 		}
 
@@ -242,6 +246,7 @@ type monthlyVariableTransaction struct {
 	TransactionId     int    `json:"transaction_id"`
 	TransactionName   string `json:"transaction_name"`
 	TransactionAmount int    `json:"transaction_amount"`
+	TransactionDate   string `json:"transaction_date"`
 }
 
 func GetMonthlyVariableResponse(data *[]model.MonthlyVariableData) *monthlyVariableResponse {
@@ -268,7 +273,8 @@ func GetMonthlyVariableResponse(data *[]model.MonthlyVariableData) *monthlyVaria
 					if mvsc.SubCategoryId == transaction.SubCategoryId {
 						mvt := &monthlyVariableTransaction{TransactionId: transaction.TransactionId,
 							TransactionName:   transaction.TransactionName,
-							TransactionAmount: transaction.TransactionAmount}
+							TransactionAmount: transaction.TransactionAmount,
+							TransactionDate:   transaction.TransactionDate.Format("2006-01-02")}
 
 						mvsc.TransactionList = append(mvsc.TransactionList, *mvt)
 					}

@@ -45,6 +45,7 @@ type MonthlyFixedData struct {
 	TotalCategoryAmount int
 	TransactionName     string
 	TransactionAmount   int
+	TransactionDate     time.Time
 }
 
 type HomeCategory struct {
@@ -63,6 +64,7 @@ type MonthlyVariableData struct {
 	TransactionId          int
 	TransactionName        string
 	TransactionAmount      int
+	TransactionDate        time.Time
 }
 
 type TotalSpendingData struct {
