@@ -89,6 +89,7 @@ type PaymentGroupTransaction struct {
 	TransactionId     int
 	TransactionName   string
 	TransactionAmount int
+	TransactionDate   time.Time
 	CategoryName      string
 	SubCategoryName   string
 	FixedFlg          bool

@@ -398,6 +398,7 @@ type paymentTransaction struct {
 	TransactionId     int    `json:"transaction_id"`
 	TransactionName   string `json:"transaction_name"`
 	TransactionAmount int    `json:"transaction_amount"`
+	TransactionDate   string `json:"transaction_date"`
 	CategoryName      string `json:"category_name"`
 	SubCategoryName   string `json:"sub_category_name"`
 	FixedFlg          bool   `json:"fixed_flg"`
@@ -435,6 +436,7 @@ func GetPaymentGroupResponse(data *[]model.PaymentGroupTransaction, last_month_d
 					TransactionId:     tran.TransactionId,
 					TransactionName:   tran.TransactionName,
 					TransactionAmount: tran.TransactionAmount,
+					TransactionDate:   tran.TransactionDate.Format("2006-01-02"),
 					CategoryName:      tran.CategoryName,
 					SubCategoryName:   tran.SubCategoryName,
 					FixedFlg:          tran.FixedFlg})

@@ -286,6 +286,7 @@ func (ts *TransactionStore) GetGroupByPayment(userId int, month string) *[]model
 		"t.transaction_id",
 		"t.transaction_name",
 		"t.transaction_amount",
+		"t.transaction_date",
 		"c.category_name",
 		"sc.sub_category_name",
 		"t.fixed_flg").
