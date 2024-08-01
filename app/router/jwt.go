@@ -37,14 +37,18 @@ func GenerateJWT(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, "Could not generate token")
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"token": jwtToken,
-	})
+	cookie := &http.Cookie{
+		Name:  "ApplicationKey",
+		Value: jwtToken,
+	}
+	c.SetCookie(cookie)
+
+	return c.String(http.StatusOK, "Success, SetCookie")
 }
 
 /*
 ValidateJwtは、JWTトークンを検証するためのミドルウェア設定を返します。
-トークンは "Application-Token" ヘッダーから取得され、特定の条件を満たす場合にスキップされます。
+トークンは "ApplicationKey" Cookieから取得され、特定の条件を満たす場合にスキップされます。
 JWTの秘密鍵は環境変数から取得し、デフォルト値は "secret" です。
 
 戻り値:
@@ -52,13 +56,8 @@ JWTの秘密鍵は環境変数から取得し、デフォルト値は "secret" �
 */
 func ValidateJwt() middleware.KeyAuthConfig {
 	return middleware.KeyAuthConfig{
-		KeyLookup: "header:Application-Token",
-		Skipper: func(c echo.Context) bool {
-			if c.Request().RequestURI == "/" || c.Request().RequestURI == "/generateKey" {
-				return true
-			}
-			return false
-		},
+		KeyLookup: "cookie:ApplicationKey",
+		Skipper:   isIgnoreList,
 		Validator: func(key string, c echo.Context) (bool, error) {
 			token, err := jwt.Parse(key, func(token *jwt.Token) (interface{}, error) {
 				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -86,4 +85,13 @@ func ValidateJwt() middleware.KeyAuthConfig {
 			}
 		},
 	}
+}
+
+func isIgnoreList(c echo.Context) bool {
+	for _, igonoreValue := range common.IgnoreVerifyApiKeyList {
+		if c.Request().RequestURI == igonoreValue {
+			return true
+		}
+	}
+	return false
 }
