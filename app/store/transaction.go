@@ -214,6 +214,7 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId int, month string) *[]
 		Where("t.transaction_date BETWEEN ? AND LAST_DAY(?)", month, month).
 		Order("category_total_amount").
 		Order("sub_category_total_amount").
+		Order("transaction_date").
 		Order("transaction_amount").
 		Scan(&monthly_variable_data)
 
