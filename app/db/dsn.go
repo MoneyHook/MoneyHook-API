@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"time"
 
 	common "MoneyHook/MoneyHook-API/common"
@@ -27,4 +28,19 @@ func getConfig() string {
 		AllowNativePasswords: true,
 	}
 	return dsn.FormatDSN()
+}
+
+func getPostgresConfig() string{
+	dbName := common.GetEnv("POSTGRES_DATABASE", "")
+	user := common.GetEnv("POSTGRES_USER", "")
+	password := common.GetEnv("POSTGRES_PASSWORD", "")
+	host := common.GetEnv("POSTGRES_HOST", "")
+	port := common.GetEnv("POSTGRES_PORT", "5432")
+
+	dsn := fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=disable&TimeZone=Asia/Tokyo",
+		user, password, host, port, dbName,
+	)
+
+	return dsn	
 }
