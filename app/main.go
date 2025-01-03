@@ -6,7 +6,6 @@ import (
 	"MoneyHook/MoneyHook-API/handler"
 	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/router"
-	"MoneyHook/MoneyHook-API/store"
 	"log"
 	"net/http"
 
@@ -38,15 +37,8 @@ func main() {
 	v1 := e.Group("/api")
 
 	d := db.New()
-	us := store.NewUserStore(d)
-	ts := store.NewTransactionStore(d)
-	fs := store.NewFixedStore(d)
-	cs := store.NewCategoryStore(d)
-	scs := store.NewSubCategoryStore(d)
-	pr := store.NewPaymentResourceStore(d)
-
 	client := router.NewFirebaseAuth()
-	h := handler.NewHandler(client, us, ts, fs, cs, scs, pr)
+	h := handler.NewHandler(client, d.UserStore, d.TransactionStore, d.FixedStore, d.CategoryStore, d.SubCategoryStore, d.PaymentResourceStore)
 	h.Register(v1)
 
 	message.Read()
