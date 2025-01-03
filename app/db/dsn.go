@@ -36,11 +36,12 @@ func getPostgresConfig() string{
 	password := common.GetEnv("POSTGRES_PASSWORD", "")
 	host := common.GetEnv("POSTGRES_HOST", "")
 	port := common.GetEnv("POSTGRES_PORT", "5432")
+	timezone := "Asia/Tokyo"
 
 	dsn := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=disable&TimeZone=Asia/Tokyo",
-		user, password, host, port, dbName,
+		"postgres://%s:%s@%s:%s/%s?sslmode=disable&TimeZone=%s",
+		user, password, host, port, dbName,timezone,
 	)
 
-	return dsn	
+	return dsn
 }
