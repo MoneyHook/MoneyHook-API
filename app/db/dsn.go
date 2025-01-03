@@ -9,7 +9,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
-func getConfig() string {
+func getMySqlConfig() string {
 
 	jst, err := time.LoadLocation("Asia/Tokyo")
 	if err != nil {
@@ -35,12 +35,12 @@ func getPostgresConfig() string{
 	user := common.GetEnv("POSTGRES_USER", "")
 	password := common.GetEnv("POSTGRES_PASSWORD", "")
 	host := common.GetEnv("POSTGRES_HOST", "")
-	port := common.GetEnv("POSTGRES_PORT", "5432")
+	port := common.GetEnv("POSTGRES_PORT", "")
 	timezone := "Asia/Tokyo"
 
 	dsn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable&TimeZone=%s",
-		user, password, host, port, dbName,timezone,
+		user, password, host, port, dbName, timezone,
 	)
 
 	return dsn
