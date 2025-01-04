@@ -2,6 +2,7 @@ package db
 
 import (
 	category "MoneyHook/MoneyHook-API/cagegory"
+	common "MoneyHook/MoneyHook-API/common"
 	fixed "MoneyHook/MoneyHook-API/fixed"
 	payment_resource "MoneyHook/MoneyHook-API/payment_resource"
 	"MoneyHook/MoneyHook-API/store_mysql"
@@ -11,7 +12,6 @@ import (
 	user "MoneyHook/MoneyHook-API/user"
 
 	"log"
-	"os"
 	"strings"
 
 	"gorm.io/driver/mysql"
@@ -36,7 +36,7 @@ const (
 )
 
 func New() *Store {
-	dbType := DatabaseType(strings.ToLower(os.Getenv("DATABASE_TYPE")))
+	dbType := DatabaseType(strings.ToLower(common.GetEnv("DATABASE_TYPE", "")))
 
 	switch dbType {
 	case MySQL:
