@@ -30,7 +30,7 @@ func getMySqlConfig() string {
 	return dsn.FormatDSN()
 }
 
-func getPostgresConfig() string{
+func getPostgresConfig() string {
 	dbName := common.GetEnv("POSTGRES_DATABASE", "")
 	user := common.GetEnv("POSTGRES_USER", "")
 	password := common.GetEnv("POSTGRES_PASSWORD", "")

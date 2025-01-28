@@ -1,6 +1,8 @@
 {
   "name": "Echo Container",
-  "dockerComposeFile": ["../compose.yaml"],
+  "dockerComposeFile": [
+    "../compose.yaml"
+  ],
   "initializeCommand": "ls -al",
   "service": "go",
   "workspaceFolder": "/workspace",
@@ -22,5 +24,7 @@
       ]
     }
   },
-  "forwardPorts": [8080]
+  "forwardPorts": [
+    8080
+  ]
 }

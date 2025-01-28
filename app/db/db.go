@@ -20,11 +20,11 @@ import (
 )
 
 type Store struct {
-	UserStore user.Store
-	TransactionStore transaction.Store
-	FixedStore fixed.Store
-	CategoryStore category.Store
-	SubCategoryStore sub_category.Store
+	UserStore            user.Store
+	TransactionStore     transaction.Store
+	FixedStore           fixed.Store
+	CategoryStore        category.Store
+	SubCategoryStore     sub_category.Store
 	PaymentResourceStore payment_resource.Store
 }
 
@@ -64,7 +64,6 @@ func NewMysql() *Store {
 	cs := store_mysql.NewCategoryStore(db)
 	scs := store_mysql.NewSubCategoryStore(db)
 	pr := store_mysql.NewPaymentResourceStore(db)
-
 
 	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr}
 }
