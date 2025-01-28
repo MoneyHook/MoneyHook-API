@@ -36,7 +36,7 @@ const (
 )
 
 func New() *Store {
-	dbType := DatabaseType(strings.ToLower(common.GetEnv("DATABASE_TYPE", "")))
+	dbType := DatabaseType(strings.ToLower(common.GetEnv("DATABASE_TYPE", "MySQL")))
 
 	switch dbType {
 	case MySQL:
