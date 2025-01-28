@@ -1,5 +1,7 @@
 sql/settings
 
+psql/data
+
 app/tmp
 app/MoneyHook-API
 app/secret

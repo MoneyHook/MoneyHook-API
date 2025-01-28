@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"time"
 
 	common "MoneyHook/MoneyHook-API/common"
@@ -8,7 +9,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
-func getConfig() string {
+func getMySqlConfig() string {
 
 	jst, err := time.LoadLocation("Asia/Tokyo")
 	if err != nil {
@@ -27,4 +28,20 @@ func getConfig() string {
 		AllowNativePasswords: true,
 	}
 	return dsn.FormatDSN()
+}
+
+func getPostgresConfig() string {
+	dbName := common.GetEnv("POSTGRES_DATABASE", "")
+	user := common.GetEnv("POSTGRES_USER", "")
+	password := common.GetEnv("POSTGRES_PASSWORD", "")
+	host := common.GetEnv("POSTGRES_HOST", "")
+	port := common.GetEnv("POSTGRES_PORT", "")
+	timezone := "Asia/Tokyo"
+
+	dsn := fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=disable&TimeZone=%s",
+		user, password, host, port, dbName, timezone,
+	)
+
+	return dsn
 }
