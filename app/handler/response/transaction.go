@@ -384,6 +384,7 @@ type paymentGroupResponse struct {
 }
 
 type paymentList struct {
+	PaymentId              int                  `json:"payment_id"`
 	PaymentName            string               `json:"payment_name"`
 	PaymentAmount          int                  `json:"payment_amount"`
 	PaymentTypeId          *int                 `json:"payment_type_id"`
@@ -399,7 +400,9 @@ type paymentTransaction struct {
 	TransactionName   string `json:"transaction_name"`
 	TransactionAmount int    `json:"transaction_amount"`
 	TransactionDate   string `json:"transaction_date"`
+	CategoryId        int    `json:"category_id"`
 	CategoryName      string `json:"category_name"`
+	SubCategoryId     int    `json:"sub_category_id"`
 	SubCategoryName   string `json:"sub_category_name"`
 	FixedFlg          bool   `json:"fixed_flg"`
 }
@@ -417,7 +420,7 @@ func GetPaymentGroupResponse(data *[]model.PaymentGroupTransaction, last_month_d
 		if payment.PaymentTypeId != 0 {
 			paymentTypeId = &payment.PaymentTypeId
 		}
-		pl := &paymentList{PaymentName: payment.PaymentName, PaymentAmount: payment.PaymentAmount,
+		pl := &paymentList{PaymentId: payment.PaymentId, PaymentName: payment.PaymentName, PaymentAmount: payment.PaymentAmount,
 			PaymentTypeId: paymentTypeId, PaymentTypeName: payment.PaymentTypeName,
 			IsPaymentDueLater: payment.IsPaymentDueLater, LastMonthSum: nil, MonthOverMonth: nil}
 
@@ -437,7 +440,9 @@ func GetPaymentGroupResponse(data *[]model.PaymentGroupTransaction, last_month_d
 					TransactionName:   tran.TransactionName,
 					TransactionAmount: tran.TransactionAmount,
 					TransactionDate:   tran.TransactionDate.Format("2006-01-02"),
+					CategoryId:        tran.CategoryId,
 					CategoryName:      tran.CategoryName,
+					SubCategoryId:     tran.SubCategoryId,
 					SubCategoryName:   tran.SubCategoryName,
 					FixedFlg:          tran.FixedFlg})
 			}
