@@ -230,6 +230,7 @@ type monthlyVariableResponse struct {
 }
 
 type monthlyVariableCategory struct {
+	CategoryId                 int                          `json:"category_id"`
 	CategoryName               string                       `json:"category_name"`
 	CategoryTotoalAmount       int                          `json:"category_total_amount"`
 	MonthlyVariableSubCategory []monthlyVariableSubCategory `json:"sub_category_list"`
@@ -247,6 +248,8 @@ type monthlyVariableTransaction struct {
 	TransactionName   string `json:"transaction_name"`
 	TransactionAmount int    `json:"transaction_amount"`
 	TransactionDate   string `json:"transaction_date"`
+	PaymentId         *int   `json:"payment_id"`
+	PaymentName       string `json:"payment_name"`
 }
 
 func GetMonthlyVariableResponse(data *[]model.MonthlyVariableData) *monthlyVariableResponse {
@@ -258,7 +261,7 @@ func GetMonthlyVariableResponse(data *[]model.MonthlyVariableData) *monthlyVaria
 			continue
 		}
 
-		mvc := &monthlyVariableCategory{CategoryName: category.CategoryName, CategoryTotoalAmount: category.CategoryTotalAmount}
+		mvc := &monthlyVariableCategory{CategoryId: category.CategoryId, CategoryName: category.CategoryName, CategoryTotoalAmount: category.CategoryTotalAmount}
 
 		for _, sub_category := range *data {
 			if mvc.CategoryName == sub_category.CategoryName {
@@ -274,7 +277,9 @@ func GetMonthlyVariableResponse(data *[]model.MonthlyVariableData) *monthlyVaria
 						mvt := &monthlyVariableTransaction{TransactionId: transaction.TransactionId,
 							TransactionName:   transaction.TransactionName,
 							TransactionAmount: transaction.TransactionAmount,
-							TransactionDate:   transaction.TransactionDate.Format("2006-01-02")}
+							TransactionDate:   transaction.TransactionDate.Format("2006-01-02"),
+							PaymentId:         &transaction.PaymentId,
+							PaymentName:       transaction.PaymentName}
 
 						mvsc.TransactionList = append(mvsc.TransactionList, *mvt)
 					}

@@ -56,6 +56,7 @@ type HomeCategory struct {
 }
 
 type MonthlyVariableData struct {
+	CategoryId             int
 	CategoryName           string
 	CategoryTotalAmount    int
 	SubCategoryId          int
@@ -65,6 +66,8 @@ type MonthlyVariableData struct {
 	TransactionName        string
 	TransactionAmount      int
 	TransactionDate        time.Time
+	PaymentId              int
+	PaymentName            string
 }
 
 type TotalSpendingData struct {
