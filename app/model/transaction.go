@@ -41,11 +41,18 @@ type TransactionData struct {
 
 type MonthlyFixedData struct {
 	gorm.Model
+	CategoryId          int
 	CategoryName        string
 	TotalCategoryAmount int
+	SubCategoryId       int
+	SubCategoryName     string
+	TransactionId       int
 	TransactionName     string
 	TransactionAmount   int
 	TransactionDate     time.Time
+	FixedFlg            bool
+	PaymentId           int
+	PaymentName         string
 }
 
 type HomeCategory struct {

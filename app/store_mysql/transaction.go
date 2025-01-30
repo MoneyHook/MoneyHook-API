@@ -123,14 +123,23 @@ func (ts *TransactionStore) GetMonthlyFixedData(userId int, month string, isSpen
 
 	ts.db.Unscoped().
 		Select(
+			"c.category_id",
 			"c.category_name",
 			"sum(t.transaction_amount) OVER(PARTITION BY c.category_name) AS total_category_amount",
+			"sc.sub_category_id",
+			"sc.sub_category_name",
+			"t.transaction_id",
 			"t.transaction_name",
 			"t.transaction_amount",
-			"t.transaction_date").
+			"t.transaction_date",
+			"t.fixed_flg",
+			"pr.payment_id",
+			"pr.payment_name",
+		).
 		Table("transaction t").
 		Joins("INNER JOIN category c ON c.category_id = t.category_id").
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
+		Joins("INNER JOIN payment_resource pr ON t.payment_id = pr.payment_id").
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_date BETWEEN ?", month).
 		Where("LAST_DAY(?)", month).

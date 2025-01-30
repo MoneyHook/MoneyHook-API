@@ -107,15 +107,22 @@ type montylyFixedReponse struct {
 }
 
 type montylyFixedData struct {
+	CategoryId          int                       `json:"category_id"`
 	CategoryName        string                    `json:"category_name"`
 	TotalCategoryAmount int                       `json:"total_category_amount"`
 	TransactionList     []montylyFixedTransaction `json:"transaction_list"`
 }
 
 type montylyFixedTransaction struct {
+	TransactionId     int    `json:"transaction_id"`
 	TransactionName   string `json:"transaction_name"`
 	TransactionAmount int    `json:"transaction_amount"`
 	TransactionDate   string `json:"transaction_date"`
+	SubCategoryId     int    `json:"sub_category_id"`
+	SubCategoryName   string `json:"sub_category_name"`
+	FixedFlg          bool   `json:"fixed_flg"`
+	PaymentId         int    `json:"payment_id"`
+	PaymentName       string `json:"payment_name"`
 }
 
 func GetMonthlyFixedResponse(data *[]model.MonthlyFixedData) *montylyFixedReponse {
@@ -127,14 +134,20 @@ func GetMonthlyFixedResponse(data *[]model.MonthlyFixedData) *montylyFixedRepons
 			continue
 		}
 
-		mfid := &montylyFixedData{CategoryName: category.CategoryName, TotalCategoryAmount: category.TotalCategoryAmount}
+		mfid := &montylyFixedData{CategoryId: category.CategoryId, CategoryName: category.CategoryName, TotalCategoryAmount: category.TotalCategoryAmount}
 		for _, transaction := range *data {
 			if mfid.CategoryName == transaction.CategoryName {
 				mfid.TransactionList = append(mfid.TransactionList,
 					montylyFixedTransaction{
+						TransactionId:     transaction.TransactionId,
 						TransactionName:   transaction.TransactionName,
 						TransactionAmount: transaction.TransactionAmount,
-						TransactionDate:   transaction.TransactionDate.Format("2006-01-02")})
+						TransactionDate:   transaction.TransactionDate.Format("2006-01-02"),
+						SubCategoryId:     transaction.SubCategoryId,
+						SubCategoryName:   transaction.SubCategoryName,
+						FixedFlg:          transaction.FixedFlg,
+						PaymentId:         transaction.PaymentId,
+						PaymentName:       transaction.PaymentName})
 			}
 		}
 
