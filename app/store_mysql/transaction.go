@@ -139,7 +139,7 @@ func (ts *TransactionStore) GetMonthlyFixedData(userId int, month string, isSpen
 		Table("transaction t").
 		Joins("INNER JOIN category c ON c.category_id = t.category_id").
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
-		Joins("INNER JOIN payment_resource pr ON t.payment_id = pr.payment_id").
+		Joins("LEFT OUTER JOIN payment_resource pr ON t.payment_id = pr.payment_id").
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_date BETWEEN ?", month).
 		Where("LAST_DAY(?)", month).
@@ -221,7 +221,7 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId int, month string) *[]
 		Joins("INNER JOIN category c ON c.category_id = t.category_id").
 		Joins("RIGHT JOIN (?) tran_list ON tran_list.transaction_id = t.transaction_id", subquery_1).
 		Joins("RIGHT JOIN (?) sub_clist ON sub_clist.sub_category_id = t.sub_category_id", subquery_2).
-		Joins("INNER JOIN payment_resource pr ON tran_list.payment_id = pr.payment_id").
+		Joins("LEFT OUTER JOIN payment_resource pr ON tran_list.payment_id = pr.payment_id").
 		Where("t.user_no = ?", userId).
 		Where("0 > t.transaction_amount").
 		Where("t.fixed_flg = FALSE").
@@ -229,7 +229,7 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId int, month string) *[]
 		Order("category_total_amount").
 		Order("sub_category_total_amount").
 		Order("transaction_date").
-		Order("transaction_amount").Debug().
+		Order("transaction_amount").
 		Scan(&monthly_variable_data)
 
 	return &monthly_variable_data
