@@ -121,7 +121,7 @@ type montylyFixedTransaction struct {
 	SubCategoryId     int    `json:"sub_category_id"`
 	SubCategoryName   string `json:"sub_category_name"`
 	FixedFlg          bool   `json:"fixed_flg"`
-	PaymentId         int    `json:"payment_id"`
+	PaymentId         *int   `json:"payment_id"`
 	PaymentName       string `json:"payment_name"`
 }
 
@@ -137,6 +137,10 @@ func GetMonthlyFixedResponse(data *[]model.MonthlyFixedData) *montylyFixedRepons
 		mfid := &montylyFixedData{CategoryId: category.CategoryId, CategoryName: category.CategoryName, TotalCategoryAmount: category.TotalCategoryAmount}
 		for _, transaction := range *data {
 			if mfid.CategoryName == transaction.CategoryName {
+				var paymentId *int
+				if transaction.PaymentId != 0 {
+					paymentId = &transaction.PaymentId
+				}
 				mfid.TransactionList = append(mfid.TransactionList,
 					montylyFixedTransaction{
 						TransactionId:     transaction.TransactionId,
@@ -146,7 +150,7 @@ func GetMonthlyFixedResponse(data *[]model.MonthlyFixedData) *montylyFixedRepons
 						SubCategoryId:     transaction.SubCategoryId,
 						SubCategoryName:   transaction.SubCategoryName,
 						FixedFlg:          transaction.FixedFlg,
-						PaymentId:         transaction.PaymentId,
+						PaymentId:         paymentId,
 						PaymentName:       transaction.PaymentName})
 			}
 		}
