@@ -1,4 +1,4 @@
-package store
+package store_mysql
 
 import (
 	"MoneyHook/MoneyHook-API/model"

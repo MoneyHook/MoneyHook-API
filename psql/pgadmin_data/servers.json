@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "MoneyHook_DB",
+      "Group": "Servers",
+      "Host": "psql",
+      "Port": 5432,
+      "Username": "moneyhook",
+      "Password": "password",
+      "SSLMode": "prefer",
+      "MaintenanceDB": "moneyhook"
+    }
+  }
+}

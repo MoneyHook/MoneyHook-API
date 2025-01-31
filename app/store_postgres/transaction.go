@@ -1,4 +1,4 @@
-package store
+package store_postgres
 
 import (
 	"MoneyHook/MoneyHook-API/model"

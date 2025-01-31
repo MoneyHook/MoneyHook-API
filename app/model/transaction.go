@@ -41,11 +41,18 @@ type TransactionData struct {
 
 type MonthlyFixedData struct {
 	gorm.Model
+	CategoryId          int
 	CategoryName        string
 	TotalCategoryAmount int
+	SubCategoryId       int
+	SubCategoryName     string
+	TransactionId       int
 	TransactionName     string
 	TransactionAmount   int
 	TransactionDate     time.Time
+	FixedFlg            bool
+	PaymentId           int
+	PaymentName         string
 }
 
 type HomeCategory struct {
@@ -56,6 +63,7 @@ type HomeCategory struct {
 }
 
 type MonthlyVariableData struct {
+	CategoryId             int
 	CategoryName           string
 	CategoryTotalAmount    int
 	SubCategoryId          int
@@ -65,6 +73,8 @@ type MonthlyVariableData struct {
 	TransactionName        string
 	TransactionAmount      int
 	TransactionDate        time.Time
+	PaymentId              int
+	PaymentName            string
 }
 
 type TotalSpendingData struct {
@@ -90,7 +100,9 @@ type PaymentGroupTransaction struct {
 	TransactionName   string
 	TransactionAmount int
 	TransactionDate   time.Time
+	CategoryId        int
 	CategoryName      string
+	SubCategoryId     int
 	SubCategoryName   string
 	FixedFlg          bool
 }
