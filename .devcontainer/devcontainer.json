@@ -20,7 +20,8 @@
         "intellsmi.deepl-translate",
         "shawtung.vscode-commentlinedown",
         "GitHub.copilot",
-        "GitHub.copilot-chat"
+        "GitHub.copilot-chat",
+        "mhutchie.git-graph"
       ]
     }
   },
