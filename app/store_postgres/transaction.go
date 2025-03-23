@@ -122,14 +122,22 @@ func (ts *TransactionStore) GetMonthlyFixedData(userId int, month string, isSpen
 
 	query := ts.db.Unscoped().
 		Select(
+			"c.category_id",
 			"c.category_name",
 			"SUM(t.transaction_amount) OVER (PARTITION BY c.category_name) AS total_category_amount",
+			"sc.sub_category_id",
+			"sc.sub_category_name",
+			"t.transaction_id",
 			"t.transaction_name",
 			"t.transaction_amount",
-			"t.transaction_date").
+			"t.transaction_date",
+			"t.fixed_flg",
+			"pr.payment_id",
+			"pr.payment_name").
 		Table("transaction t").
 		Joins("INNER JOIN category c ON c.category_id = t.category_id").
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
+		Joins("LEFT OUTER JOIN payment_resource pr ON t.payment_id = pr.payment_id").
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month - 1 day')", month, month).
 		Where(amount_condition)
@@ -139,7 +147,7 @@ func (ts *TransactionStore) GetMonthlyFixedData(userId int, month string, isSpen
 	}
 
 	query.
-		Order("total_category_amount").
+		Order("total_category_amount, transaction_amount").
 		Find(&result_list)
 
 	return &result_list
@@ -183,7 +191,8 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId int, month string) *[]
 	subquery_1 := ts.db.Select("transaction_id",
 		"transaction_name",
 		"transaction_amount",
-		"transaction_date").
+		"transaction_date",
+		"payment_id").
 		Table("transaction").
 		Where("user_no = ?", userId).
 		Where("transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month - 1 day')", month, month)
@@ -198,7 +207,8 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId int, month string) *[]
 		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month - 1 day')", month, month).
 		Group("t.sub_category_id, sc.sub_category_name")
 
-	ts.db.Select("c.category_name",
+	ts.db.Select("c.category_id",
+		"c.category_name",
 		"SUM(t.transaction_amount) OVER (PARTITION BY c.category_name) AS category_total_amount",
 		"sub_clist.sub_category_id",
 		"sub_clist.sub_category_name",
@@ -206,11 +216,14 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId int, month string) *[]
 		"tran_list.transaction_id",
 		"tran_list.transaction_name",
 		"tran_list.transaction_amount",
-		"tran_list.transaction_date").
+		"tran_list.transaction_date",
+		"pr.payment_id",
+		"pr.payment_name").
 		Table("transaction t").
 		Joins("INNER JOIN category c ON c.category_id = t.category_id").
 		Joins("RIGHT JOIN (?) AS tran_list ON tran_list.transaction_id = t.transaction_id", subquery_1).
 		Joins("RIGHT JOIN (?) AS sub_clist ON sub_clist.sub_category_id = t.sub_category_id", subquery_2).
+		Joins("LEFT OUTER JOIN payment_resource pr ON tran_list.payment_id = pr.payment_id").
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_amount < 0").
 		Where("t.fixed_flg = FALSE").
@@ -294,7 +307,9 @@ func (ts *TransactionStore) GetGroupByPayment(userId int, month string) *[]model
 		"t.transaction_name",
 		"t.transaction_amount",
 		"t.transaction_date",
+		"c.category_id",
 		"c.category_name",
+		"sc.sub_category_id",
 		"sc.sub_category_name",
 		"t.fixed_flg").
 		Table("transaction t").
