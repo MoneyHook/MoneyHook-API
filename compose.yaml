@@ -64,6 +64,7 @@ services:
       POSTGRES_DATABASE: "moneyhook"
       POSTGRES_USER: "moneyhook"
       POSTGRES_PASSWORD: "password"
+      SSLMODE: "disable" # "disable" or "verify-full"
       # Firebase
       SECRET_PATH: "secret/firebase_secret.json"
       ENABLE_FIREBASE_AUTH: false

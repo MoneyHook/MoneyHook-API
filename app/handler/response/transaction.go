@@ -290,12 +290,17 @@ func GetMonthlyVariableResponse(data *[]model.MonthlyVariableData) *monthlyVaria
 					continue
 				}
 				for _, transaction := range *data {
+					var paymentId *int
+					if transaction.PaymentId != 0 {
+						paymentId = &transaction.PaymentId
+					}
+
 					if mvsc.SubCategoryId == transaction.SubCategoryId {
 						mvt := &monthlyVariableTransaction{TransactionId: transaction.TransactionId,
 							TransactionName:   transaction.TransactionName,
 							TransactionAmount: transaction.TransactionAmount,
 							TransactionDate:   transaction.TransactionDate.Format("2006-01-02"),
-							PaymentId:         &transaction.PaymentId,
+							PaymentId:         paymentId,
 							PaymentName:       transaction.PaymentName}
 
 						mvsc.TransactionList = append(mvsc.TransactionList, *mvt)
