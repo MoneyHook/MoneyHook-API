@@ -30,7 +30,7 @@ func (ts *TransactionStore) GetTimelineData(userId int, month string) *[]model.T
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
 		Joins("LEFT JOIN payment_resource pr ON pr.payment_id = t.payment_id").
 		Where("t.user_no = ?", userId).
-		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month - 1 day')", month, month).
+		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", month, month).
 		Order("t.transaction_date DESC, t.transaction_id DESC").
 		Scan(&timeline_list)
 
@@ -59,7 +59,7 @@ func (ts *TransactionStore) GetMonthlySpendingData(userId int, month string) *[]
 		Table("transaction").
 		Where("user_no = ?", userId).
 		Where("transaction_amount < 0").
-		Where("transaction_date BETWEEN (?::date - INTERVAL '5 months') AND (date_trunc('month', ?::date) + INTERVAL '1 month - 1 day')", month, month).
+		Where("transaction_date BETWEEN (?::date - INTERVAL '5 months') AND (date_trunc('month', ?::date) + INTERVAL '1 month' - INTERVAL '1 day')", month, month).
 		Group("month").
 		Order("month DESC").
 		Find(&query_list)
@@ -139,7 +139,7 @@ func (ts *TransactionStore) GetMonthlyFixedData(userId int, month string, isSpen
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
 		Joins("LEFT OUTER JOIN payment_resource pr ON t.payment_id = pr.payment_id").
 		Where("t.user_no = ?", userId).
-		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month - 1 day')", month, month).
+		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", month, month).
 		Where(amount_condition)
 
 	if isSpending {
@@ -163,7 +163,7 @@ func (ts *TransactionStore) GetHome(userId int, month string) *[]model.HomeCateg
 		Table("transaction AS st").
 		Joins("INNER JOIN sub_category AS ssc ON ssc.sub_category_id = st.sub_category_id").
 		Where("st.user_no = ?", userId).
-		Where("st.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month - 1 day')", month, month).
+		Where("st.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", month, month).
 		Group("st.sub_category_id, ssc.category_id, ssc.sub_category_name")
 
 	ts.db.Select("sub_tran.category_id",
@@ -176,7 +176,7 @@ func (ts *TransactionStore) GetHome(userId int, month string) *[]model.HomeCateg
 		Table("transaction AS t").
 		Joins("RIGHT JOIN (?) AS sub_tran ON sub_tran.sub_category_id = t.sub_category_id", subquery).
 		Where("t.user_no = ?", userId).
-		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month - 1 day')", month, month).
+		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", month, month).
 		Where("t.transaction_amount < 0").
 		Group("sub_tran.category_id, sub_tran.sub_category_id, sub_tran.sub_category_name, sub_tran.sub_category_total_amount").
 		Order("category_total_amount, sub_tran.sub_category_id").
@@ -195,7 +195,7 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId int, month string) *[]
 		"payment_id").
 		Table("transaction").
 		Where("user_no = ?", userId).
-		Where("transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month - 1 day')", month, month)
+		Where("transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", month, month)
 
 	subquery_2 := ts.db.Select("t.sub_category_id",
 		"sc.sub_category_name",
@@ -204,7 +204,7 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId int, month string) *[]
 		Joins("INNER JOIN sub_category sc ON t.sub_category_id = sc.sub_category_id").
 		Where("t.user_no = ?", userId).
 		Where("t.fixed_flg = FALSE").
-		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month - 1 day')", month, month).
+		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", month, month).
 		Group("t.sub_category_id, sc.sub_category_name")
 
 	ts.db.Select("c.category_id",
@@ -227,7 +227,7 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId int, month string) *[]
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_amount < 0").
 		Where("t.fixed_flg = FALSE").
-		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month - 1 day')", month, month).
+		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", month, month).
 		Order("category_total_amount").
 		Order("sub_category_total_amount").
 		Order("tran_list.transaction_date").
@@ -255,7 +255,7 @@ func (ts *TransactionStore) GetTotalSpending(userId int, categoryId string, subC
 		"transaction_amount").
 		Table("transaction").
 		Where("user_no = ?", userId).
-		Where("transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month - 1 day')", startMonth, endMonth)
+		Where("transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", startMonth, endMonth)
 
 	subquery_2 := ts.db.Select(
 		"t.sub_category_id",
@@ -264,7 +264,7 @@ func (ts *TransactionStore) GetTotalSpending(userId int, categoryId string, subC
 		Table("transaction t").
 		Joins("INNER JOIN sub_category sc ON t.sub_category_id = sc.sub_category_id").
 		Where("t.user_no = ?", userId).
-		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month - 1 day')", startMonth, endMonth).
+		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", startMonth, endMonth).
 		Group("t.sub_category_id, sc.sub_category_name")
 
 	query.Select(
@@ -284,7 +284,7 @@ func (ts *TransactionStore) GetTotalSpending(userId int, categoryId string, subC
 		Joins("RIGHT JOIN (?) AS sub_clist ON sub_clist.sub_category_id = t.sub_category_id", subquery_2).
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_amount < 0").
-		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month - 1 day')", startMonth, endMonth).
+		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", startMonth, endMonth).
 		Order("category_total_amount").
 		Order("sub_category_total_amount").
 		Order("tran_list.transaction_amount").
@@ -319,7 +319,7 @@ func (ts *TransactionStore) GetGroupByPayment(userId int, month string) *[]model
 		Joins("JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_amount < 0").
-		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month - 1 day')", month, month).
+		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", month, month).
 		Order("payment_amount").
 		Order("t.transaction_date DESC").
 		Order("t.transaction_id DESC").
@@ -337,7 +337,7 @@ func (ts *TransactionStore) GetLastMonthGroupByPayment(userId int, month string)
 		Table("transaction t").
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_amount < 0").
-		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month - 1 day')", month, month).
+		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", month, month).
 		Group("t.payment_id").
 		Order("payment_amount").
 		Scan(&payment_group_transaction)
@@ -360,7 +360,7 @@ func (ts *TransactionStore) GetMonthlyWithdrawalAmount(userId int, paymentId int
 		Where("pr.payment_date IS NOT NULL").
 		Where(`
 			t.transaction_date BETWEEN ?::date 
-			AND (date_trunc('month', ?::date) + interval '1 month - 1 day')
+			AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')
 		`, startMonth, endMonth).
 		Group("t.payment_id, pr.payment_name, pr.payment_date").
 		Scan(&monthlyWithdrawalAmount)
