@@ -86,7 +86,7 @@ func (ts *TransactionStore) GetMonthlySpendingData(userId int, month string) *[]
 	return &result_list
 }
 
-func (ts *TransactionStore) GetTransactionData(userId int, transactionId int) *model.TransactionData {
+func (ts *TransactionStore) GetTransactionData(userId int, transactionId string) *model.TransactionData {
 	var result model.TransactionData
 
 	ts.db.Unscoped().

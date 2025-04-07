@@ -74,7 +74,7 @@ func (r *AddTransactionListRequest) Bind(c echo.Context, u *model.AddTransaction
 
 type EditTransactionRequest struct {
 	Transaction struct {
-		TransactionId     int    `json:"transaction_id" validate:"required"`
+		TransactionId     string `json:"transaction_id" validate:"required"`
 		TransactionDate   string `json:"transaction_date" validate:"required"`
 		TransactionAmount int    `json:"transaction_amount"  validate:"required"`
 		TransactionSign   int    `json:"transaction_sign"  validate:"required"`

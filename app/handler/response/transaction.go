@@ -10,7 +10,7 @@ type timelineListResponse struct {
 }
 
 type timelineResponse struct {
-	TransactionId     int    `json:"transaction_id"`
+	TransactionId     string `json:"transaction_id"`
 	TransactionName   string `json:"transaction_name"`
 	TransactionAmount int    `json:"transaction_amount"`
 	TransactionSign   int    `json:"transaction_sign"`
@@ -114,7 +114,7 @@ type montylyFixedData struct {
 }
 
 type montylyFixedTransaction struct {
-	TransactionId     int    `json:"transaction_id"`
+	TransactionId     string `json:"transaction_id"`
 	TransactionName   string `json:"transaction_name"`
 	TransactionAmount int    `json:"transaction_amount"`
 	TransactionDate   string `json:"transaction_date"`
@@ -261,7 +261,7 @@ type monthlyVariableSubCategory struct {
 }
 
 type monthlyVariableTransaction struct {
-	TransactionId     int    `json:"transaction_id"`
+	TransactionId     string `json:"transaction_id"`
 	TransactionName   string `json:"transaction_name"`
 	TransactionAmount int    `json:"transaction_amount"`
 	TransactionDate   string `json:"transaction_date"`
@@ -356,7 +356,7 @@ type totalSpendingSubCategory struct {
 }
 
 type totalSpendingTransaction struct {
-	TransactionId     int    `json:"transaction_id"`
+	TransactionId     string `json:"transaction_id"`
 	TransactionName   string `json:"transaction_name"`
 	TransactionAmount int    `json:"transaction_amount"`
 }
@@ -423,7 +423,7 @@ type paymentList struct {
 }
 
 type paymentTransaction struct {
-	TransactionId     int    `json:"transaction_id"`
+	TransactionId     string `json:"transaction_id"`
 	TransactionName   string `json:"transaction_name"`
 	TransactionAmount int    `json:"transaction_amount"`
 	TransactionDate   string `json:"transaction_date"`

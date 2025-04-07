@@ -8,7 +8,7 @@ import (
 
 type Timeline struct {
 	gorm.Model
-	TransactionId     int
+	TransactionId     string
 	TransactionName   string
 	TransactionAmount int
 	TransactionSign   int
@@ -46,7 +46,7 @@ type MonthlyFixedData struct {
 	TotalCategoryAmount int
 	SubCategoryId       int
 	SubCategoryName     string
-	TransactionId       int
+	TransactionId       string
 	TransactionName     string
 	TransactionAmount   int
 	TransactionDate     time.Time
@@ -69,7 +69,7 @@ type MonthlyVariableData struct {
 	SubCategoryId          int
 	SubCategoryName        string
 	SubCategoryTotalAmount int
-	TransactionId          int
+	TransactionId          string
 	TransactionName        string
 	TransactionAmount      int
 	TransactionDate        time.Time
@@ -83,7 +83,7 @@ type TotalSpendingData struct {
 	SubCategoryId          int
 	SubCategoryName        string
 	SubCategoryTotalAmount int
-	TransactionId          int
+	TransactionId          string
 	TransactionName        string
 	TransactionAmount      int
 	TransactionDate        time.Time
@@ -96,7 +96,7 @@ type PaymentGroupTransaction struct {
 	PaymentTypeId     int
 	PaymentTypeName   string
 	IsPaymentDueLater bool
-	TransactionId     int
+	TransactionId     string
 	TransactionName   string
 	TransactionAmount int
 	TransactionDate   time.Time
@@ -145,7 +145,7 @@ type AddTransactionList struct {
 }
 
 type EditTransaction struct {
-	TransactionId     int
+	TransactionId     string
 	UserId            int
 	TransactionDate   string
 	TransactionAmount int
@@ -159,5 +159,5 @@ type EditTransaction struct {
 
 type DeleteTransaction struct {
 	UserId        int
-	TransactionId int
+	TransactionId string
 }

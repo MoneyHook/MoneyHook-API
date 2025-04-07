@@ -8,7 +8,6 @@ import (
 
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -50,11 +49,12 @@ func (h *Handler) getTransaction(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
 	}
 
-	transactionId, err := strconv.Atoi(c.Param("transactionId"))
-	if err != nil {
-		return c.JSON(http.StatusOK, "hej")
-	}
+	transactionId := c.Param("transactionId")
 	result := h.transactionStore.GetTransactionData(userId, transactionId)
+
+	if result == nil {
+		return c.JSON(http.StatusNotFound, model.Error.Create(message.Get("transaction_not_found")))
+	}
 
 	result_list := response.GetTransactionResponse(result)
 
@@ -364,10 +364,7 @@ func (h *Handler) deleteTransaction(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
 	}
 
-	transactionId, err := strconv.Atoi(c.Param("transactionId"))
-	if err != nil {
-		return c.JSON(http.StatusOK, "hej")
-	}
+	transactionId := c.Param("transactionId")
 	deleteTransaction := model.DeleteTransaction{UserId: userId, TransactionId: transactionId}
 
 	err = h.transactionStore.DeleteTransaction(&deleteTransaction)

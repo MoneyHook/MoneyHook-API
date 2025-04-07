@@ -2,6 +2,7 @@ package store_postgres
 
 import (
 	"MoneyHook/MoneyHook-API/model"
+	"errors"
 	"slices"
 	"time"
 
@@ -87,10 +88,10 @@ func (ts *TransactionStore) GetMonthlySpendingData(userId int, month string) *[]
 	return &result_list
 }
 
-func (ts *TransactionStore) GetTransactionData(userId int, transactionId int) *model.TransactionData {
+func (ts *TransactionStore) GetTransactionData(userId int, transactionId string) *model.TransactionData {
 	var result model.TransactionData
 
-	ts.db.Unscoped().
+	tx := ts.db.Unscoped().
 		Select(
 			"t.transaction_date",
 			"t.transaction_name",
@@ -105,7 +106,14 @@ func (ts *TransactionStore) GetTransactionData(userId int, transactionId int) *m
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_id = ?", transactionId).
-		Find(&result)
+		Take(&result)
+
+	if tx.Error != nil {
+		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return nil
+	}
 
 	return &result
 }
