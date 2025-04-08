@@ -8,7 +8,7 @@ import (
 カテゴリ・サブカテゴリ
 */
 type categoryResponse struct {
-	Category_id   int    `json:"category_id"`
+	Category_id   string `json:"category_id"`
 	Category_name string `json:"category_name"`
 }
 
@@ -32,13 +32,13 @@ type categoryWithSubCategoryListResponse struct {
 }
 
 type categoryWithSubCategory struct {
-	CategoryId              int                                 `json:"category_id"`
+	CategoryId              string                              `json:"category_id"`
 	CategoryName            string                              `json:"category_name"`
 	SubCategoryListResponse []subCategoryListWithEnableResponse `json:"sub_category_list"`
 }
 
 type subCategoryListWithEnableResponse struct {
-	SubCategoryId   int    `json:"sub_category_id"`
+	SubCategoryId   string `json:"sub_category_id"`
 	SubCategoryName string `json:"sub_category_name"`
 	Enable          bool   `json:"enable"`
 }
@@ -64,7 +64,7 @@ type subCategoryListResponse struct {
 }
 
 type subCategoryResponse struct {
-	SubCategoryId   int    `json:"sub_category_id"`
+	SubCategoryId   string `json:"sub_category_id"`
 	SubCategoryName string `json:"sub_category_name"`
 }
 

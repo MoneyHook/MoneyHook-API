@@ -16,8 +16,8 @@ func NewUserStore(db *gorm.DB) *UserStore {
 	return &UserStore{db: db}
 }
 
-func (us *UserStore) UserExists(userId *string) *int {
-	var result int
+func (us *UserStore) UserExists(userId *string) *string {
+	var result string
 
 	us.db.Table("users").
 		Select("user_no").
@@ -63,14 +63,14 @@ func (us *UserStore) CreateToken(googleSignIn *model.GoogleSignIn) {
 	})
 }
 
-func (us *UserStore) ExtractUserNoFromToken(userToken *string) (*int, error) {
+func (us *UserStore) ExtractUserNoFromToken(userToken *string) (*string, error) {
 	model := model.GoogleSignIn{}
 	result := us.db.Table("user_token").
 		Select("user_no").
 		Where("token = ?", userToken).
 		Scan(&model)
 
-	if result.Error != nil || model.UserNo == 0 {
+	if result.Error != nil || model.UserNo == "" {
 		log.Printf("database error: %v\n", result.Error)
 		log.Printf("user_no, user_token: %v, %v\n", model.UserNo, *userToken)
 		return &model.UserNo, gorm.ErrRecordNotFound
@@ -78,14 +78,14 @@ func (us *UserStore) ExtractUserNoFromToken(userToken *string) (*int, error) {
 	return &model.UserNo, nil
 }
 
-func (us *UserStore) ExtractUserNoFromUserId(userId *string) (*int, error) {
+func (us *UserStore) ExtractUserNoFromUserId(userId *string) (*string, error) {
 	model := model.GoogleSignIn{}
 	result := us.db.Table("users").
 		Select("user_no").
 		Where("user_id = ?", userId).
 		Scan(&model)
 
-	if result.Error != nil || model.UserNo == 0 {
+	if result.Error != nil || model.UserNo == "" {
 		log.Printf("database error: %v\n", result.Error)
 		log.Printf("user_no, user_id: %v, %v\n", model.UserNo, *userId)
 		return &model.UserNo, gorm.ErrRecordNotFound

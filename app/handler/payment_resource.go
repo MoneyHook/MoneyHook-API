@@ -7,7 +7,6 @@ import (
 	"MoneyHook/MoneyHook-API/model"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 )
@@ -79,10 +78,7 @@ func (h *Handler) DeletePaymentResource(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
 	}
 
-	paymentId, err := strconv.Atoi(c.Param("paymentId"))
-	if err != nil {
-		return c.JSON(http.StatusOK, "hej")
-	}
+	paymentId := c.Param("paymentId")
 
 	deletePaymentResource := model.DeletePaymentResource{UserNo: userId, PaymentId: paymentId}
 

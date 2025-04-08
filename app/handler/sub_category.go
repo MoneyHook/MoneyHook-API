@@ -7,7 +7,6 @@ import (
 	"MoneyHook/MoneyHook-API/model"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 )
@@ -18,10 +17,7 @@ func (h *Handler) GetSubCategoryList(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
 	}
 
-	categoryId, err := strconv.Atoi(c.Param("categoryId"))
-	if err != nil {
-		return c.JSON(http.StatusOK, "hej")
-	}
+	categoryId := c.Param("categoryId")
 
 	result := h.subCategoryStore.GetSubCategoryList(userId, categoryId)
 

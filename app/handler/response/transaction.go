@@ -10,26 +10,26 @@ type timelineListResponse struct {
 }
 
 type timelineResponse struct {
-	TransactionId     string `json:"transaction_id"`
-	TransactionName   string `json:"transaction_name"`
-	TransactionAmount int    `json:"transaction_amount"`
-	TransactionSign   int    `json:"transaction_sign"`
-	TransactionDate   string `json:"transaction_date"`
-	CategoryId        int    `json:"category_id"`
-	CategoryName      string `json:"category_name"`
-	SubCategoryId     int    `json:"sub_category_id"`
-	SubCategoryName   string `json:"sub_category_name"`
-	FixedFlg          bool   `json:"fixed_flg"`
-	PaymentId         *int   `json:"payment_id"`
-	PaymentName       string `json:"payment_name"`
+	TransactionId     string  `json:"transaction_id"`
+	TransactionName   string  `json:"transaction_name"`
+	TransactionAmount int     `json:"transaction_amount"`
+	TransactionSign   int     `json:"transaction_sign"`
+	TransactionDate   string  `json:"transaction_date"`
+	CategoryId        string  `json:"category_id"`
+	CategoryName      string  `json:"category_name"`
+	SubCategoryId     string  `json:"sub_category_id"`
+	SubCategoryName   string  `json:"sub_category_name"`
+	FixedFlg          bool    `json:"fixed_flg"`
+	PaymentId         *string `json:"payment_id"`
+	PaymentName       string  `json:"payment_name"`
 }
 
 func GetTimelineListResponse(data *[]model.Timeline) *timelineListResponse {
 	tll := &timelineListResponse{TimelineList: []timelineResponse{}}
 
 	for _, t := range *data {
-		var paymentId *int
-		if t.PaymentId != 0 {
+		var paymentId *string
+		if t.PaymentId != "" {
 			paymentId = &t.PaymentId
 		}
 
@@ -78,9 +78,9 @@ type transactionData struct {
 	TransactionDate   string `json:"transaction_date"`
 	TransactionName   string `json:"transaction_name"`
 	TransactionAmount int    `json:"transaction_amount"`
-	CategoryId        int    `json:"category_id"`
+	CategoryId        string `json:"category_id"`
 	CategoryName      string `json:"category_name"`
-	SubCategoryId     int    `json:"sub_category_id"`
+	SubCategoryId     string `json:"sub_category_id"`
 	SubCategoryName   string `json:"sub_category_name"`
 	FixedFlg          bool   `json:"fixed_flg"`
 }
@@ -107,22 +107,22 @@ type montylyFixedReponse struct {
 }
 
 type montylyFixedData struct {
-	CategoryId          int                       `json:"category_id"`
+	CategoryId          string                    `json:"category_id"`
 	CategoryName        string                    `json:"category_name"`
 	TotalCategoryAmount int                       `json:"total_category_amount"`
 	TransactionList     []montylyFixedTransaction `json:"transaction_list"`
 }
 
 type montylyFixedTransaction struct {
-	TransactionId     string `json:"transaction_id"`
-	TransactionName   string `json:"transaction_name"`
-	TransactionAmount int    `json:"transaction_amount"`
-	TransactionDate   string `json:"transaction_date"`
-	SubCategoryId     int    `json:"sub_category_id"`
-	SubCategoryName   string `json:"sub_category_name"`
-	FixedFlg          bool   `json:"fixed_flg"`
-	PaymentId         *int   `json:"payment_id"`
-	PaymentName       string `json:"payment_name"`
+	TransactionId     string  `json:"transaction_id"`
+	TransactionName   string  `json:"transaction_name"`
+	TransactionAmount int     `json:"transaction_amount"`
+	TransactionDate   string  `json:"transaction_date"`
+	SubCategoryId     string  `json:"sub_category_id"`
+	SubCategoryName   string  `json:"sub_category_name"`
+	FixedFlg          bool    `json:"fixed_flg"`
+	PaymentId         *string `json:"payment_id"`
+	PaymentName       string  `json:"payment_name"`
 }
 
 func GetMonthlyFixedResponse(data *[]model.MonthlyFixedData) *montylyFixedReponse {
@@ -137,8 +137,8 @@ func GetMonthlyFixedResponse(data *[]model.MonthlyFixedData) *montylyFixedRepons
 		mfid := &montylyFixedData{CategoryId: category.CategoryId, CategoryName: category.CategoryName, TotalCategoryAmount: category.TotalCategoryAmount}
 		for _, transaction := range *data {
 			if mfid.CategoryName == transaction.CategoryName {
-				var paymentId *int
-				if transaction.PaymentId != 0 {
+				var paymentId *string
+				if transaction.PaymentId != "" {
 					paymentId = &transaction.PaymentId
 				}
 				mfid.TransactionList = append(mfid.TransactionList,
@@ -247,26 +247,26 @@ type monthlyVariableResponse struct {
 }
 
 type monthlyVariableCategory struct {
-	CategoryId                 int                          `json:"category_id"`
+	CategoryId                 string                       `json:"category_id"`
 	CategoryName               string                       `json:"category_name"`
 	CategoryTotoalAmount       int                          `json:"category_total_amount"`
 	MonthlyVariableSubCategory []monthlyVariableSubCategory `json:"sub_category_list"`
 }
 
 type monthlyVariableSubCategory struct {
-	SubCategoryId          int                          `json:"sub_category_id"`
+	SubCategoryId          string                       `json:"sub_category_id"`
 	SubCategoryName        string                       `json:"sub_category_name"`
 	SubCategoryTotalAmount int                          `json:"sub_category_total_amount"`
 	TransactionList        []monthlyVariableTransaction `json:"transaction_list"`
 }
 
 type monthlyVariableTransaction struct {
-	TransactionId     string `json:"transaction_id"`
-	TransactionName   string `json:"transaction_name"`
-	TransactionAmount int    `json:"transaction_amount"`
-	TransactionDate   string `json:"transaction_date"`
-	PaymentId         *int   `json:"payment_id"`
-	PaymentName       string `json:"payment_name"`
+	TransactionId     string  `json:"transaction_id"`
+	TransactionName   string  `json:"transaction_name"`
+	TransactionAmount int     `json:"transaction_amount"`
+	TransactionDate   string  `json:"transaction_date"`
+	PaymentId         *string `json:"payment_id"`
+	PaymentName       string  `json:"payment_name"`
 }
 
 func GetMonthlyVariableResponse(data *[]model.MonthlyVariableData) *monthlyVariableResponse {
@@ -290,8 +290,8 @@ func GetMonthlyVariableResponse(data *[]model.MonthlyVariableData) *monthlyVaria
 					continue
 				}
 				for _, transaction := range *data {
-					var paymentId *int
-					if transaction.PaymentId != 0 {
+					var paymentId *string
+					if transaction.PaymentId != "" {
 						paymentId = &transaction.PaymentId
 					}
 
@@ -349,7 +349,7 @@ type totalSpendingCategory struct {
 }
 
 type totalSpendingSubCategory struct {
-	SubCategoryId          int                        `json:"sub_category_id"`
+	SubCategoryId          string                     `json:"sub_category_id"`
 	SubCategoryName        string                     `json:"sub_category_name"`
 	SubCategoryTotalAmount int                        `json:"sub_category_total_amount"`
 	TransactionList        []totalSpendingTransaction `json:"transaction_list"`
@@ -411,10 +411,10 @@ type paymentGroupResponse struct {
 }
 
 type paymentList struct {
-	PaymentId              int                  `json:"payment_id"`
+	PaymentId              *string              `json:"payment_id"`
 	PaymentName            string               `json:"payment_name"`
 	PaymentAmount          int                  `json:"payment_amount"`
-	PaymentTypeId          *int                 `json:"payment_type_id"`
+	PaymentTypeId          *string              `json:"payment_type_id"`
 	PaymentTypeName        string               `json:"payment_type_name"`
 	IsPaymentDueLater      bool                 `json:"is_payment_due_later"`
 	LastMonthSum           *int                 `json:"last_month_sum"`
@@ -427,9 +427,9 @@ type paymentTransaction struct {
 	TransactionName   string `json:"transaction_name"`
 	TransactionAmount int    `json:"transaction_amount"`
 	TransactionDate   string `json:"transaction_date"`
-	CategoryId        int    `json:"category_id"`
+	CategoryId        string `json:"category_id"`
 	CategoryName      string `json:"category_name"`
-	SubCategoryId     int    `json:"sub_category_id"`
+	SubCategoryId     string `json:"sub_category_id"`
 	SubCategoryName   string `json:"sub_category_name"`
 	FixedFlg          bool   `json:"fixed_flg"`
 }
@@ -443,11 +443,15 @@ func GetPaymentGroupResponse(data *[]model.PaymentGroupTransaction, last_month_d
 			continue
 		}
 
-		var paymentTypeId *int
-		if payment.PaymentTypeId != 0 {
+		var paymentId *string
+		if payment.PaymentId != "" {
+			paymentId = &payment.PaymentId
+		}
+		var paymentTypeId *string
+		if payment.PaymentTypeId != "" {
 			paymentTypeId = &payment.PaymentTypeId
 		}
-		pl := &paymentList{PaymentId: payment.PaymentId, PaymentName: payment.PaymentName, PaymentAmount: payment.PaymentAmount,
+		pl := &paymentList{PaymentId: paymentId, PaymentName: payment.PaymentName, PaymentAmount: payment.PaymentAmount,
 			PaymentTypeId: paymentTypeId, PaymentTypeName: payment.PaymentTypeName,
 			IsPaymentDueLater: payment.IsPaymentDueLater, LastMonthSum: nil, MonthOverMonth: nil}
 
@@ -507,7 +511,7 @@ type monthlyWithdrawalAmountResponse struct {
 }
 
 type monthlyWithdrawalAmount struct {
-	PaymentId            int    `json:"payment_id"`
+	PaymentId            string `json:"payment_id"`
 	PaymentName          string `json:"payment_name"`
 	PaymentDate          int    `json:"payment_date"`
 	AggregationStartDate string `json:"aggregation_start_date"`
@@ -545,13 +549,13 @@ type frequentTransactionResponse struct {
 }
 
 type frequentTransaction struct {
-	TransactionName string `json:"transaction_name"`
-	CategoryId      int    `json:"category_id"`
-	SubCategoryId   int    `json:"sub_category_id"`
-	FixedFlg        bool   `json:"fixed_flg"`
-	PaymentId       *int   `json:"payment_id"`
-	CategoryName    string `json:"category_name"`
-	SubCategoryName string `json:"sub_category_name"`
+	TransactionName string  `json:"transaction_name"`
+	CategoryId      string  `json:"category_id"`
+	SubCategoryId   string  `json:"sub_category_id"`
+	FixedFlg        bool    `json:"fixed_flg"`
+	PaymentId       *string `json:"payment_id"`
+	CategoryName    string  `json:"category_name"`
+	SubCategoryName string  `json:"sub_category_name"`
 }
 
 func containsFrequentName(transactions []frequentTransaction, transactionName string) bool {
@@ -568,8 +572,8 @@ func GetFrequentTransactionResponse(data *[]model.FrequentTransactionName) *freq
 
 	for _, tran := range *data {
 
-		var paymentId *int
-		if tran.PaymentId != 0 {
+		var paymentId *string
+		if tran.PaymentId != "" {
 			paymentId = &tran.PaymentId
 		}
 		if exist := containsFrequentName(ftr.FrequentTransactionlist, tran.TransactionName); !exist {

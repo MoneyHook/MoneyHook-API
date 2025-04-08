@@ -1,7 +1,7 @@
 package model
 
 type GoogleSignIn struct {
-	UserNo int `gorm:"primaryKey"`
+	UserNo string `gorm:"primaryKey"`
 	UserId string
 	Token  string
 }

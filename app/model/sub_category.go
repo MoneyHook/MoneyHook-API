@@ -1,19 +1,19 @@
 package model
 
 type SubCategory struct {
-	SubCategoryId   int
+	SubCategoryId   string
 	SubCategoryName string
 }
 
 type SubCategoryModel struct {
-	SubCategoryId   int `gorm:"primaryKey"`
-	UserNo          int
-	CategoryId      int
+	SubCategoryId   string `gorm:"primaryKey"`
+	UserNo          string
+	CategoryId      string
 	SubCategoryName string
 }
 
 type EditSubCategoryModel struct {
-	UserId        int
-	SubCategoryId int
+	UserId        string
+	SubCategoryId string
 	IsEnable      bool
 }

@@ -1,12 +1,12 @@
 package model
 
 type Category struct {
-	CategoryId   int
+	CategoryId   string
 	CategoryName string
 }
 
 type CategoryWithSubCategory struct {
-	CategoryId      int
+	CategoryId      string
 	CategoryName    string
 	SubCategoryList []SubCategoryWithEnable `gorm:"foreignKey:SubCategoryId;references:CategoryId"`
 }
@@ -20,7 +20,7 @@ func (SubCategoryWithEnable) TableName() string {
 }
 
 type SubCategoryWithEnable struct {
-	SubCategoryId   int
+	SubCategoryId   string
 	SubCategoryName string
 	Enable          bool
 }

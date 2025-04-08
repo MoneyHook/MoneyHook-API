@@ -13,12 +13,12 @@ type Timeline struct {
 	TransactionAmount int
 	TransactionSign   int
 	TransactionDate   time.Time
-	CategoryId        int
+	CategoryId        string
 	CategoryName      string
-	SubCategoryId     int
+	SubCategoryId     string
 	SubCategoryName   string
 	FixedFlg          bool
-	PaymentId         int
+	PaymentId         string
 	PaymentName       string
 }
 
@@ -32,26 +32,26 @@ type TransactionData struct {
 	TransactionDate   time.Time
 	TransactionName   string
 	TransactionAmount int
-	CategoryId        int
+	CategoryId        string
 	CategoryName      string
-	SubCategoryId     int
+	SubCategoryId     string
 	SubCategoryName   string
 	FixedFlg          bool
 }
 
 type MonthlyFixedData struct {
 	gorm.Model
-	CategoryId          int
+	CategoryId          string
 	CategoryName        string
 	TotalCategoryAmount int
-	SubCategoryId       int
+	SubCategoryId       string
 	SubCategoryName     string
 	TransactionId       string
 	TransactionName     string
 	TransactionAmount   int
 	TransactionDate     time.Time
 	FixedFlg            bool
-	PaymentId           int
+	PaymentId           string
 	PaymentName         string
 }
 
@@ -63,24 +63,24 @@ type HomeCategory struct {
 }
 
 type MonthlyVariableData struct {
-	CategoryId             int
+	CategoryId             string
 	CategoryName           string
 	CategoryTotalAmount    int
-	SubCategoryId          int
+	SubCategoryId          string
 	SubCategoryName        string
 	SubCategoryTotalAmount int
 	TransactionId          string
 	TransactionName        string
 	TransactionAmount      int
 	TransactionDate        time.Time
-	PaymentId              int
+	PaymentId              string
 	PaymentName            string
 }
 
 type TotalSpendingData struct {
 	CategoryName           string
 	CategoryTotalAmount    int
-	SubCategoryId          int
+	SubCategoryId          string
 	SubCategoryName        string
 	SubCategoryTotalAmount int
 	TransactionId          string
@@ -90,25 +90,25 @@ type TotalSpendingData struct {
 }
 
 type PaymentGroupTransaction struct {
-	PaymentId         int
+	PaymentId         string
 	PaymentName       string
 	PaymentAmount     int
-	PaymentTypeId     int
+	PaymentTypeId     string
 	PaymentTypeName   string
 	IsPaymentDueLater bool
 	TransactionId     string
 	TransactionName   string
 	TransactionAmount int
 	TransactionDate   time.Time
-	CategoryId        int
+	CategoryId        string
 	CategoryName      string
-	SubCategoryId     int
+	SubCategoryId     string
 	SubCategoryName   string
 	FixedFlg          bool
 }
 
 type MonthlyWithdrawalAmountList struct {
-	PaymentId            int
+	PaymentId            string
 	PaymentName          string
 	PaymentDate          int
 	AggregationStartDate string
@@ -118,46 +118,46 @@ type MonthlyWithdrawalAmountList struct {
 
 type FrequentTransactionName struct {
 	TransactionName string
-	CategoryId      int
-	SubCategoryId   int
+	CategoryId      string
+	SubCategoryId   string
 	FixedFlg        bool
-	PaymentId       int
+	PaymentId       string
 	CategoryName    string
 	SubCategoryName string
 	RowNum          int
 }
 
 type AddTransaction struct {
-	UserId            int
+	UserId            string
 	TransactionDate   string
 	TransactionAmount int
 	TransactionName   string
-	CategoryId        int
-	SubCategoryId     int
+	CategoryId        string
+	SubCategoryId     string
 	SubCategoryName   string
 	FixedFlg          bool
-	PaymentId         int
+	PaymentId         string
 }
 
 type AddTransactionList struct {
-	UserId          int
+	UserId          string
 	TransactionList []AddTransaction
 }
 
 type EditTransaction struct {
 	TransactionId     string
-	UserId            int
+	UserId            string
 	TransactionDate   string
 	TransactionAmount int
 	TransactionName   string
-	CategoryId        int
-	SubCategoryId     int
+	CategoryId        string
+	SubCategoryId     string
 	SubCategoryName   string
 	FixedFlg          bool
-	PaymentId         int
+	PaymentId         string
 }
 
 type DeleteTransaction struct {
-	UserId        int
+	UserId        string
 	TransactionId string
 }

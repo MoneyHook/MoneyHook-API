@@ -11,11 +11,11 @@ type Transaction struct {
 	TransactionAmount int    `json:"transaction_amount"  validate:"required"`
 	TransactionSign   int    `json:"transaction_sign"  validate:"required"`
 	TransactionName   string `json:"transaction_name"  validate:"required"`
-	CategoryId        int    `json:"category_id"  validate:"required"`
-	SubCategoryId     int    `json:"sub_category_id"`
+	CategoryId        string `json:"category_id"  validate:"required"`
+	SubCategoryId     string `json:"sub_category_id"`
 	SubCategoryName   string `json:"sub_category_name"`
 	FixedFlg          bool   `json:"fixed_flg"  validate:"required"`
-	PaymentId         int    `json:"payment_id"`
+	PaymentId         string `json:"payment_id"`
 }
 
 type AddTransactionRequest struct {
@@ -79,11 +79,11 @@ type EditTransactionRequest struct {
 		TransactionAmount int    `json:"transaction_amount"  validate:"required"`
 		TransactionSign   int    `json:"transaction_sign"  validate:"required"`
 		TransactionName   string `json:"transaction_name"  validate:"required"`
-		CategoryId        int    `json:"category_id"  validate:"required"`
-		SubCategoryId     int    `json:"sub_category_id"`
+		CategoryId        string `json:"category_id"  validate:"required"`
+		SubCategoryId     string `json:"sub_category_id"`
 		SubCategoryName   string `json:"sub_category_name"`
 		FixedFlg          bool   `json:"fixed_flg"  validate:"required"`
-		PaymentId         int    `json:"payment_id"`
+		PaymentId         string `json:"payment_id"`
 	} `json:"transaction"`
 }
 
