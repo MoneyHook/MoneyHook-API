@@ -354,7 +354,7 @@ func (ts *TransactionStore) GetLastMonthGroupByPayment(userId string, month stri
 }
 
 func (ts *TransactionStore) GetMonthlyWithdrawalAmount(userId string, paymentId string, startMonth string, endMonth string) *model.MonthlyWithdrawalAmountList {
-	monthlyWithdrawalAmount := model.MonthlyWithdrawalAmountList{AggregationStartDate: startMonth, AggregationEndDate: endMonth}
+	var monthlyWithdrawalAmount model.MonthlyWithdrawalAmountList
 
 	ts.db.Select(
 		"t.payment_id",
@@ -372,6 +372,9 @@ func (ts *TransactionStore) GetMonthlyWithdrawalAmount(userId string, paymentId 
 		`, startMonth, endMonth).
 		Group("t.payment_id, pr.payment_name, pr.payment_date").
 		Scan(&monthlyWithdrawalAmount)
+
+	monthlyWithdrawalAmount.AggregationStartDate = startMonth
+	monthlyWithdrawalAmount.AggregationEndDate = endMonth
 
 	return &monthlyWithdrawalAmount
 }
