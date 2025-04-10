@@ -1,37 +1,37 @@
 package model
 
 type PaymentResource struct {
-	PaymentId     int
+	PaymentId     string
 	PaymentName   string
-	PaymentTypeId int
+	PaymentTypeId string
 	PaymentDate   int
 	ClosingDate   int
 }
 
 type AddPaymentResource struct {
-	UserNo        int
+	UserNo        string
 	PaymentName   string
-	PaymentTypeId int
+	PaymentTypeId string
 	PaymentDate   *int
 	ClosingDate   *int
 }
 
 type EditPaymentResource struct {
-	UserNo        int
-	PaymentId     int
+	UserNo        string
+	PaymentId     string
 	PaymentName   string
-	PaymentTypeId int
+	PaymentTypeId string
 	PaymentDate   *int
 	ClosingDate   *int
 }
 
 type DeletePaymentResource struct {
-	UserNo    int
-	PaymentId int
+	UserNo    string
+	PaymentId string
 }
 
 type PaymentType struct {
-	PaymentTypeId     int
+	PaymentTypeId     string
 	PaymentTypeName   string
 	IsPaymentDueLater bool
 }

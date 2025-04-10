@@ -12,10 +12,10 @@ type AddFixedRequest struct {
 		MonthlyTransactionAmount int    `json:"monthly_transaction_amount"  validate:"required"`
 		MonthlyTransactionSign   int    `json:"monthly_transaction_sign"  validate:"required"`
 		MonthlyTransactionDate   int    `json:"monthly_transaction_date" validate:"required"`
-		CategoryId               int    `json:"category_id"  validate:"required"`
-		SubCategoryId            int    `json:"sub_category_id"`
+		CategoryId               string `json:"category_id"  validate:"required"`
+		SubCategoryId            string `json:"sub_category_id"`
 		SubCategoryName          string `json:"sub_category_name"`
-		PaymentId                int    `json:"payment_id"`
+		PaymentId                string `json:"payment_id"`
 	} `json:"monthly_transaction"`
 }
 
@@ -41,16 +41,16 @@ func (r *AddFixedRequest) Bind(c echo.Context, u *model.AddFixed) error {
 
 type EditFixedRequest struct {
 	MonthlyTransaction struct {
-		MonthlyTransactionId     int    `json:"monthly_transaction_id"  validate:"required"`
+		MonthlyTransactionId     string `json:"monthly_transaction_id"  validate:"required"`
 		MonthlyTransactionName   string `json:"monthly_transaction_name"  validate:"required"`
 		MonthlyTransactionAmount int    `json:"monthly_transaction_amount"  validate:"required"`
 		MonthlyTransactionSign   int    `json:"monthly_transaction_sign"  validate:"required"`
 		MonthlyTransactionDate   int    `json:"monthly_transaction_date" validate:"required"`
-		CategoryId               int    `json:"category_id"  validate:"required"`
-		SubCategoryId            int    `json:"sub_category_id"`
+		CategoryId               string `json:"category_id"  validate:"required"`
+		SubCategoryId            string `json:"sub_category_id"`
 		SubCategoryName          string `json:"sub_category_name"`
 		IncludeFlg               bool   `json:"include_flg"`
-		PaymentId                int    `json:"payment_id"`
+		PaymentId                string `json:"payment_id"`
 	} `json:"monthly_transaction"`
 }
 

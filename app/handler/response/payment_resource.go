@@ -9,9 +9,9 @@ type paymentResourceListResponse struct {
 	PaymentResourceList []paymentResourceResponse `json:"payment_list"`
 }
 type paymentResourceResponse struct {
-	PaymentId     int    `json:"payment_id"`
+	PaymentId     string `json:"payment_id"`
 	PaymentName   string `json:"payment_name"`
-	PaymentTypeId int    `json:"payment_type_id"`
+	PaymentTypeId string `json:"payment_type_id"`
 	PaymentDate   *int   `json:"payment_date"`
 	ClosingDate   *int   `json:"closing_date"`
 }
@@ -46,7 +46,7 @@ type paymentTypeListResponse struct {
 	PaymentTypeList []paymentTypeResponse `json:"payment_type_list"`
 }
 type paymentTypeResponse struct {
-	PaymentTypeId     int    `json:"payment_type_id"`
+	PaymentTypeId     string `json:"payment_type_id"`
 	PaymentTypeName   string `json:"payment_type_name"`
 	IsPaymentDueLater bool   `json:"is_payment_due_later"`
 }

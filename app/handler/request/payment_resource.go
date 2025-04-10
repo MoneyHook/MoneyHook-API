@@ -7,10 +7,10 @@ import (
 )
 
 type AddPaymentRequest struct {
-	PaymentName   string `json:"payment_name"`
-	PaymentTypeId *int   `json:"payment_type_id"`
-	PaymentDate   *int   `json:"payment_date"`
-	ClosingDate   *int   `json:"closing_date"`
+	PaymentName   string  `json:"payment_name"`
+	PaymentTypeId *string `json:"payment_type_id"`
+	PaymentDate   *int    `json:"payment_date"`
+	ClosingDate   *int    `json:"closing_date"`
 }
 
 func (r *AddPaymentRequest) Bind(c echo.Context, u *model.AddPaymentResource) error {
@@ -23,7 +23,7 @@ func (r *AddPaymentRequest) Bind(c echo.Context, u *model.AddPaymentResource) er
 	// }
 
 	u.PaymentName = r.PaymentName
-	u.PaymentTypeId = 1
+	u.PaymentTypeId = "1"
 	if r.PaymentTypeId != nil {
 		u.PaymentTypeId = *r.PaymentTypeId
 		u.PaymentDate = r.PaymentDate
@@ -34,11 +34,11 @@ func (r *AddPaymentRequest) Bind(c echo.Context, u *model.AddPaymentResource) er
 }
 
 type EditPaymentRequest struct {
-	PaymentId     int    `json:"payment_id"`
-	PaymentName   string `json:"payment_name"`
-	PaymentTypeId *int   `json:"payment_type_id"`
-	PaymentDate   *int   `json:"payment_date"`
-	ClosingDate   *int   `json:"closing_date"`
+	PaymentId     string  `json:"payment_id"`
+	PaymentName   string  `json:"payment_name"`
+	PaymentTypeId *string `json:"payment_type_id"`
+	PaymentDate   *int    `json:"payment_date"`
+	ClosingDate   *int    `json:"closing_date"`
 }
 
 func (r *EditPaymentRequest) Bind(c echo.Context, u *model.EditPaymentResource) error {
@@ -52,7 +52,7 @@ func (r *EditPaymentRequest) Bind(c echo.Context, u *model.EditPaymentResource) 
 
 	u.PaymentId = r.PaymentId
 	u.PaymentName = r.PaymentName
-	u.PaymentTypeId = 1
+	u.PaymentTypeId = "1"
 	if r.PaymentTypeId != nil {
 		u.PaymentTypeId = *r.PaymentTypeId
 		u.PaymentDate = r.PaymentDate

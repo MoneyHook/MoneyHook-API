@@ -6,21 +6,21 @@ import (
 
 type GetFixed struct {
 	gorm.Model
-	MonthlyTransactionId     int
+	MonthlyTransactionId     string
 	MonthlyTransactionName   string
 	MonthlyTransactionAmount int
 	MonthlyTransactionSign   int
 	MonthlyTransactionDate   int
-	CategoryId               int
+	CategoryId               string
 	CategoryName             string
-	SubCategoryId            int
+	SubCategoryId            string
 	SubCategoryName          string
-	PaymentId                int
+	PaymentId                string
 }
 
 type GetDeletedFixed struct {
 	gorm.Model
-	MonthlyTransactionId     int
+	MonthlyTransactionId     string
 	MonthlyTransactionName   string
 	MonthlyTransactionAmount int
 	MonthlyTransactionDate   int
@@ -29,30 +29,30 @@ type GetDeletedFixed struct {
 }
 
 type AddFixed struct {
-	UserId                   int
+	UserId                   string
 	MonthlyTransactionName   string
 	MonthlyTransactionAmount int
 	MonthlyTransactionDate   int
-	CategoryId               int
-	SubCategoryId            int
+	CategoryId               string
+	SubCategoryId            string
 	SubCategoryName          string
-	PaymentId                int
+	PaymentId                string
 }
 
 type EditFixed struct {
-	UserId                   int
-	MonthlyTransactionId     int
+	UserId                   string
+	MonthlyTransactionId     string
 	MonthlyTransactionName   string
 	MonthlyTransactionAmount int
 	MonthlyTransactionDate   int
-	CategoryId               int
-	SubCategoryId            int
+	CategoryId               string
+	SubCategoryId            string
 	SubCategoryName          string
 	IncludeFlg               bool
-	PaymentId                int
+	PaymentId                string
 }
 
 type DeleteFixed struct {
-	UserId               int
-	MonthlyTransactionId int
+	UserId               string
+	MonthlyTransactionId string
 }

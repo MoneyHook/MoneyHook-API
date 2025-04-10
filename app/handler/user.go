@@ -24,7 +24,7 @@ func (h *Handler) googleSignIn(c echo.Context) error {
 	}
 
 	// 受け取ったユーザーIDがuserテーブルに存在するかどうかチェック
-	if result := h.userStore.UserExists(&googleSignIn.UserId); *result != 0 {
+	if result := h.userStore.UserExists(&googleSignIn.UserId); *result != "" {
 		// Yes: user_tokenテーブルのtokenを更新
 		googleSignIn.UserNo = *result
 		h.userStore.UpdateToken(&googleSignIn)
@@ -38,17 +38,17 @@ func (h *Handler) googleSignIn(c echo.Context) error {
 	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }
 
-func (h *Handler) GetUserId(c echo.Context) (int, error) {
+func (h *Handler) GetUserId(c echo.Context) (string, error) {
 	// Authorizationヘッダからトークンを抽出
 	token := c.Request().Header.Get(echo.HeaderAuthorization)
 
-	var userNo int
+	var userNo string
 
 	if EnableFirebaseAuth() {
 		user, err := h.firebaseClient.VerifyIDToken(context.Background(), token)
 		if err != nil {
 			log.Printf("GetUserId FirebaseAuth error: %v\n", err)
-			return 0, err
+			return "", err
 		}
 		email := user.Claims["email"]
 
@@ -57,7 +57,7 @@ func (h *Handler) GetUserId(c echo.Context) (int, error) {
 		result, err := h.userStore.ExtractUserNoFromUserId(&user_id)
 		if err != nil {
 			log.Printf("GetUserId extract user error: %v\n", err)
-			return 0, err
+			return "", err
 		}
 		userNo = *result
 	} else {
@@ -65,7 +65,7 @@ func (h *Handler) GetUserId(c echo.Context) (int, error) {
 		result, err := h.userStore.ExtractUserNoFromToken(&token)
 		if err != nil {
 			log.Printf("GetUserId  extract user error: %v\n", err)
-			return 0, err
+			return "", err
 		}
 		userNo = *result
 	}

@@ -2,6 +2,7 @@ package store_postgres
 
 import (
 	"MoneyHook/MoneyHook-API/model"
+	"errors"
 	"slices"
 	"time"
 
@@ -16,7 +17,7 @@ func NewTransactionStore(db *gorm.DB) *TransactionStore {
 	return &TransactionStore{db: db}
 }
 
-func (ts *TransactionStore) GetTimelineData(userId int, month string) *[]model.Timeline {
+func (ts *TransactionStore) GetTimelineData(userId string, month string) *[]model.Timeline {
 	var timeline_list []model.Timeline
 
 	ts.db.Unscoped().Preload("Category").
@@ -49,7 +50,7 @@ func search_spending_data(data_list *[]model.MonthlySpendingData, key *string) *
 	return &result
 }
 
-func (ts *TransactionStore) GetMonthlySpendingData(userId int, month string) *[]model.MonthlySpendingData {
+func (ts *TransactionStore) GetMonthlySpendingData(userId string, month string) *[]model.MonthlySpendingData {
 	var result_list []model.MonthlySpendingData
 
 	var query_list []model.MonthlySpendingData
@@ -87,10 +88,10 @@ func (ts *TransactionStore) GetMonthlySpendingData(userId int, month string) *[]
 	return &result_list
 }
 
-func (ts *TransactionStore) GetTransactionData(userId int, transactionId int) *model.TransactionData {
+func (ts *TransactionStore) GetTransactionData(userId string, transactionId string) *model.TransactionData {
 	var result model.TransactionData
 
-	ts.db.Unscoped().
+	tx := ts.db.Unscoped().
 		Select(
 			"t.transaction_date",
 			"t.transaction_name",
@@ -105,12 +106,19 @@ func (ts *TransactionStore) GetTransactionData(userId int, transactionId int) *m
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_id = ?", transactionId).
-		Find(&result)
+		Take(&result)
+
+	if tx.Error != nil {
+		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return nil
+	}
 
 	return &result
 }
 
-func (ts *TransactionStore) GetMonthlyFixedData(userId int, month string, isSpending bool) *[]model.MonthlyFixedData {
+func (ts *TransactionStore) GetMonthlyFixedData(userId string, month string, isSpending bool) *[]model.MonthlyFixedData {
 	var result_list []model.MonthlyFixedData
 
 	var amount_condition string
@@ -153,7 +161,7 @@ func (ts *TransactionStore) GetMonthlyFixedData(userId int, month string, isSpen
 	return &result_list
 }
 
-func (ts *TransactionStore) GetHome(userId int, month string) *[]model.HomeCategory {
+func (ts *TransactionStore) GetHome(userId string, month string) *[]model.HomeCategory {
 	var home_data []model.HomeCategory
 
 	subquery := ts.db.Select("st.sub_category_id",
@@ -185,7 +193,7 @@ func (ts *TransactionStore) GetHome(userId int, month string) *[]model.HomeCateg
 	return &home_data
 }
 
-func (ts *TransactionStore) GetMonthlyVariableData(userId int, month string) *[]model.MonthlyVariableData {
+func (ts *TransactionStore) GetMonthlyVariableData(userId string, month string) *[]model.MonthlyVariableData {
 	var monthly_variable_data []model.MonthlyVariableData
 
 	subquery_1 := ts.db.Select("transaction_id",
@@ -237,7 +245,7 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId int, month string) *[]
 	return &monthly_variable_data
 }
 
-func (ts *TransactionStore) GetTotalSpending(userId int, categoryId string, subCategoryId string, startMonth string, endMonth string) *[]model.TotalSpendingData {
+func (ts *TransactionStore) GetTotalSpending(userId string, categoryId string, subCategoryId string, startMonth string, endMonth string) *[]model.TotalSpendingData {
 	var total_spending_data []model.TotalSpendingData
 
 	query := ts.db
@@ -293,7 +301,7 @@ func (ts *TransactionStore) GetTotalSpending(userId int, categoryId string, subC
 	return &total_spending_data
 }
 
-func (ts *TransactionStore) GetGroupByPayment(userId int, month string) *[]model.PaymentGroupTransaction {
+func (ts *TransactionStore) GetGroupByPayment(userId string, month string) *[]model.PaymentGroupTransaction {
 	var payment_group_transaction []model.PaymentGroupTransaction
 
 	ts.db.Select(
@@ -328,7 +336,7 @@ func (ts *TransactionStore) GetGroupByPayment(userId int, month string) *[]model
 	return &payment_group_transaction
 }
 
-func (ts *TransactionStore) GetLastMonthGroupByPayment(userId int, month string) *[]model.PaymentGroupTransaction {
+func (ts *TransactionStore) GetLastMonthGroupByPayment(userId string, month string) *[]model.PaymentGroupTransaction {
 	var payment_group_transaction []model.PaymentGroupTransaction
 
 	ts.db.Select(
@@ -345,8 +353,8 @@ func (ts *TransactionStore) GetLastMonthGroupByPayment(userId int, month string)
 	return &payment_group_transaction
 }
 
-func (ts *TransactionStore) GetMonthlyWithdrawalAmount(userId int, paymentId int, startMonth string, endMonth string) *model.MonthlyWithdrawalAmountList {
-	monthlyWithdrawalAmount := model.MonthlyWithdrawalAmountList{AggregationStartDate: startMonth, AggregationEndDate: endMonth}
+func (ts *TransactionStore) GetMonthlyWithdrawalAmount(userId string, paymentId string, startMonth string, endMonth string) *model.MonthlyWithdrawalAmountList {
+	var monthlyWithdrawalAmount model.MonthlyWithdrawalAmountList
 
 	ts.db.Select(
 		"t.payment_id",
@@ -365,10 +373,13 @@ func (ts *TransactionStore) GetMonthlyWithdrawalAmount(userId int, paymentId int
 		Group("t.payment_id, pr.payment_name, pr.payment_date").
 		Scan(&monthlyWithdrawalAmount)
 
+	monthlyWithdrawalAmount.AggregationStartDate = startMonth
+	monthlyWithdrawalAmount.AggregationEndDate = endMonth
+
 	return &monthlyWithdrawalAmount
 }
 
-func (ts *TransactionStore) GetFrequentTransactionName(userId int) *[]model.FrequentTransactionName {
+func (ts *TransactionStore) GetFrequentTransactionName(userId string) *[]model.FrequentTransactionName {
 	var frequent_transaction_name_list []model.FrequentTransactionName
 
 	ts.db.Table("transaction tran").
@@ -392,7 +403,7 @@ func (ts *TransactionStore) GetFrequentTransactionName(userId int) *[]model.Freq
 
 func (ts *TransactionStore) AddTransaction(transaction *model.AddTransaction) error {
 	paymentId := interface{}(transaction.PaymentId)
-	if transaction.PaymentId == 0 {
+	if transaction.PaymentId == "" {
 		paymentId = nil
 	}
 
@@ -413,7 +424,7 @@ func (ts *TransactionStore) AddTransactionList(transaction *model.AddTransaction
 
 	for _, tran := range transaction.TransactionList {
 		paymentId := interface{}(tran.PaymentId)
-		if tran.PaymentId == 0 {
+		if tran.PaymentId == "" {
 			paymentId = nil
 		}
 		insert_val = append(insert_val, map[string]any{
@@ -434,7 +445,7 @@ func (ts *TransactionStore) AddTransactionList(transaction *model.AddTransaction
 
 func (ts *TransactionStore) EditTransaction(transaction *model.EditTransaction) error {
 	paymentId := interface{}(transaction.PaymentId)
-	if transaction.PaymentId == 0 {
+	if transaction.PaymentId == "" {
 		paymentId = nil
 	}
 

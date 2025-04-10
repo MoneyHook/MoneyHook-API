@@ -8,7 +8,6 @@ import (
 
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -50,11 +49,12 @@ func (h *Handler) getTransaction(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
 	}
 
-	transactionId, err := strconv.Atoi(c.Param("transactionId"))
-	if err != nil {
-		return c.JSON(http.StatusOK, "hej")
-	}
+	transactionId := c.Param("transactionId")
 	result := h.transactionStore.GetTransactionData(userId, transactionId)
+
+	if result == nil {
+		return c.JSON(http.StatusNotFound, model.Error.Create(message.Get("transaction_not_found")))
+	}
 
 	result_list := response.GetTransactionResponse(result)
 
@@ -206,7 +206,7 @@ func (h *Handler) getMonthlyWithdrawalAmount(c echo.Context) error {
 			}
 
 			monthlyWithdrawalAmount := h.transactionStore.GetMonthlyWithdrawalAmount(userId, payment.PaymentId, startMonth.Format("2006-01-02"), endMonth.Format("2006-01-02"))
-			if monthlyWithdrawalAmount.PaymentId != 0 {
+			if monthlyWithdrawalAmount.PaymentId != "" {
 				result = append(result, monthlyWithdrawalAmount)
 			}
 		}
@@ -246,7 +246,7 @@ func (h *Handler) addTransaction(c echo.Context) error {
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	if addTran.SubCategoryId == 0 {
+	if addTran.SubCategoryId == "" {
 		subCategory := model.SubCategoryModel{
 			UserNo:          addTran.UserId,
 			CategoryId:      addTran.CategoryId,
@@ -258,7 +258,7 @@ func (h *Handler) addTransaction(c echo.Context) error {
 			error := h.subCategoryStore.CreateSubCategory(&subCategory)
 			if error != nil {
 				log.Printf("database insert error: %v\n", err)
-				log.Printf("'%v' is exist: %v\n", subCategory.SubCategoryName, subCategory.SubCategoryId != 0)
+				log.Printf("'%v' is exist: %v\n", subCategory.SubCategoryName, subCategory.SubCategoryId != "")
 				return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("sub_category_create_failed")))
 			}
 		}
@@ -292,7 +292,7 @@ func (h *Handler) addTransactionList(c echo.Context) error {
 	}
 
 	for i, addTran := range addTranList.TransactionList {
-		if addTran.SubCategoryId == 0 {
+		if addTran.SubCategoryId == "" {
 			subCategory := model.SubCategoryModel{
 				UserNo:          addTranList.UserId,
 				CategoryId:      addTran.CategoryId,
@@ -304,7 +304,7 @@ func (h *Handler) addTransactionList(c echo.Context) error {
 				error := h.subCategoryStore.CreateSubCategory(&subCategory)
 				if error != nil {
 					log.Printf("CreateSubCategory: %v\n", error)
-					log.Printf("'%v' is exist: %v\n", subCategory.SubCategoryName, subCategory.SubCategoryId != 0)
+					log.Printf("'%v' is exist: %v\n", subCategory.SubCategoryName, subCategory.SubCategoryId != "")
 					return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("sub_category_create_failed")))
 				}
 			}
@@ -338,7 +338,7 @@ func (h *Handler) editTransaction(c echo.Context) error {
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	if editTran.SubCategoryId == 0 {
+	if editTran.SubCategoryId == "" {
 		subCategory := model.SubCategoryModel{
 			UserNo:          editTran.UserId,
 			CategoryId:      editTran.CategoryId,
@@ -364,10 +364,7 @@ func (h *Handler) deleteTransaction(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
 	}
 
-	transactionId, err := strconv.Atoi(c.Param("transactionId"))
-	if err != nil {
-		return c.JSON(http.StatusOK, "hej")
-	}
+	transactionId := c.Param("transactionId")
 	deleteTransaction := model.DeleteTransaction{UserId: userId, TransactionId: transactionId}
 
 	err = h.transactionStore.DeleteTransaction(&deleteTransaction)

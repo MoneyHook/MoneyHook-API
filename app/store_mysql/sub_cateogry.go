@@ -14,11 +14,11 @@ func NewSubCategoryStore(db *gorm.DB) *SubCategoryStore {
 	return &SubCategoryStore{db: db}
 }
 
-func (cs *SubCategoryStore) GetSubCategoryList(userId int, categoryId int) *[]model.SubCategory {
+func (cs *SubCategoryStore) GetSubCategoryList(userId string, categoryId string) *[]model.SubCategory {
 	var sub_category_list []model.SubCategory
 	cs.db.Table("sub_category sc").
 		Joins("LEFT JOIN hidden_sub_category hsc ON sc.sub_category_id = hsc.sub_category_id").
-		Where("sc.user_no IN ?", []int{1, userId}).
+		Where("sc.user_no IN ?", []string{"1", userId}).
 		Where("sc.category_id = ?", categoryId).
 		Where("hsc.sub_category_id is NULL").
 		Find(&sub_category_list)
@@ -51,5 +51,5 @@ func (cs *SubCategoryStore) FindByName(subCategory *model.SubCategoryModel) bool
 		Where("user_no = ?", subCategory.UserNo).
 		Find(&subCategory)
 
-	return subCategory.SubCategoryId != 0
+	return subCategory.SubCategoryId != ""
 }

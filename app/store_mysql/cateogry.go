@@ -25,7 +25,7 @@ func (cs *CategoryStore) GetCategoryList() *[]model.Category {
 	return &category_list
 }
 
-func (cs *CategoryStore) GetCategoryWithSubCategoryList(userId int) *[]model.CategoryWithSubCategory {
+func (cs *CategoryStore) GetCategoryWithSubCategoryList(userId string) *[]model.CategoryWithSubCategory {
 	var result []model.CategoryWithSubCategory
 
 	cs.db.Table("category").Select("category_id", "category_name").Order("order_num").Find(&result)
@@ -35,7 +35,7 @@ func (cs *CategoryStore) GetCategoryWithSubCategoryList(userId int) *[]model.Cat
 			Select("sc.sub_category_id", "sc.sub_category_name", "hsc.sub_category_id IS NULL as enable").
 			Joins("LEFT JOIN hidden_sub_category hsc ON sc.sub_category_id = hsc.sub_category_id").
 			Where("category_id = ?", v.CategoryId).
-			Where("sc.user_no IN ? ", []int{1, userId}).
+			Where("sc.user_no IN ? ", []string{"1", userId}).
 			Find(&result[i].SubCategoryList)
 	}
 

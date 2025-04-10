@@ -14,7 +14,7 @@ func NewFixedStore(db *gorm.DB) *FixedStore {
 	return &FixedStore{db: db}
 }
 
-func (fs *FixedStore) GetFixedData(userId int) *[]model.GetFixed {
+func (fs *FixedStore) GetFixedData(userId string) *[]model.GetFixed {
 	var fixed_list []model.GetFixed
 
 	fs.db.Unscoped().
@@ -41,7 +41,7 @@ func (fs *FixedStore) GetFixedData(userId int) *[]model.GetFixed {
 	return &fixed_list
 }
 
-func (fs *FixedStore) GetFixedDeletedData(userId int) *[]model.GetDeletedFixed {
+func (fs *FixedStore) GetFixedDeletedData(userId string) *[]model.GetDeletedFixed {
 	var fixed_list []model.GetDeletedFixed
 
 	fs.db.Unscoped().
@@ -63,7 +63,7 @@ func (fs *FixedStore) GetFixedDeletedData(userId int) *[]model.GetDeletedFixed {
 
 func (ts *FixedStore) AddFixed(monthlyTransaction *model.AddFixed) error {
 	paymentId := interface{}(monthlyTransaction.PaymentId)
-	if monthlyTransaction.PaymentId == 0 {
+	if monthlyTransaction.PaymentId == "" {
 		paymentId = nil
 	}
 
@@ -81,7 +81,7 @@ func (ts *FixedStore) AddFixed(monthlyTransaction *model.AddFixed) error {
 
 func (ts *FixedStore) EditFixed(monthlyTransaction *model.EditFixed) error {
 	paymentId := interface{}(monthlyTransaction.PaymentId)
-	if monthlyTransaction.PaymentId == 0 {
+	if monthlyTransaction.PaymentId == "" {
 		paymentId = nil
 	}
 

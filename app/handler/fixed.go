@@ -7,7 +7,6 @@ import (
 	"MoneyHook/MoneyHook-API/model"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 )
@@ -54,7 +53,7 @@ func (h *Handler) addFixed(c echo.Context) error {
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	if addFixed.SubCategoryId == 0 {
+	if addFixed.SubCategoryId == "" {
 		subCategory := model.SubCategoryModel{
 			UserNo:          addFixed.UserId,
 			CategoryId:      addFixed.CategoryId,
@@ -90,7 +89,7 @@ func (h *Handler) editFixed(c echo.Context) error {
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	if editFixed.SubCategoryId == 0 {
+	if editFixed.SubCategoryId == "" {
 		subCategory := model.SubCategoryModel{
 			UserNo:          editFixed.UserId,
 			CategoryId:      editFixed.CategoryId,
@@ -116,10 +115,7 @@ func (h *Handler) deleteFixed(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
 	}
 
-	monthlyTransactionId, err := strconv.Atoi(c.Param("monthly_transaction_id"))
-	if err != nil {
-		return c.JSON(http.StatusOK, "hej")
-	}
+	monthlyTransactionId := c.Param("monthly_transaction_id")
 	deleteFixed := model.DeleteFixed{UserId: userId, MonthlyTransactionId: monthlyTransactionId}
 
 	err = h.fixedStore.DeleteFixed(&deleteFixed)

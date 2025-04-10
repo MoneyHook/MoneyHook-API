@@ -7,8 +7,8 @@ import (
 )
 
 type EditSubCategoryRequest struct {
-	SubCategoryId int  `json:"sub_category_id" validate:"required"`
-	IsEnable      bool `json:"is_enable"  validate:"required"`
+	SubCategoryId string `json:"sub_category_id" validate:"required"`
+	IsEnable      bool   `json:"is_enable"  validate:"required"`
 }
 
 func (r *EditSubCategoryRequest) Bind(c echo.Context, u *model.EditSubCategoryModel) error {
