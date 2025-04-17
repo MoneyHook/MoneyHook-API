@@ -46,4 +46,7 @@ func (h *Handler) Register(v1 *echo.Group) {
 	payment_resource.PATCH("/editPayment", h.EditPaymentResource)
 	payment_resource.DELETE("/deletePayment/:paymentId", h.DeletePaymentResource)
 	payment_resource.GET("/getPaymentType", h.GetPaymentTypeList)
+
+	job := v1.Group("/job")
+	job.POST("/daily", h.ProcessDailyJob)
 }

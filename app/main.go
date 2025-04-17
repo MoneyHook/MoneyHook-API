@@ -38,7 +38,7 @@ func main() {
 
 	d := db.New()
 	client := router.NewFirebaseAuth()
-	h := handler.NewHandler(client, d.UserStore, d.TransactionStore, d.FixedStore, d.CategoryStore, d.SubCategoryStore, d.PaymentResourceStore)
+	h := handler.NewHandler(client, d.UserStore, d.TransactionStore, d.FixedStore, d.CategoryStore, d.SubCategoryStore, d.PaymentResourceStore, d.JobsStore)
 	h.Register(v1)
 
 	message.Read()

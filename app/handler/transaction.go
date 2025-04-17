@@ -242,7 +242,7 @@ func (h *Handler) addTransaction(c echo.Context) error {
 
 	req := &request.AddTransactionRequest{}
 	if err := req.Bind(c, &addTran); err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("test_error_message")))
+		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("add_failed")))
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
@@ -287,7 +287,7 @@ func (h *Handler) addTransactionList(c echo.Context) error {
 
 	req := &request.AddTransactionListRequest{}
 	if err := req.Bind(c, &addTranList); err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("test_error_message")))
+		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("add_failed")))
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 

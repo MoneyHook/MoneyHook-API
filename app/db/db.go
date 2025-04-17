@@ -4,6 +4,7 @@ import (
 	category "MoneyHook/MoneyHook-API/cagegory"
 	common "MoneyHook/MoneyHook-API/common"
 	fixed "MoneyHook/MoneyHook-API/fixed"
+	job "MoneyHook/MoneyHook-API/job"
 	payment_resource "MoneyHook/MoneyHook-API/payment_resource"
 	"MoneyHook/MoneyHook-API/store_mysql"
 	"MoneyHook/MoneyHook-API/store_postgres"
@@ -26,6 +27,7 @@ type Store struct {
 	CategoryStore        category.Store
 	SubCategoryStore     sub_category.Store
 	PaymentResourceStore payment_resource.Store
+	JobsStore            job.Store
 }
 
 type DatabaseType string
@@ -64,8 +66,9 @@ func NewMysql() *Store {
 	cs := store_mysql.NewCategoryStore(db)
 	scs := store_mysql.NewSubCategoryStore(db)
 	pr := store_mysql.NewPaymentResourceStore(db)
+	job := store_mysql.NewJobStore(db)
 
-	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr}
+	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobsStore: job}
 }
 
 func NewPostgres() *Store {
@@ -83,6 +86,7 @@ func NewPostgres() *Store {
 	cs := store_postgres.NewCategoryStore(db)
 	scs := store_postgres.NewSubCategoryStore(db)
 	pr := store_postgres.NewPaymentResourceStore(db)
+	job := store_postgres.NewJobStore(db)
 
-	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr}
+	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobsStore: job}
 }
