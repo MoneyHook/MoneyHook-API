@@ -1,4 +1,4 @@
-FROM golang:1.23.4-bullseye
+FROM golang:1.24.2-bookworm
 
 ENV PATH="$PATH:$GOROOT/bin:$GOPATH/bin"
 ENV PATH="$PATH:$(go env GOPATH)/bin"
