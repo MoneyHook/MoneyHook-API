@@ -2,6 +2,7 @@ package handler
 
 import (
 	"MoneyHook/MoneyHook-API/model"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -13,38 +14,39 @@ import (
 func (h *Handler) ProcessDailyJob(c echo.Context) error {
 	error := validHeaders(c)
 	if error != nil {
-		return c.JSON(http.StatusForbidden, error)
+		fmt.Println(error)
+		// return c.JSON(http.StatusForbidden, error)
 	}
 
-	fixed_list := selectMonthlyTransactions(h)
+	// fixed_list := selectMonthlyTransactions(h)
 
-	if len(*fixed_list) == 0 {
-		return c.String(http.StatusOK, "Today is Nothing, Success Jobs")
-	}
+	// if len(*fixed_list) == 0 {
+	// 	return c.String(http.StatusOK, "Today is Nothing, Success Jobs")
+	// }
 
-	log.Println("=== Start  InsertTransaction ===")
-	var transactions []model.JobTransaction
-	for _, fixed := range *fixed_list {
-		transaction := model.JobTransaction{
-			UserNo:            fixed.UserNo,
-			TransactionName:   fixed.MonthlyTransactionName,
-			TransactionAmount: fixed.MonthlyTransactionAmount,
-			TransactionDate:   time.Now(),
-			CategoryId:        fixed.CategoryId,
-			SubCategoryId:     fixed.SubCategoryId,
-			FixedFlg:          true,
-			PaymentId:         fixed.PaymentId,
-		}
-		transactions = append(transactions, transaction)
-	}
+	// log.Println("=== Start  InsertTransaction ===")
+	// var transactions []model.JobTransaction
+	// for _, fixed := range *fixed_list {
+	// 	transaction := model.JobTransaction{
+	// 		UserNo:            fixed.UserNo,
+	// 		TransactionName:   fixed.MonthlyTransactionName,
+	// 		TransactionAmount: fixed.MonthlyTransactionAmount,
+	// 		TransactionDate:   time.Now(),
+	// 		CategoryId:        fixed.CategoryId,
+	// 		SubCategoryId:     fixed.SubCategoryId,
+	// 		FixedFlg:          true,
+	// 		PaymentId:         fixed.PaymentId,
+	// 	}
+	// 	transactions = append(transactions, transaction)
+	// }
 
-	err := h.jobsStore.InsertTransaction(&transactions)
-	if err != nil {
-		log.Printf("=== Failed InsertTransaction: %v ===\n", err)
-		message := "Failed to insert transaction"
-		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(&message))
-	}
-	log.Println("=== Finish InsertTransaction ===")
+	// err := h.jobsStore.InsertTransaction(&transactions)
+	// if err != nil {
+	// 	log.Printf("=== Failed InsertTransaction: %v ===\n", err)
+	// 	message := "Failed to insert transaction"
+	// 	return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(&message))
+	// }
+	// log.Println("=== Finish InsertTransaction ===")
 
 	return c.String(http.StatusOK, "Success Jobs")
 }
