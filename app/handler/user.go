@@ -61,8 +61,8 @@ func (h *Handler) GetUserId(c echo.Context) (string, error) {
 		}
 		userNo = *result
 	} else {
-		// トークンからUserNoを抽出(DBのハッシュかされたIDトークンを見る方法)
-		result, err := h.userStore.ExtractUserNoFromToken(&token)
+		// トークンからUserNoを抽出
+		result, err := h.userStore.ExtractUserNoFromUserId(&token)
 		if err != nil {
 			log.Printf("GetUserId  extract user error: %v\n", err)
 			return "", err

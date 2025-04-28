@@ -3,6 +3,14 @@ package model
 type Status string
 
 const (
+	UserAgent                   = "User-Agent"
+	XCloudScheduler             = "X-CloudScheduler"
+	XCloudSchedulerJobName      = "X-CloudScheduler-JobName"
+	XCloudSchedulerScheduleTime = "X-CloudScheduler-ScheduleTime"
+	ContentType                 = "Content-Type"
+)
+
+const (
 	Success = Status("Success")
 	Error   = Status("Error")
 )

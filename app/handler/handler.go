@@ -3,6 +3,7 @@ package handler
 import (
 	category "MoneyHook/MoneyHook-API/cagegory"
 	fixed "MoneyHook/MoneyHook-API/fixed"
+	job "MoneyHook/MoneyHook-API/job"
 	payment_resource "MoneyHook/MoneyHook-API/payment_resource"
 	sub_category "MoneyHook/MoneyHook-API/sub_cagegory"
 	transaction "MoneyHook/MoneyHook-API/transaction"
@@ -19,6 +20,7 @@ type Handler struct {
 	categoryStore        category.Store
 	subCategoryStore     sub_category.Store
 	paymentResourceStore payment_resource.Store
+	jobsStore            job.Store
 }
 
 func NewHandler(
@@ -29,6 +31,7 @@ func NewHandler(
 	cs category.Store,
 	scs sub_category.Store,
 	pr payment_resource.Store,
+	js job.Store,
 ) *Handler {
 	return &Handler{
 		firebaseClient:       fc,
@@ -38,5 +41,6 @@ func NewHandler(
 		fixedStore:           fs,
 		userStore:            us,
 		paymentResourceStore: pr,
+		jobsStore:            js,
 	}
 }
