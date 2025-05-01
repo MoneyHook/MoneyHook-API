@@ -15,13 +15,17 @@ func (h *Handler) ProcessDailyJob(c echo.Context) error {
 	error := validHeaders(c)
 	if error != nil {
 		fmt.Println(error)
-		// return c.JSON(http.StatusForbidden, error)
+		return c.JSON(http.StatusForbidden, error)
 	}
 
-	// fixed_list := selectMonthlyTransactions(h)
+	fixed_list := selectMonthlyTransactions(h)
+
+	for _, fixed := range *fixed_list {
+		fmt.Printf("UserNo: %s, MonthlyTransactionName: %s, MonthlyTransactionAmount: %d", fixed.UserNo, fixed.MonthlyTransactionName, fixed.MonthlyTransactionAmount)
+	}
 
 	// if len(*fixed_list) == 0 {
-	// 	return c.String(http.StatusOK, "Today is Nothing, Success Jobs")
+	// return c.String(http.StatusOK, "Today is Nothing, Success Jobs")
 	// }
 
 	// log.Println("=== Start  InsertTransaction ===")
@@ -58,6 +62,12 @@ func validHeaders(c echo.Context) map[string]string {
 	x_cloud_scheduler_job_name := c.Request().Header.Get(model.XCloudSchedulerJobName)
 	x_cloud_scheduler_schedule_time := c.Request().Header.Get(model.XCloudSchedulerScheduleTime)
 	invalidRequest := "Invalid Request"
+
+	fmt.Println("user_agent:", user_agent)
+	fmt.Println("content_type:", content_type)
+	fmt.Println("x_cloud_scheduler:", x_cloud_scheduler)
+	fmt.Println("x_cloud_scheduler_job_name:", x_cloud_scheduler_job_name)
+	fmt.Println("x_cloud_scheduler_schedule_time:", x_cloud_scheduler_schedule_time)
 
 	switch {
 	case user_agent != "Google-Cloud-Scheduler":
