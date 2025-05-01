@@ -20,37 +20,33 @@ func (h *Handler) ProcessDailyJob(c echo.Context) error {
 
 	fixed_list := selectMonthlyTransactions(h)
 
-	for _, fixed := range *fixed_list {
-		fmt.Printf("UserNo: %s, MonthlyTransactionName: %s, MonthlyTransactionAmount: %d", fixed.UserNo, fixed.MonthlyTransactionName, fixed.MonthlyTransactionAmount)
+	if len(*fixed_list) == 0 {
+		return c.String(http.StatusOK, "Today is Nothing, Success Jobs")
 	}
 
-	// if len(*fixed_list) == 0 {
-	// return c.String(http.StatusOK, "Today is Nothing, Success Jobs")
-	// }
+	log.Println("=== Start  InsertTransaction ===")
+	var transactions []model.JobTransaction
+	for _, fixed := range *fixed_list {
+		transaction := model.JobTransaction{
+			UserNo:            fixed.UserNo,
+			TransactionName:   fixed.MonthlyTransactionName,
+			TransactionAmount: fixed.MonthlyTransactionAmount,
+			TransactionDate:   time.Now(),
+			CategoryId:        fixed.CategoryId,
+			SubCategoryId:     fixed.SubCategoryId,
+			FixedFlg:          true,
+			PaymentId:         fixed.PaymentId,
+		}
+		transactions = append(transactions, transaction)
+	}
 
-	// log.Println("=== Start  InsertTransaction ===")
-	// var transactions []model.JobTransaction
-	// for _, fixed := range *fixed_list {
-	// 	transaction := model.JobTransaction{
-	// 		UserNo:            fixed.UserNo,
-	// 		TransactionName:   fixed.MonthlyTransactionName,
-	// 		TransactionAmount: fixed.MonthlyTransactionAmount,
-	// 		TransactionDate:   time.Now(),
-	// 		CategoryId:        fixed.CategoryId,
-	// 		SubCategoryId:     fixed.SubCategoryId,
-	// 		FixedFlg:          true,
-	// 		PaymentId:         fixed.PaymentId,
-	// 	}
-	// 	transactions = append(transactions, transaction)
-	// }
-
-	// err := h.jobsStore.InsertTransaction(&transactions)
-	// if err != nil {
-	// 	log.Printf("=== Failed InsertTransaction: %v ===\n", err)
-	// 	message := "Failed to insert transaction"
-	// 	return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(&message))
-	// }
-	// log.Println("=== Finish InsertTransaction ===")
+	err := h.jobsStore.InsertTransaction(&transactions)
+	if err != nil {
+		log.Printf("=== Failed InsertTransaction: %v ===\n", err)
+		message := "Failed to insert transaction"
+		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(&message))
+	}
+	log.Println("=== Finish InsertTransaction ===")
 
 	return c.String(http.StatusOK, "Success Jobs")
 }
@@ -79,7 +75,7 @@ func validHeaders(c echo.Context) map[string]string {
 	case !x_cloud_scheduler || err != nil:
 		log.Printf("Invalid X-CloudScheduler: '%s'", c.Request().Header.Get(model.XCloudScheduler))
 		return model.Error.Create(&invalidRequest)
-	case x_cloud_scheduler_job_name == "":
+	case x_cloud_scheduler_job_name != "money-hooks-batch-schedule":
 		log.Printf("Invalid X-CloudScheduler-JobName: '%s'", x_cloud_scheduler_job_name)
 		return model.Error.Create(&invalidRequest)
 	case x_cloud_scheduler_schedule_time == "":
