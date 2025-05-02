@@ -7,6 +7,7 @@ import (
 	"MoneyHook/MoneyHook-API/model"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 )
@@ -61,7 +62,7 @@ func (h *Handler) addFixed(c echo.Context) error {
 		}
 		// TODO Createの前に、同じユーザー、同じカテゴリIDに紐づくサブカテゴリ名が存在するか確認
 		h.subCategoryStore.CreateSubCategory(&subCategory)
-		addFixed.SubCategoryId = subCategory.SubCategoryId
+		addFixed.SubCategoryId = strconv.FormatInt(subCategory.SubCategoryId, 10)
 	}
 
 	err = h.fixedStore.AddFixed(&addFixed)
@@ -97,7 +98,7 @@ func (h *Handler) editFixed(c echo.Context) error {
 		}
 		// TODO Createの前に、同じユーザー、同じカテゴリIDに紐づくサブカテゴリ名が存在するか確認
 		h.subCategoryStore.CreateSubCategory(&subCategory)
-		editFixed.SubCategoryId = subCategory.SubCategoryId
+		editFixed.SubCategoryId = strconv.FormatInt(subCategory.SubCategoryId, 10)
 	}
 
 	err = h.fixedStore.EditFixed(&editFixed)

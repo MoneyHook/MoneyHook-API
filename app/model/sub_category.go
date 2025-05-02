@@ -6,7 +6,7 @@ type SubCategory struct {
 }
 
 type SubCategoryModel struct {
-	SubCategoryId   string `gorm:"primaryKey"`
+	SubCategoryId   int64 `gorm:"primaryKey"`
 	UserNo          string
 	CategoryId      string
 	SubCategoryName string

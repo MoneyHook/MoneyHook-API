@@ -51,5 +51,5 @@ func (cs *SubCategoryStore) FindByName(subCategory *model.SubCategoryModel) bool
 		Where("user_no = ?", subCategory.UserNo).
 		Find(&subCategory)
 
-	return subCategory.SubCategoryId != ""
+	return subCategory.SubCategoryId != 0
 }
