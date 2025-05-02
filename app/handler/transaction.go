@@ -5,7 +5,6 @@ import (
 	"MoneyHook/MoneyHook-API/handler/response"
 	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/model"
-	"fmt"
 	"strconv"
 
 	"log"
@@ -266,7 +265,6 @@ func (h *Handler) addTransaction(c echo.Context) error {
 		}
 
 		addTran.SubCategoryId = strconv.FormatInt(subCategory.SubCategoryId, 10)
-		fmt.Println("new SubCategoryId: ", subCategory.SubCategoryId)
 	}
 
 	err = h.transactionStore.AddTransaction(&addTran)
