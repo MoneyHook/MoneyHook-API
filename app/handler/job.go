@@ -86,7 +86,8 @@ func validHeaders(c echo.Context) map[string]string {
 }
 
 func selectMonthlyTransactions(h *Handler) *[]model.JobMonthlyTransaction {
-	today := time.Now()
+	jst, _ := time.LoadLocation("Asia/Tokyo")
+	today := time.Now().In(jst)
 	log.Printf("Today is %s\n", today.Format("2006-01-02"))
 
 	year, month, day := today.Year(), today.Month(), today.Day()
