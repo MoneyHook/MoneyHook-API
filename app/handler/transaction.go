@@ -5,6 +5,7 @@ import (
 	"MoneyHook/MoneyHook-API/handler/response"
 	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/model"
+	"strconv"
 
 	"log"
 	"net/http"
@@ -258,12 +259,12 @@ func (h *Handler) addTransaction(c echo.Context) error {
 			error := h.subCategoryStore.CreateSubCategory(&subCategory)
 			if error != nil {
 				log.Printf("database insert error: %v\n", err)
-				log.Printf("'%v' is exist: %v\n", subCategory.SubCategoryName, subCategory.SubCategoryId != "")
+				log.Printf("'%v' is exist: %v\n", subCategory.SubCategoryName, subCategory.SubCategoryId != 0)
 				return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("sub_category_create_failed")))
 			}
 		}
 
-		addTran.SubCategoryId = subCategory.SubCategoryId
+		addTran.SubCategoryId = strconv.FormatInt(subCategory.SubCategoryId, 10)
 	}
 
 	err = h.transactionStore.AddTransaction(&addTran)
@@ -304,12 +305,12 @@ func (h *Handler) addTransactionList(c echo.Context) error {
 				error := h.subCategoryStore.CreateSubCategory(&subCategory)
 				if error != nil {
 					log.Printf("CreateSubCategory: %v\n", error)
-					log.Printf("'%v' is exist: %v\n", subCategory.SubCategoryName, subCategory.SubCategoryId != "")
+					log.Printf("'%v' is exist: %v\n", subCategory.SubCategoryName, subCategory.SubCategoryId != 0)
 					return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("sub_category_create_failed")))
 				}
 			}
 
-			addTranList.TransactionList[i].SubCategoryId = subCategory.SubCategoryId
+			addTranList.TransactionList[i].SubCategoryId = strconv.FormatInt(subCategory.SubCategoryId, 10)
 		}
 	}
 
@@ -346,7 +347,7 @@ func (h *Handler) editTransaction(c echo.Context) error {
 		}
 		// TODO Createの前に、同じユーザー、同じカテゴリIDに紐づくサブカテゴリ名が存在するか確認
 		h.subCategoryStore.CreateSubCategory(&subCategory)
-		editTran.SubCategoryId = subCategory.SubCategoryId
+		editTran.SubCategoryId = strconv.FormatInt(subCategory.SubCategoryId, 10)
 	}
 
 	err = h.transactionStore.EditTransaction(&editTran)
