@@ -1,6 +1,7 @@
 package handler
 
 import (
+	common "MoneyHook/MoneyHook-API/common"
 	"MoneyHook/MoneyHook-API/model"
 	"fmt"
 	"log"
@@ -75,7 +76,7 @@ func validHeaders(c echo.Context) map[string]string {
 	case !x_cloud_scheduler || err != nil:
 		log.Printf("Invalid X-CloudScheduler: '%s'", c.Request().Header.Get(model.XCloudScheduler))
 		return model.Error.Create(&invalidRequest)
-	case x_cloud_scheduler_job_name != "money-hooks-batch-schedule":
+	case x_cloud_scheduler_job_name != common.GetEnv("JOB_NAME", ""):
 		log.Printf("Invalid X-CloudScheduler-JobName: '%s'", x_cloud_scheduler_job_name)
 		return model.Error.Create(&invalidRequest)
 	case x_cloud_scheduler_schedule_time == "":
