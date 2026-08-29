@@ -1,16 +1,72 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-      {
-        "name": "Remote",
-        "type": "go",
-        "request": "attach",
-        "mode": "remote",
-        "remotePath": "/app",
-        "host": "localhost",
-        "port": 2345,
-        "cwd": "/app",
-        "showLog": true
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Echo Server via Air (Hot Reload + Debug)",
+      "type": "go",
+      "request": "attach",
+      "mode": "remote",
+      "host": "127.0.0.1",
+      "port": 2345,
+      "cwd": "${workspaceFolder}/app",
+      "remotePath": "${workspaceFolder}/app",
+      "preLaunchTask": "air-debug",
+      "showLog": true
+    },
+    {
+      "name": "Attach to Air (Delve :2345)",
+      "type": "go",
+      "request": "attach",
+      "mode": "remote",
+      "host": "127.0.0.1",
+      "port": 2345,
+      "cwd": "${workspaceFolder}/app",
+      "remotePath": "${workspaceFolder}/app",
+      "showLog": true
+    },
+    {
+      "name": "Launch Echo Server (Direct Debug)",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/app",
+      "cwd": "${workspaceFolder}/app",
+      "env": {
+        "DATABASE_TYPE": "PostgreSQL",
+        "POSTGRES_HOST": "psql",
+        "POSTGRES_PORT": "5432",
+        "POSTGRES_DATABASE": "moneyhook",
+        "POSTGRES_USER": "moneyhook",
+        "POSTGRES_PASSWORD": "password",
+        "SSLMODE": "disable",
+        "GOOGLE_CLOUD_PROJECT": "demo-moneyhooks",
+        "FIREBASE_AUTH_EMULATOR_HOST": "firebase:9099",
+        "ENABLE_SEED_DATA": "true",
+        "JOB_NAME": "money-hooks-batch-schedule",
+        "FRONT_URL": "http://localhost:3000"
       }
-    ]
-  }
+    },
+    {
+      "name": "Launch Echo Server (Local Host)",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/app",
+      "cwd": "${workspaceFolder}/app",
+      "env": {
+        "DATABASE_TYPE": "PostgreSQL",
+        "POSTGRES_HOST": "localhost",
+        "POSTGRES_PORT": "5432",
+        "POSTGRES_DATABASE": "moneyhook",
+        "POSTGRES_USER": "moneyhook",
+        "POSTGRES_PASSWORD": "password",
+        "SSLMODE": "disable",
+        "GOOGLE_CLOUD_PROJECT": "demo-moneyhooks",
+        "FIREBASE_AUTH_EMULATOR_HOST": "127.0.0.1:9099",
+        "ENABLE_SEED_DATA": "true",
+        "JOB_NAME": "money-hooks-batch-schedule",
+        "FRONT_URL": "http://localhost:3000"
+      }
+    }
+  ]
+}

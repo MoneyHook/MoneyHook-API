@@ -1,0 +1,6 @@
+.git
+.devcontainer
+app/secret
+psql/data
+psql/pgadmin_data
+sql/settings
