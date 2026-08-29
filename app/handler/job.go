@@ -79,9 +79,9 @@ func validHeaders(c echo.Context) map[string]string {
 	case x_cloud_scheduler_job_name != common.GetEnv("JOB_NAME", ""):
 		log.Printf("Invalid X-CloudScheduler-JobName: '%s'", x_cloud_scheduler_job_name)
 		return model.Error.Create(&invalidRequest)
-	case x_cloud_scheduler_schedule_time == "":
-		log.Printf("Invalid X-CloudScheduler-ScheduleTime: '%s'", x_cloud_scheduler_schedule_time)
-		return model.Error.Create(&invalidRequest)
+		// case x_cloud_scheduler_schedule_time == "":
+		// log.Printf("Invalid X-CloudScheduler-ScheduleTime: '%s'", x_cloud_scheduler_schedule_time)
+		// return model.Error.Create(&invalidRequest)
 	}
 	return nil
 }
