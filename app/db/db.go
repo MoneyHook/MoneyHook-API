@@ -3,6 +3,7 @@ package db
 import (
 	category "MoneyHook/MoneyHook-API/cagegory"
 	common "MoneyHook/MoneyHook-API/common"
+	dbmigration "MoneyHook/MoneyHook-API/db/migration"
 	fixed "MoneyHook/MoneyHook-API/fixed"
 	job "MoneyHook/MoneyHook-API/job"
 	payment_resource "MoneyHook/MoneyHook-API/payment_resource"
@@ -12,8 +13,13 @@ import (
 	transaction "MoneyHook/MoneyHook-API/transaction"
 	user "MoneyHook/MoneyHook-API/user"
 
+	"context"
+	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -37,26 +43,48 @@ const (
 	PostgreSQL DatabaseType = "postgresql"
 )
 
-func New() *Store {
+func New() (*Store, error) {
+	enableSeedData, err := seedDataEnabledFromEnvironment()
+	if err != nil {
+		return nil, err
+	}
 	dbType := DatabaseType(strings.ToLower(common.GetEnv("DATABASE_TYPE", "MySQL")))
 
 	switch dbType {
 	case MySQL:
-		return NewMysql()
+		return newMysql(enableSeedData)
 	case PostgreSQL:
-		return NewPostgres()
+		return newPostgres(enableSeedData)
 	default:
-		log.Fatalf("Unsupported DATABASE_TYPE: '%s'. Please set 'MySQL' or 'PostgreSQL'", dbType)
-		return nil
+		return nil, fmt.Errorf("unsupported DATABASE_TYPE %q: set MySQL or PostgreSQL", dbType)
 	}
 }
 
-func NewMysql() *Store {
+func NewMysql() (*Store, error) {
+	enableSeedData, err := seedDataEnabledFromEnvironment()
+	if err != nil {
+		return nil, err
+	}
+	return newMysql(enableSeedData)
+}
+
+func newMysql(enableSeedData bool) (*Store, error) {
 
 	log.Printf("Start MySQL Database Setup")
-	db, err := gorm.Open(mysql.Open(getMySqlConfig()), &gorm.Config{})
+	db, err := openWithRetry("MySQL", func() gorm.Dialector {
+		return mysql.Open(getMySqlConfig())
+	})
 	if err != nil {
-		panic(err)
+		return nil, err
+	}
+	if err := dbmigration.Run(
+		context.Background(),
+		db,
+		dbmigration.MySQL,
+		common.GetEnv("MYSQL_DATABASE", ""),
+		dbmigration.Options{EnableSeedData: enableSeedData},
+	); err != nil {
+		return nil, err
 	}
 	log.Printf("Finish MySQL Database Setup")
 
@@ -68,15 +96,34 @@ func NewMysql() *Store {
 	pr := store_mysql.NewPaymentResourceStore(db)
 	job := store_mysql.NewJobStore(db)
 
-	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobsStore: job}
+	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobsStore: job}, nil
 }
 
-func NewPostgres() *Store {
+func NewPostgres() (*Store, error) {
+	enableSeedData, err := seedDataEnabledFromEnvironment()
+	if err != nil {
+		return nil, err
+	}
+	return newPostgres(enableSeedData)
+}
+
+func newPostgres(enableSeedData bool) (*Store, error) {
 
 	log.Printf("Start PostgreSQL Database Setup")
-	db, err := gorm.Open(postgres.Open(getPostgresConfig()), &gorm.Config{})
+	db, err := openWithRetry("PostgreSQL", func() gorm.Dialector {
+		return postgres.Open(getPostgresConfig())
+	})
 	if err != nil {
-		panic(err)
+		return nil, err
+	}
+	if err := dbmigration.Run(
+		context.Background(),
+		db,
+		dbmigration.PostgreSQL,
+		common.GetEnv("POSTGRES_DATABASE", ""),
+		dbmigration.Options{EnableSeedData: enableSeedData},
+	); err != nil {
+		return nil, err
 	}
 	log.Printf("Finish PostgreSQL Database Setup")
 
@@ -88,5 +135,61 @@ func NewPostgres() *Store {
 	pr := store_postgres.NewPaymentResourceStore(db)
 	job := store_postgres.NewJobStore(db)
 
-	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobsStore: job}
+	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobsStore: job}, nil
+}
+
+func seedDataEnabledFromEnvironment() (bool, error) {
+	value, exists := os.LookupEnv("ENABLE_SEED_DATA")
+	return parseSeedDataEnabled(value, exists)
+}
+
+func parseSeedDataEnabled(value string, exists bool) (bool, error) {
+	value = strings.TrimSpace(value)
+	if !exists || value == "" {
+		return false, nil
+	}
+
+	enabled, err := strconv.ParseBool(value)
+	if err != nil {
+		return false, fmt.Errorf("invalid ENABLE_SEED_DATA value %q: expected a boolean accepted by strconv.ParseBool", value)
+	}
+	return enabled, nil
+}
+
+func openWithRetry(databaseName string, dialector func() gorm.Dialector) (*gorm.DB, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	delay := time.Second
+	var lastErr error
+	for attempt := 1; ; attempt++ {
+		db, err := gorm.Open(dialector(), &gorm.Config{
+			DisableForeignKeyConstraintWhenMigrating: true,
+			IgnoreRelationshipsWhenMigrating:         true,
+		})
+		if err == nil {
+			return db, nil
+		}
+		lastErr = err
+		if db != nil {
+			if sqlDB, sqlErr := db.DB(); sqlErr == nil {
+				_ = sqlDB.Close()
+			}
+		}
+
+		log.Printf("event=database_connection_retry database=%s attempt=%d delay_ms=%d error=%q", databaseName, attempt, delay.Milliseconds(), err)
+		timer := time.NewTimer(delay)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return nil, fmt.Errorf("connect to %s within 60 seconds: %w", databaseName, lastErr)
+		case <-timer.C:
+		}
+		if delay < 5*time.Second {
+			delay *= 2
+			if delay > 5*time.Second {
+				delay = 5 * time.Second
+			}
+		}
+	}
 }

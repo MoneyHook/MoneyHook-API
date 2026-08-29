@@ -1,7 +1,12 @@
-sql/settings
+# Database runtime data
+/sql/settings/
+/psql/data/
 
-psql/data
+# Build and runtime artifacts
+/tmp/
+/app/tmp/
+/app/MoneyHook-API
+/firepit-log.txt
 
-app/tmp
-app/MoneyHook-API
-app/secret
+# Local secrets
+/app/secret/

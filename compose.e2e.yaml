@@ -1,0 +1,6 @@
+services:
+  go:
+    command: ["sh", "-c", "cd /workspace/app && go run ."]
+    environment:
+      ENABLE_SEED_DATA: "false"
+      FRONT_URL: "http://localhost:3000"

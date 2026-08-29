@@ -24,20 +24,20 @@ func main() {
 		ExposeHeaders: []string{"Content-Length"},
 	}))
 
-	// e.Use(middleware.KeyAuthWithConfig(router.ValidateJwt()))
-
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Success, running")
 	})
 
-	// e.GET("/generateKey", func(c echo.Context) error {
-	// return router.GenerateJWT(c)
-	// })
-
 	v1 := e.Group("/api")
 
-	d := db.New()
-	client := router.NewFirebaseAuth()
+	d, err := db.New()
+	if err != nil {
+		log.Fatalf("Database setup failed: %v", err)
+	}
+	client, err := router.NewFirebaseAuth()
+	if err != nil {
+		log.Fatalf("Firebase setup failed: %v", err)
+	}
 	h := handler.NewHandler(client, d.UserStore, d.TransactionStore, d.FixedStore, d.CategoryStore, d.SubCategoryStore, d.PaymentResourceStore, d.JobsStore)
 	h.Register(v1)
 

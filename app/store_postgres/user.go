@@ -1,94 +1,85 @@
 package store_postgres
 
 import (
-	"MoneyHook/MoneyHook-API/model"
+	userdomain "MoneyHook/MoneyHook-API/user"
+	"errors"
 	"fmt"
-	"log"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type UserStore struct {
 	db *gorm.DB
 }
 
+type userIdentity struct {
+	UserNo string `gorm:"column:user_no"`
+	UserID string `gorm:"column:user_id"`
+}
+
 func NewUserStore(db *gorm.DB) *UserStore {
 	return &UserStore{db: db}
 }
 
-func (us *UserStore) UserExists(userId *string) *string {
-	var result string
+func (us *UserStore) ResolveFirebaseUser(firebaseUID string, legacyUserID string) (string, error) {
+	var userNo string
+	err := us.db.Transaction(func(tx *gorm.DB) error {
+		current, currentFound, err := findUserIdentity(tx, firebaseUID)
+		if err != nil {
+			return err
+		}
+		legacy, legacyFound, err := findUserIdentity(tx, legacyUserID)
+		if err != nil {
+			return err
+		}
+		if currentFound && legacyFound && current.UserNo != legacy.UserNo {
+			return userdomain.ErrIdentityConflict
+		}
+		if currentFound {
+			userNo = current.UserNo
+			return nil
+		}
+		if legacyFound {
+			result := tx.Table("users").
+				Where("user_no = ? AND user_id = ?", legacy.UserNo, legacyUserID).
+				Update("user_id", firebaseUID)
+			if result.Error != nil {
+				return fmt.Errorf("migrate legacy firebase identity: %w", result.Error)
+			}
+			if result.RowsAffected != 1 {
+				return userdomain.ErrIdentityConflict
+			}
+			userNo = legacy.UserNo
+			return nil
+		}
 
-	us.db.Table("users").
-		Select("user_no").
-		Where("user_id = ?", userId).
-		Limit(1).
-		Scan(&result)
-
-	return &result
-}
-
-func (us *UserStore) UpdateToken(googleSignIn *model.GoogleSignIn) {
-	subquery := us.db.Table("users").Select("user_no").Where("user_id = ?", googleSignIn.UserId)
-
-	us.db.Table("user_token").
-		Where("user_no = (?)", subquery).
-		Update("token", googleSignIn.Token)
-}
-
-func (us *UserStore) CreateUser(googleSignIn *model.GoogleSignIn) *model.GoogleSignIn {
-	us.db.Table("users").
-		Model(&googleSignIn).
-		Create(map[string]interface{}{
-			"user_id": googleSignIn.UserId,
-		})
-
-	result := us.db.Table("users").
-		Select("user_no").
-		Where("user_id = ?", googleSignIn.UserId).
-		Scan(&googleSignIn.UserNo)
-
-	if result == nil {
-		// エラー処理
-		fmt.Println("error")
-	}
-
-	return googleSignIn
-}
-
-func (us *UserStore) CreateToken(googleSignIn *model.GoogleSignIn) {
-	us.db.Table("user_token").Create(map[string]interface{}{
-		"user_no": googleSignIn.UserNo,
-		"token":   googleSignIn.Token,
+		if err := tx.Table("users").Clauses(clause.OnConflict{DoNothing: true}).
+			Create(map[string]any{"user_id": firebaseUID}).Error; err != nil {
+			return fmt.Errorf("create firebase user: %w", err)
+		}
+		created, found, err := findUserIdentity(tx, firebaseUID)
+		if err != nil {
+			return err
+		}
+		if !found {
+			return errors.New("created firebase user could not be resolved")
+		}
+		userNo = created.UserNo
+		return nil
 	})
+	return userNo, err
 }
 
-func (us *UserStore) ExtractUserNoFromToken(userToken *string) (*string, error) {
-	model := model.GoogleSignIn{}
-	result := us.db.Table("user_token").
-		Select("user_no").
-		Where("token = ?", userToken).
-		Scan(&model)
-
-	if result.Error != nil || model.UserNo == "" {
-		log.Printf("database error: %v\n", result.Error)
-		log.Printf("user_no, user_token: %v, %v\n", model.UserNo, *userToken)
-		return &model.UserNo, gorm.ErrRecordNotFound
+func findUserIdentity(db *gorm.DB, userID string) (userIdentity, bool, error) {
+	var identity userIdentity
+	err := db.Table("users").Clauses(clause.Locking{Strength: "UPDATE"}).
+		Select("user_no", "user_id").Where("user_id = ?", userID).Take(&identity).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return userIdentity{}, false, nil
 	}
-	return &model.UserNo, nil
-}
-
-func (us *UserStore) ExtractUserNoFromUserId(userId *string) (*string, error) {
-	model := model.GoogleSignIn{}
-	result := us.db.Table("users").
-		Select("user_no").
-		Where("user_id = ?", userId).
-		Scan(&model)
-
-	if result.Error != nil || model.UserNo == "" {
-		log.Printf("database error: %v\n", result.Error)
-		log.Printf("user_no, user_id: %v, %v\n", model.UserNo, *userId)
-		return &model.UserNo, gorm.ErrRecordNotFound
+	if err != nil {
+		return userIdentity{}, false, err
 	}
-	return &model.UserNo, nil
+	return identity, true, nil
 }

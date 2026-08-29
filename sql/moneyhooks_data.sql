@@ -1,23 +1,9 @@
 -- ユーザー
 INSERT INTO
-    users (user_id, email, PASSWORD)
+    users (user_id)
 VALUES
-    (
-        '4f4da417-7693-4fa1-b153-a3511ed1a57a',
-        'MasterUser',
-        '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'
-    ),
-    (
-        'a77a6e94-6aa2-47ea-87dd-129f580fb669',
-        'sample@sample.com',
-        '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'
-    );
-
--- トークン
-INSERT INTO
-    user_token (user_no, token)
-VALUES
-    (2, 'sample_token');
+    ('4f4da417-7693-4fa1-b153-a3511ed1a57a'),
+    ('a77a6e94-6aa2-47ea-87dd-129f580fb669');
 
 -- カテゴリ
 INSERT INTO

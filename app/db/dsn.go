@@ -26,6 +26,9 @@ func getMySqlConfig() string {
 		Collation:            "utf8mb4_unicode_ci",
 		Loc:                  jst,
 		AllowNativePasswords: true,
+		Timeout:              5 * time.Second,
+		ReadTimeout:          30 * time.Second,
+		WriteTimeout:         30 * time.Second,
 	}
 	return dsn.FormatDSN()
 }
@@ -40,7 +43,7 @@ func getPostgresConfig() string {
 	timezone := "Asia/Tokyo"
 
 	dsn := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=%s&TimeZone=%s",
+		"postgres://%s:%s@%s:%s/%s?sslmode=%s&TimeZone=%s&connect_timeout=5",
 		user, password, host, port, dbName, sslmode, timezone,
 	)
 

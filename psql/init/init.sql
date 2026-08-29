@@ -1,8 +1,8 @@
 /* ============================================================
 CREATE TABLES
 ============================================================ */
-DROP TABLE IF EXISTS users,
-user_token,
+DROP TABLE IF EXISTS user_token,
+users,
 category,
 sub_category,
 hidden_sub_category,
@@ -13,10 +13,8 @@ payment_resource CASCADE;
 
 CREATE TABLE
     users (
-        user_id VARCHAR(64) NOT NULL,
-        user_no BIGSERIAL PRIMARY KEY,
-        email VARCHAR(128) UNIQUE,
-        PASSWORD TEXT
+        user_id VARCHAR(128) NOT NULL UNIQUE,
+        user_no BIGSERIAL PRIMARY KEY
     );
 
 CREATE TABLE
@@ -24,13 +22,6 @@ CREATE TABLE
         category_id BIGSERIAL PRIMARY KEY,
         category_name VARCHAR(16) NOT NULL,
         order_num INT NOT NULL
-    );
-
-CREATE TABLE
-    user_token (
-        user_no BIGINT NOT NULL,
-        token VARCHAR(64) NOT NULL,
-        CONSTRAINT fk_user_no FOREIGN KEY (user_no) REFERENCES users (user_no)
     );
 
 CREATE TABLE
@@ -82,6 +73,7 @@ CREATE TABLE
         transaction_name VARCHAR(32) NOT NULL,
         transaction_amount BIGINT NOT NULL,
         transaction_date DATE NOT NULL,
+        transaction_time TIME,
         category_id BIGINT NOT NULL,
         sub_category_id BIGINT NOT NULL,
         fixed_flg BOOLEAN NOT NULL,
@@ -114,13 +106,11 @@ INSERT DATA
 ============================================================ */
 -- ユーザー
 INSERT INTO
-    users (user_id, user_no, email, PASSWORD)
+    users (user_id, user_no)
 VALUES
     (
         '4f4da417-7693-4fa1-b153-a3511ed1a57a',
-        1,
-        'MasterUser',
-        '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'
+        1
     );
 
 -- カテゴリ
