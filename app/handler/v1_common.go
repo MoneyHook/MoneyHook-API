@@ -43,7 +43,3 @@ func respondV1Error(c echo.Context, status int, code string, message string, fie
 func respondV1Unauthorized(c echo.Context) error {
 	return respondV1Error(c, http.StatusUnauthorized, "UNAUTHORIZED", "認証に失敗しました", nil)
 }
-
-func (h *Handler) GetV1UserId(c echo.Context) (string, error) {
-	return h.GetUserId(c)
-}

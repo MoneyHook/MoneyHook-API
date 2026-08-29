@@ -3,7 +3,11 @@
 package migration
 
 import (
+	userdomain "MoneyHook/MoneyHook-API/user"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -14,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"MoneyHook/MoneyHook-API/store_mysql"
+	"MoneyHook/MoneyHook-API/store_postgres"
 	mysqldriver "github.com/go-sql-driver/mysql"
 	mysqlgorm "gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -111,6 +117,7 @@ func exerciseMigration(t *testing.T, db *gorm.DB, dialect Dialect, databaseName 
 	if err := db.Table("users").Where("user_no = ? AND user_id = ?", 99, "duplicate-legacy-id").Count(&preservedLegacyUser).Error; err != nil || preservedLegacyUser != 1 {
 		t.Fatalf("legacy user identity was not preserved: count=%d error=%v", preservedLegacyUser, err)
 	}
+	exerciseFirebaseIdentityResolution(t, db, dialect)
 	assertCount(t, db, "category", 29)
 	assertCount(t, db, "sub_category", 91)
 	assertCount(t, db, "payment_type", 3)
@@ -215,6 +222,89 @@ func exerciseMigration(t *testing.T, db *gorm.DB, dialect Dialect, databaseName 
 
 	exerciseSampleSeed(t, db, dialect, databaseName)
 	exerciseLegacySchema(t, db, dialect, databaseName)
+}
+
+func exerciseFirebaseIdentityResolution(t *testing.T, db *gorm.DB, dialect Dialect) {
+	t.Helper()
+	var store userdomain.Store
+	if dialect == PostgreSQL {
+		store = store_postgres.NewUserStore(db)
+	} else {
+		store = store_mysql.NewUserStore(db)
+	}
+
+	legacyDigest := sha256.Sum256([]byte("second@example.com"))
+	legacyUserID := hex.EncodeToString(legacyDigest[:])
+	mustExec(t, db, "UPDATE users SET user_id = ? WHERE user_no = ?", legacyUserID, 99)
+	if err := db.Table("transaction").Create(map[string]any{
+		"user_no":            99,
+		"transaction_name":   "移行前データ",
+		"transaction_amount": -100,
+		"transaction_date":   "2026-08-29",
+		"category_id":        1,
+		"sub_category_id":    1,
+		"fixed_flg":          false,
+	}).Error; err != nil {
+		t.Fatalf("create legacy user's business data: %v", err)
+	}
+
+	userNo, err := store.ResolveFirebaseUser("firebase-uid-migrated", legacyUserID)
+	if err != nil || userNo != "99" {
+		t.Fatalf("migrate legacy email hash: userNo=%q error=%v", userNo, err)
+	}
+	var preservedTransactions int64
+	if err := db.Table("transaction").Where("user_no = ?", 99).Count(&preservedTransactions).Error; err != nil || preservedTransactions != 1 {
+		t.Fatalf("business data was not preserved: count=%d error=%v", preservedTransactions, err)
+	}
+	userNo, err = store.ResolveFirebaseUser("firebase-uid-migrated", legacyUserID)
+	if err != nil || userNo != "99" {
+		t.Fatalf("resolve existing Firebase UID: userNo=%q error=%v", userNo, err)
+	}
+
+	newUserNo, err := store.ResolveFirebaseUser("firebase-uid-new", "missing-legacy-id")
+	if err != nil || newUserNo == "" {
+		t.Fatalf("create Firebase user: userNo=%q error=%v", newUserNo, err)
+	}
+
+	mustExec(t, db, "INSERT INTO users (user_id) VALUES (?)", "firebase-uid-conflict")
+	mustExec(t, db, "INSERT INTO users (user_id) VALUES (?)", "legacy-id-conflict")
+	if _, err := store.ResolveFirebaseUser("firebase-uid-conflict", "legacy-id-conflict"); !errors.Is(err, userdomain.ErrIdentityConflict) {
+		t.Fatalf("identity conflict error = %v", err)
+	}
+
+	const concurrentRequests = 4
+	resolved := make(chan string, concurrentRequests)
+	resolutionErrors := make(chan error, concurrentRequests)
+	var waitGroup sync.WaitGroup
+	for range concurrentRequests {
+		waitGroup.Add(1)
+		go func() {
+			defer waitGroup.Done()
+			resolvedUserNo, resolveErr := store.ResolveFirebaseUser("firebase-uid-concurrent", "missing-concurrent-legacy-id")
+			resolved <- resolvedUserNo
+			resolutionErrors <- resolveErr
+		}()
+	}
+	waitGroup.Wait()
+	close(resolved)
+	close(resolutionErrors)
+	for resolveErr := range resolutionErrors {
+		if resolveErr != nil {
+			t.Fatalf("concurrent first access: %v", resolveErr)
+		}
+	}
+	var expectedUserNo string
+	for resolvedUserNo := range resolved {
+		if resolvedUserNo == "" {
+			t.Fatal("concurrent first access returned an empty user number")
+		}
+		if expectedUserNo == "" {
+			expectedUserNo = resolvedUserNo
+		}
+		if resolvedUserNo != expectedUserNo {
+			t.Fatalf("concurrent first access returned multiple users: %q and %q", expectedUserNo, resolvedUserNo)
+		}
+	}
 }
 
 func exerciseSampleSeed(t *testing.T, db *gorm.DB, dialect Dialect, databaseName string) {

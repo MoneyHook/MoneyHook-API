@@ -5,15 +5,14 @@ import (
 	fixed "MoneyHook/MoneyHook-API/fixed"
 	job "MoneyHook/MoneyHook-API/job"
 	payment_resource "MoneyHook/MoneyHook-API/payment_resource"
+	"MoneyHook/MoneyHook-API/router"
 	sub_category "MoneyHook/MoneyHook-API/sub_cagegory"
 	transaction "MoneyHook/MoneyHook-API/transaction"
 	user "MoneyHook/MoneyHook-API/user"
-
-	"firebase.google.com/go/auth"
 )
 
 type Handler struct {
-	firebaseClient       *auth.Client
+	firebaseClient       router.IDTokenVerifier
 	userStore            user.Store
 	transactionStore     transaction.Store
 	fixedStore           fixed.Store
@@ -24,7 +23,7 @@ type Handler struct {
 }
 
 func NewHandler(
-	fc *auth.Client,
+	fc router.IDTokenVerifier,
 	us user.Store,
 	ts transaction.Store,
 	fs fixed.Store,
