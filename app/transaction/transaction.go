@@ -1,6 +1,14 @@
 package transaction
 
-import "MoneyHook/MoneyHook-API/model"
+import (
+	"MoneyHook/MoneyHook-API/model"
+	"errors"
+)
+
+var (
+	ErrNotFound        = errors.New("transaction not found")
+	ErrInvalidRelation = errors.New("invalid transaction relation")
+)
 
 type Store interface {
 	GetTimelineData(userId string, month string) *[]model.Timeline
@@ -18,4 +26,9 @@ type Store interface {
 	AddTransactionList(*model.AddTransactionList) error
 	EditTransaction(*model.EditTransaction) error
 	DeleteTransaction(*model.DeleteTransaction) error
+	GetV1Transaction(userId string, transactionId string) (*model.V1Transaction, error)
+	CreateV1Transaction(transaction *model.V1TransactionWrite) (*model.V1Transaction, error)
+	UpdateV1Transaction(transaction *model.V1TransactionWrite) (*model.V1Transaction, string, error)
+	DeleteV1Transaction(userId string, transactionId string) error
+	GetV1AnalyticsTransactions(userId string, startDate string, endDate string) ([]model.V1AnalyticsTransaction, error)
 }

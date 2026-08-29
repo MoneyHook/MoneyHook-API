@@ -5,6 +5,18 @@ import (
 )
 
 func (h *Handler) Register(v1 *echo.Group) {
+	reactV1 := v1.Group("/v1")
+	v1Transactions := reactV1.Group("/transactions")
+	v1Transactions.GET("/:transactionId", h.getV1Transaction)
+	v1Transactions.POST("", h.createV1Transaction)
+	v1Transactions.PATCH("/:transactionId", h.updateV1Transaction)
+	v1Transactions.DELETE("/:transactionId", h.deleteV1Transaction)
+	v1Analytics := reactV1.Group("/analytics")
+	v1Analytics.GET("/overview", h.getV1AnalyticsOverview)
+	v1Analytics.GET("/categories", h.getV1AnalyticsCategories)
+	v1Analytics.GET("/fixed", h.getV1AnalyticsFixed)
+	v1Analytics.GET("/payments", h.getV1AnalyticsPayments)
+
 	user := v1.Group("/user")
 	user.POST("/googleSignIn", h.googleSignIn)
 

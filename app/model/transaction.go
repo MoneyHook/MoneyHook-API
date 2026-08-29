@@ -161,3 +161,52 @@ type DeleteTransaction struct {
 	UserId        string
 	TransactionId string
 }
+
+type V1Transaction struct {
+	TransactionId   string
+	TransactionDate string
+	TransactionTime *string
+	TransactionName string
+	Amount          int64
+	Sign            int
+	SignedAmount    int64
+	CategoryId      string
+	CategoryName    string
+	SubCategoryId   string
+	SubCategoryName string
+	FixedFlg        bool
+	PaymentId       *string
+	PaymentName     *string
+}
+
+type V1TransactionWrite struct {
+	TransactionId   string
+	UserId          string
+	TransactionDate string
+	TransactionTime *string
+	TransactionName string
+	Amount          int64
+	Sign            int
+	CategoryId      string
+	SubCategoryId   string
+	FixedFlg        bool
+	PaymentId       *string
+}
+
+type V1AnalyticsTransaction struct {
+	TransactionId     string
+	TransactionDate   string
+	TransactionTime   *string
+	TransactionName   string
+	SignedAmount      int64
+	CategoryId        string
+	CategoryName      string
+	SubCategoryId     string
+	SubCategoryName   string
+	FixedFlg          bool
+	PaymentId         *string
+	PaymentName       *string
+	PaymentTypeId     *string
+	PaymentTypeName   *string
+	IsPaymentDueLater *bool
+}
