@@ -36,7 +36,10 @@ func main() {
 
 	v1 := e.Group("/api")
 
-	d := db.New()
+	d, err := db.New()
+	if err != nil {
+		log.Fatalf("Database setup failed: %v", err)
+	}
 	client := router.NewFirebaseAuth()
 	h := handler.NewHandler(client, d.UserStore, d.TransactionStore, d.FixedStore, d.CategoryStore, d.SubCategoryStore, d.PaymentResourceStore, d.JobsStore)
 	h.Register(v1)

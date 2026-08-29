@@ -1,5 +1,5 @@
-DROP TABLE IF EXISTS users,
-user_token,
+DROP TABLE IF EXISTS user_token,
+users,
 category,
 sub_category,
 hidden_sub_category,
@@ -10,10 +10,8 @@ payment_resource;
 
 CREATE TABLE
     users (
-        user_id VARCHAR(64) NOT NULL,
+        user_id VARCHAR(128) NOT NULL UNIQUE,
         user_no BIGINT UNSIGNED AUTO_INCREMENT,
-        email VARCHAR(128) UNIQUE,
-        PASSWORD text,
         PRIMARY KEY (user_no)
     );
 
@@ -23,13 +21,6 @@ CREATE TABLE
         category_name VARCHAR(16) NOT NULL,
         order_num INT NOT NULL,
         PRIMARY KEY (category_id)
-    );
-
-CREATE TABLE
-    user_token (
-        user_no BIGINT UNSIGNED NOT NULL,
-        token VARCHAR(64) NOT NULL,
-        FOREIGN KEY user_no (user_no) REFERENCES users (user_no)
     );
 
 CREATE TABLE
@@ -84,6 +75,7 @@ CREATE TABLE
         transaction_name VARCHAR(32) NOT NULL,
         transaction_amount BIGINT NOT NULL,
         transaction_date DATE NOT NULL,
+        transaction_time TIME,
         category_id BIGINT UNSIGNED NOT NULL,
         sub_category_id BIGINT UNSIGNED NOT NULL,
         fixed_flg BOOLEAN NOT NULL,

@@ -13,7 +13,7 @@ services:
   #     MYSQL_USER: "moneyhook"
   #     MYSQL_PASSWORD: "password"
   #   volumes:
-  #     - ./sql/:/docker-entrypoint-initdb.d/
+  #     - ./sql/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
   #     - ./sql/mysql.cnf:/etc/mysql/conf.d/my.cnf
   #     - ./sql/settings:/var/lib/mysql
   psql:
@@ -27,7 +27,7 @@ services:
       POSTGRES_PASSWORD: "password"
       POSTGRES_DB: "moneyhook"
     volumes:
-      - ./psql/init:/docker-entrypoint-initdb.d/
+      - ./psql/init/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
       - ./psql/data:/var/lib/postgresql/data
   pgadmin:
     image: dpage/pgadmin4
@@ -69,3 +69,4 @@ services:
       # Firebase
       SECRET_PATH: "secret/firebase_secret.json"
       ENABLE_FIREBASE_AUTH: false
+      ENABLE_SEED_DATA: "true"
