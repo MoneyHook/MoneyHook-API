@@ -34,3 +34,22 @@ func TestParseSeedDataEnabled(t *testing.T) {
 		})
 	}
 }
+
+func TestQuotePostgresIdentifier(t *testing.T) {
+	tests := []struct {
+		name       string
+		identifier string
+		want       string
+	}{
+		{name: "simple", identifier: "moneyhook", want: `"moneyhook"`},
+		{name: "double quote", identifier: `money"hook`, want: `"money""hook"`},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := quotePostgresIdentifier(test.identifier); got != test.want {
+				t.Errorf("quotePostgresIdentifier(%q) = %q, want %q", test.identifier, got, test.want)
+			}
+		})
+	}
+}

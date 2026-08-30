@@ -110,6 +110,10 @@ func NewPostgres() (*Store, error) {
 func newPostgres(enableSeedData bool) (*Store, error) {
 
 	log.Printf("Start PostgreSQL Database Setup")
+	databaseName := common.GetEnv("POSTGRES_DATABASE", "")
+	if err := ensurePostgresDatabase(context.Background(), databaseName); err != nil {
+		return nil, err
+	}
 	db, err := openWithRetry("PostgreSQL", func() gorm.Dialector {
 		return postgres.Open(getPostgresConfig())
 	})
@@ -120,7 +124,7 @@ func newPostgres(enableSeedData bool) (*Store, error) {
 		context.Background(),
 		db,
 		dbmigration.PostgreSQL,
-		common.GetEnv("POSTGRES_DATABASE", ""),
+		databaseName,
 		dbmigration.Options{EnableSeedData: enableSeedData},
 	); err != nil {
 		return nil, err
@@ -136,6 +140,53 @@ func newPostgres(enableSeedData bool) (*Store, error) {
 	job := store_postgres.NewJobStore(db)
 
 	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobStore: job}, nil
+}
+
+func ensurePostgresDatabase(ctx context.Context, databaseName string) error {
+	if strings.TrimSpace(databaseName) == "" {
+		return fmt.Errorf("POSTGRES_DATABASE must not be empty")
+	}
+
+	adminDB, err := openWithRetry("PostgreSQL admin database", func() gorm.Dialector {
+		return postgres.Open(getPostgresAdminConfig())
+	})
+	if err != nil {
+		return err
+	}
+	sqlDB, err := adminDB.DB()
+	if err != nil {
+		return fmt.Errorf("get PostgreSQL admin database handle: %w", err)
+	}
+	defer sqlDB.Close()
+
+	var exists bool
+	if err := adminDB.WithContext(ctx).
+		Raw("SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = ?)", databaseName).
+		Scan(&exists).Error; err != nil {
+		return fmt.Errorf("check PostgreSQL database %q: %w", databaseName, err)
+	}
+	if exists {
+		log.Printf("event=database_creation status=already_exists dialect=postgresql database=%s", databaseName)
+		return nil
+	}
+
+	query := fmt.Sprintf("CREATE DATABASE %s", quotePostgresIdentifier(databaseName))
+	if err := adminDB.WithContext(ctx).Exec(query).Error; err != nil {
+		if checkErr := adminDB.WithContext(ctx).
+			Raw("SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = ?)", databaseName).
+			Scan(&exists).Error; checkErr == nil && exists {
+			log.Printf("event=database_creation status=already_exists dialect=postgresql database=%s", databaseName)
+			return nil
+		}
+		return fmt.Errorf("create PostgreSQL database %q: %w", databaseName, err)
+	}
+
+	log.Printf("event=database_creation status=created dialect=postgresql database=%s", databaseName)
+	return nil
+}
+
+func quotePostgresIdentifier(identifier string) string {
+	return `"` + strings.ReplaceAll(identifier, `"`, `""`) + `"`
 }
 
 func SeedDataEnabledFromEnvironment() (bool, error) {

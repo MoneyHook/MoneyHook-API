@@ -34,7 +34,14 @@ func getMySqlConfig() string {
 }
 
 func getPostgresConfig() string {
-	dbName := common.GetEnv("POSTGRES_DATABASE", "")
+	return getPostgresConfigForDatabase(common.GetEnv("POSTGRES_DATABASE", ""))
+}
+
+func getPostgresAdminConfig() string {
+	return getPostgresConfigForDatabase("postgres")
+}
+
+func getPostgresConfigForDatabase(dbName string) string {
 	user := common.GetEnv("POSTGRES_USER", "")
 	password := common.GetEnv("POSTGRES_PASSWORD", "")
 	host := common.GetEnv("POSTGRES_HOST", "")
