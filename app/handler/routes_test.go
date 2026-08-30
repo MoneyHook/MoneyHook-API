@@ -11,6 +11,10 @@ import (
 )
 
 var expectedBusinessRoutes = map[string]struct{}{
+	"GET /api/v1/budget":                                       {},
+	"PUT /api/v1/budget":                                       {},
+	"GET /api/v1/settings":                                     {},
+	"PATCH /api/v1/settings":                                   {},
 	"POST /api/v1/transactions":                                {},
 	"GET /api/v1/transactions/:transactionId":                  {},
 	"PATCH /api/v1/transactions/:transactionId":                {},

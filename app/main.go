@@ -20,7 +20,7 @@ func main() {
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins:  []string{common.GetEnv("FRONT_URL", "http://localhost:3000")},
-		AllowMethods:  []string{echo.GET, echo.PATCH, echo.POST, echo.DELETE},
+		AllowMethods:  []string{echo.GET, echo.PATCH, echo.PUT, echo.POST, echo.DELETE},
 		AllowHeaders:  []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 		ExposeHeaders: []string{"Content-Length"},
 	}))
@@ -53,6 +53,8 @@ func main() {
 	h := handler.New(handler.Dependencies{
 		FirebaseClient:       client,
 		UserStore:            d.UserStore,
+		BudgetStore:          d.BudgetStore,
+		SettingsStore:        d.SettingsStore,
 		TransactionStore:     d.TransactionStore,
 		FixedStore:           d.FixedStore,
 		CategoryStore:        d.CategoryStore,

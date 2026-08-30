@@ -11,6 +11,12 @@ func (h *Handler) Register(api *echo.Group) {
 	protected := api.Group("", authMiddleware)
 
 	reactV1 := protected.Group("/v1")
+	budget := reactV1.Group("/budget")
+	budget.GET("", h.budget.GetV1Budget)
+	budget.PUT("", h.budget.PutV1Budget)
+	settings := reactV1.Group("/settings")
+	settings.GET("", h.settings.GetV1Settings)
+	settings.PATCH("", h.settings.PatchV1Settings)
 	v1Transactions := reactV1.Group("/transactions")
 	v1Transactions.GET("/:transactionId", h.transaction.GetV1Transaction)
 	v1Transactions.POST("", h.transaction.CreateV1Transaction)

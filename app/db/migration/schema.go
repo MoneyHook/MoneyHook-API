@@ -1,11 +1,21 @@
 package migration
 
 type userSchema struct {
-	UserID string `gorm:"column:user_id;type:varchar(128);not null;unique"`
-	UserNo uint64 `gorm:"column:user_no;primaryKey;autoIncrement"`
+	UserID      string `gorm:"column:user_id;type:varchar(128);not null;unique"`
+	UserNo      uint64 `gorm:"column:user_no;primaryKey;autoIncrement"`
+	AccentColor string `gorm:"column:accent_color;type:varchar(16);not null;default:blue"`
+	ThemeMode   string `gorm:"column:theme_mode;type:varchar(16);not null;default:system"`
 }
 
 func (userSchema) TableName() string { return "users" }
+
+type budgetSchema struct {
+	UserNo              uint64 `gorm:"column:user_no;primaryKey"`
+	EffectiveFrom       string `gorm:"column:effective_from;type:date;primaryKey"`
+	MonthlyBudgetAmount int64  `gorm:"column:monthly_budget_amount;not null"`
+}
+
+func (budgetSchema) TableName() string { return "budget" }
 
 type categorySchema struct {
 	CategoryID   uint64 `gorm:"column:category_id;primaryKey;autoIncrement"`
@@ -82,6 +92,7 @@ func (monthlyTransactionSchema) TableName() string { return "monthly_transaction
 
 var schemaModels = []any{
 	&userSchema{},
+	&budgetSchema{},
 	&categorySchema{},
 	&subCategorySchema{},
 	&hiddenSubCategorySchema{},
@@ -114,6 +125,7 @@ type foreignKeyRequirement struct {
 }
 
 var foreignKeyRequirements = []foreignKeyRequirement{
+	{Name: "fk_budget_user", Table: "budget", Column: "user_no", ReferencedTable: "users", ReferencedColumn: "user_no"},
 	{Name: "fk_sub_category_user", Table: "sub_category", Column: "user_no", ReferencedTable: "users", ReferencedColumn: "user_no"},
 	{Name: "fk_sub_category_category", Table: "sub_category", Column: "category_id", ReferencedTable: "category", ReferencedColumn: "category_id"},
 	{Name: "fk_hidden_sub_category_user", Table: "hidden_sub_category", Column: "user_no", ReferencedTable: "users", ReferencedColumn: "user_no"},

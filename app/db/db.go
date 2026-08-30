@@ -1,12 +1,14 @@
 package db
 
 import (
+	budget "MoneyHook/MoneyHook-API/budget"
 	category "MoneyHook/MoneyHook-API/category"
 	common "MoneyHook/MoneyHook-API/common"
 	dbmigration "MoneyHook/MoneyHook-API/db/migration"
 	fixed "MoneyHook/MoneyHook-API/fixed"
 	job "MoneyHook/MoneyHook-API/job"
 	paymentresource "MoneyHook/MoneyHook-API/paymentresource"
+	settings "MoneyHook/MoneyHook-API/settings"
 	"MoneyHook/MoneyHook-API/store_postgres"
 	subcategory "MoneyHook/MoneyHook-API/subcategory"
 	transaction "MoneyHook/MoneyHook-API/transaction"
@@ -26,6 +28,8 @@ import (
 
 type Store struct {
 	UserStore            user.Store
+	BudgetStore          budget.Store
+	SettingsStore        settings.Store
 	TransactionStore     transaction.Store
 	FixedStore           fixed.Store
 	CategoryStore        category.Store
@@ -74,6 +78,8 @@ func newPostgres(enableSeedData bool) (*Store, error) {
 	log.Printf("Finish PostgreSQL Database Setup")
 
 	us := store_postgres.NewUserStore(db)
+	bs := store_postgres.NewBudgetStore(db)
+	ss := store_postgres.NewSettingsStore(db)
 	ts := store_postgres.NewTransactionStore(db)
 	fs := store_postgres.NewFixedStore(db)
 	cs := store_postgres.NewCategoryStore(db)
@@ -81,7 +87,7 @@ func newPostgres(enableSeedData bool) (*Store, error) {
 	pr := store_postgres.NewPaymentResourceStore(db)
 	job := store_postgres.NewJobStore(db)
 
-	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobStore: job}, nil
+	return &Store{UserStore: us, BudgetStore: bs, SettingsStore: ss, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobStore: job}, nil
 }
 
 func ensurePostgresDatabase(ctx context.Context, databaseName string) error {

@@ -3,6 +3,7 @@
 package migration
 
 import (
+	"MoneyHook/MoneyHook-API/model"
 	userdomain "MoneyHook/MoneyHook-API/user"
 	"context"
 	"crypto/sha256"
@@ -71,9 +72,30 @@ func exerciseMigration(t *testing.T, db *gorm.DB, databaseName string) {
 		t.Fatal("legacy authentication storage was not removed")
 	}
 	mustExec(t, db, "DELETE FROM users WHERE user_no = ?", 98)
+	createLegacyBudgetSchema(t, db)
 	if err := Run(ctx, db, databaseName, Options{}); err != nil {
 		t.Fatalf("migrate empty database: %v", err)
 	}
+	for _, column := range []string{"accent_color", "theme_mode"} {
+		if !db.Migrator().HasColumn("users", column) {
+			t.Fatalf("users.%s was not added by migration", column)
+		}
+	}
+	if !db.Migrator().HasTable("budget") {
+		t.Fatal("budget table was not added by migration")
+	}
+	if !db.Migrator().HasColumn("budget", "effective_from") {
+		t.Fatal("budget.effective_from was not added by migration")
+	}
+	budgetKeys, err := loadForeignKeys(ctx, db, "budget")
+	if err != nil || !containsForeignKey(budgetKeys, foreignKeyRequirement{Column: "user_no", ReferencedTable: "users", ReferencedColumn: "user_no"}) {
+		t.Fatalf("budget foreign key was not added: keys=%v error=%v", budgetKeys, err)
+	}
+	primaryKeyColumns, err := loadPrimaryKeyColumns(ctx, db, "budget")
+	if err != nil || !sameStringSlice(primaryKeyColumns, budgetPrimaryKeyColumns) {
+		t.Fatalf("budget primary key columns = %v, want %v (error=%v)", primaryKeyColumns, budgetPrimaryKeyColumns, err)
+	}
+	exerciseBudgetAndSettingsStores(t, db)
 	var preservedLegacyUser int64
 	if err := db.Table("users").Where("user_no = ? AND user_id = ?", 99, "duplicate-legacy-id").Count(&preservedLegacyUser).Error; err != nil || preservedLegacyUser != 1 {
 		t.Fatalf("legacy user identity was not preserved: count=%d error=%v", preservedLegacyUser, err)
@@ -178,6 +200,97 @@ func exerciseMigration(t *testing.T, db *gorm.DB, databaseName string) {
 
 	exerciseSampleSeed(t, db, databaseName)
 	exerciseLegacySchema(t, db, databaseName)
+}
+
+func exerciseBudgetAndSettingsStores(t *testing.T, db *gorm.DB) {
+	t.Helper()
+	budgetStore := store_postgres.NewBudgetStore(db)
+	settingsStore := store_postgres.NewSettingsStore(db)
+	legacyBudget, err := budgetStore.GetBudget("99", "2026-07-01")
+	if err != nil {
+		t.Fatalf("get migrated legacy budget: %v", err)
+	}
+	if legacyBudget == nil || legacyBudget.MonthlyBudgetAmount != 100000 || legacyBudget.EffectiveFrom != "2026-07-01" {
+		t.Fatalf("migrated legacy budget = %+v", legacyBudget)
+	}
+
+	settings, err := settingsStore.GetSettings("1")
+	if err != nil {
+		t.Fatalf("get default user settings: %v", err)
+	}
+	if settings.AccentColor != "blue" || settings.ThemeMode != "system" {
+		t.Fatalf("default user settings = %+v", settings)
+	}
+	accentColor := "rose"
+	updatedSettings, err := settingsStore.UpdateSettings("1", &model.UserSettingsUpdate{AccentColor: &accentColor})
+	if err != nil {
+		t.Fatalf("update user settings: %v", err)
+	}
+	if updatedSettings.AccentColor != "rose" || updatedSettings.ThemeMode != "system" {
+		t.Fatalf("partially updated user settings = %+v", updatedSettings)
+	}
+
+	unconfiguredBudget, err := budgetStore.GetBudget("1", "2026-07-01")
+	if err != nil {
+		t.Fatalf("get unconfigured budget: %v", err)
+	}
+	if unconfiguredBudget != nil {
+		t.Fatalf("unconfigured budget = %+v, want nil", unconfiguredBudget)
+	}
+	firstBudget := &model.Budget{UserNo: "1", MonthlyBudgetAmount: 100000, EffectiveFrom: "2026-07-01"}
+	if err := budgetStore.UpsertBudget(firstBudget); err != nil {
+		t.Fatalf("create budget: %v", err)
+	}
+	storedBudget, err := budgetStore.GetBudget("1", "2026-07-01")
+	if err != nil {
+		t.Fatalf("get created budget: %v", err)
+	}
+	if *storedBudget != *firstBudget {
+		t.Fatalf("created budget = %+v, want %+v", storedBudget, firstBudget)
+	}
+	secondBudget := &model.Budget{UserNo: "1", MonthlyBudgetAmount: 200000, EffectiveFrom: "2026-08-01"}
+	if err := budgetStore.UpsertBudget(secondBudget); err != nil {
+		t.Fatalf("add budget history: %v", err)
+	}
+	storedBudget, err = budgetStore.GetBudget("1", "2026-08-01")
+	if err != nil {
+		t.Fatalf("get August budget: %v", err)
+	}
+	if *storedBudget != *secondBudget {
+		t.Fatalf("August budget = %+v, want %+v", storedBudget, secondBudget)
+	}
+	storedBudget, err = budgetStore.GetBudget("1", "2026-07-01")
+	if err != nil {
+		t.Fatalf("get July budget after August update: %v", err)
+	}
+	if *storedBudget != *firstBudget {
+		t.Fatalf("July budget after August update = %+v, want %+v", storedBudget, firstBudget)
+	}
+	storedBudget, err = budgetStore.GetBudget("1", "2026-09-01")
+	if err != nil {
+		t.Fatalf("get September budget: %v", err)
+	}
+	if *storedBudget != *secondBudget {
+		t.Fatalf("September budget = %+v, want %+v", storedBudget, secondBudget)
+	}
+	updatedAugust := &model.Budget{UserNo: "1", MonthlyBudgetAmount: 250000, EffectiveFrom: "2026-08-01"}
+	if err := budgetStore.UpsertBudget(updatedAugust); err != nil {
+		t.Fatalf("update August budget: %v", err)
+	}
+	storedBudget, err = budgetStore.GetBudget("1", "2026-08-01")
+	if err != nil {
+		t.Fatalf("get updated August budget: %v", err)
+	}
+	if *storedBudget != *updatedAugust {
+		t.Fatalf("updated August budget = %+v, want %+v", storedBudget, updatedAugust)
+	}
+	storedBudget, err = budgetStore.GetBudget("1", "2026-07-01")
+	if err != nil {
+		t.Fatalf("get preserved July budget after August overwrite: %v", err)
+	}
+	if *storedBudget != *firstBudget {
+		t.Fatalf("preserved July budget = %+v, want %+v", storedBudget, firstBudget)
+	}
 }
 
 func exerciseFirebaseIdentityResolution(t *testing.T, db *gorm.DB) {
@@ -332,6 +445,18 @@ func createLegacyAuthSchema(t *testing.T, db *gorm.DB) {
 	mustExec(t, db, insertLegacyUser, "duplicate-legacy-id", 98, "first@example.com", "password")
 	mustExec(t, db, insertLegacyUser, "duplicate-legacy-id", 99, "second@example.com", "password")
 	mustExec(t, db, "INSERT INTO user_token (user_no, token) VALUES (?, ?)", 99, "legacy-token")
+}
+
+func createLegacyBudgetSchema(t *testing.T, db *gorm.DB) {
+	t.Helper()
+	mustExec(t, db, `
+		CREATE TABLE budget (
+			user_no BIGINT NOT NULL PRIMARY KEY,
+			monthly_budget_amount BIGINT NOT NULL,
+			start_month DATE NOT NULL,
+			CONSTRAINT fk_budget_user FOREIGN KEY (user_no) REFERENCES users (user_no)
+		)`)
+	mustExec(t, db, "INSERT INTO budget (user_no, monthly_budget_amount, start_month) VALUES (?, ?, ?)", 99, 100000, "2026-07-01")
 }
 
 func assertUserCount(t *testing.T, db *gorm.DB, table string, userNo uint64, want int64) {
