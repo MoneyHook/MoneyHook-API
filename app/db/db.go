@@ -1,15 +1,15 @@
 package db
 
 import (
-	category "MoneyHook/MoneyHook-API/cagegory"
+	category "MoneyHook/MoneyHook-API/category"
 	common "MoneyHook/MoneyHook-API/common"
 	dbmigration "MoneyHook/MoneyHook-API/db/migration"
 	fixed "MoneyHook/MoneyHook-API/fixed"
 	job "MoneyHook/MoneyHook-API/job"
-	payment_resource "MoneyHook/MoneyHook-API/payment_resource"
+	paymentresource "MoneyHook/MoneyHook-API/paymentresource"
 	"MoneyHook/MoneyHook-API/store_mysql"
 	"MoneyHook/MoneyHook-API/store_postgres"
-	sub_category "MoneyHook/MoneyHook-API/sub_cagegory"
+	subcategory "MoneyHook/MoneyHook-API/subcategory"
 	transaction "MoneyHook/MoneyHook-API/transaction"
 	user "MoneyHook/MoneyHook-API/user"
 
@@ -31,9 +31,9 @@ type Store struct {
 	TransactionStore     transaction.Store
 	FixedStore           fixed.Store
 	CategoryStore        category.Store
-	SubCategoryStore     sub_category.Store
-	PaymentResourceStore payment_resource.Store
-	JobsStore            job.Store
+	SubCategoryStore     subcategory.Store
+	PaymentResourceStore paymentresource.Store
+	JobStore             job.Store
 }
 
 type DatabaseType string
@@ -96,7 +96,7 @@ func newMysql(enableSeedData bool) (*Store, error) {
 	pr := store_mysql.NewPaymentResourceStore(db)
 	job := store_mysql.NewJobStore(db)
 
-	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobsStore: job}, nil
+	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobStore: job}, nil
 }
 
 func NewPostgres() (*Store, error) {
@@ -135,7 +135,7 @@ func newPostgres(enableSeedData bool) (*Store, error) {
 	pr := store_postgres.NewPaymentResourceStore(db)
 	job := store_postgres.NewJobStore(db)
 
-	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobsStore: job}, nil
+	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobStore: job}, nil
 }
 
 func seedDataEnabledFromEnvironment() (bool, error) {

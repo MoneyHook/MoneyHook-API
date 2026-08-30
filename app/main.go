@@ -24,11 +24,9 @@ func main() {
 		ExposeHeaders: []string{"Content-Length"},
 	}))
 
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Success, running")
-	})
+	registerHealthRoute(e)
 
-	v1 := e.Group("/api")
+	api := e.Group("/api")
 
 	d, err := db.New()
 	if err != nil {
@@ -38,10 +36,25 @@ func main() {
 	if err != nil {
 		log.Fatalf("Firebase setup failed: %v", err)
 	}
-	h := handler.NewHandler(client, d.UserStore, d.TransactionStore, d.FixedStore, d.CategoryStore, d.SubCategoryStore, d.PaymentResourceStore, d.JobsStore)
-	h.Register(v1)
+	h := handler.New(handler.Dependencies{
+		FirebaseClient:       client,
+		UserStore:            d.UserStore,
+		TransactionStore:     d.TransactionStore,
+		FixedStore:           d.FixedStore,
+		CategoryStore:        d.CategoryStore,
+		SubCategoryStore:     d.SubCategoryStore,
+		PaymentResourceStore: d.PaymentResourceStore,
+		JobStore:             d.JobStore,
+	})
+	h.Register(api)
 
 	message.Read()
 
 	e.Logger.Fatal(e.Start(":8080"))
+}
+
+func registerHealthRoute(e *echo.Echo) {
+	e.GET("/", func(c echo.Context) error {
+		return c.String(http.StatusOK, "Success, running")
+	})
 }
