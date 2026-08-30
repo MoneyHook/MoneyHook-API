@@ -1,11 +1,5 @@
 package migration
 
-import (
-	"context"
-
-	"gorm.io/gorm"
-)
-
 type userSchema struct {
 	UserID string `gorm:"column:user_id;type:varchar(128);not null;unique"`
 	UserNo uint64 `gorm:"column:user_no;primaryKey;autoIncrement"`
@@ -95,10 +89,6 @@ var schemaModels = []any{
 	&paymentResourceSchema{},
 	&transactionSchema{},
 	&monthlyTransactionSchema{},
-}
-
-func schemaModelsForDialect(ctx context.Context, db *gorm.DB, dialect Dialect) ([]any, error) {
-	return append([]any(nil), schemaModels...), nil
 }
 
 type uniqueRequirement struct {

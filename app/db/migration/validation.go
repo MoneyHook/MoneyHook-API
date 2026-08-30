@@ -42,56 +42,42 @@ func detectMissingSchema(ctx context.Context, db *gorm.DB, models []any) ([]sche
 	return changes, nil
 }
 
-func synchronizeSequences(ctx context.Context, db *gorm.DB, dialect Dialect) error {
+func synchronizeSequences(ctx context.Context, db *gorm.DB) error {
 	for _, requirement := range sequenceRequirements {
 		var maximum sql.NullInt64
 		maxQuery := fmt.Sprintf(
 			"SELECT MAX(%s) FROM %s",
-			quoteIdentifier(dialect, requirement.Column),
-			quoteIdentifier(dialect, requirement.Table),
+			quoteIdentifier(requirement.Column),
+			quoteIdentifier(requirement.Table),
 		)
 		if err := db.WithContext(ctx).Raw(maxQuery).Scan(&maximum).Error; err != nil {
 			return err
 		}
 
-		switch dialect {
-		case PostgreSQL:
-			var sequenceName sql.NullString
-			if err := db.WithContext(ctx).
-				Raw("SELECT pg_get_serial_sequence(?, ?)", requirement.Table, requirement.Column).
-				Scan(&sequenceName).Error; err != nil {
-				return err
-			}
-			if !sequenceName.Valid || sequenceName.String == "" {
-				return fmt.Errorf("serial sequence not found for %s.%s", requirement.Table, requirement.Column)
-			}
-			value := int64(1)
-			isCalled := false
-			if maximum.Valid {
-				value = maximum.Int64
-				isCalled = true
-			}
-			if err := db.WithContext(ctx).
-				Exec("SELECT setval(CAST(? AS regclass), ?, ?)", sequenceName.String, value, isCalled).Error; err != nil {
-				return err
-			}
-		case MySQL:
-			nextValue := int64(1)
-			if maximum.Valid {
-				nextValue = maximum.Int64 + 1
-			}
-			query := fmt.Sprintf("ALTER TABLE %s AUTO_INCREMENT = %d", quoteIdentifier(dialect, requirement.Table), nextValue)
-			if err := db.WithContext(ctx).Exec(query).Error; err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("unsupported database dialect %q", dialect)
+		var sequenceName sql.NullString
+		if err := db.WithContext(ctx).
+			Raw("SELECT pg_get_serial_sequence(?, ?)", requirement.Table, requirement.Column).
+			Scan(&sequenceName).Error; err != nil {
+			return err
+		}
+		if !sequenceName.Valid || sequenceName.String == "" {
+			return fmt.Errorf("serial sequence not found for %s.%s", requirement.Table, requirement.Column)
+		}
+		value := int64(1)
+		isCalled := false
+		if maximum.Valid {
+			value = maximum.Int64
+			isCalled = true
+		}
+		if err := db.WithContext(ctx).
+			Exec("SELECT setval(CAST(? AS regclass), ?, ?)", sequenceName.String, value, isCalled).Error; err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func validateSchema(ctx context.Context, db *gorm.DB, dialect Dialect, models []any) error {
+func validateSchema(ctx context.Context, db *gorm.DB, models []any) error {
 	expectedColumns, err := expectedSchemaColumns(db, models)
 	if err != nil {
 		return err
@@ -113,7 +99,7 @@ func validateSchema(ctx context.Context, db *gorm.DB, dialect Dialect, models []
 	}
 
 	for _, requirement := range uniqueRequirements {
-		indexes, err := loadUniqueIndexes(ctx, db, dialect, requirement.Table)
+		indexes, err := loadUniqueIndexes(ctx, db, requirement.Table)
 		if err != nil {
 			return err
 		}
@@ -122,7 +108,7 @@ func validateSchema(ctx context.Context, db *gorm.DB, dialect Dialect, models []
 		}
 	}
 	for _, requirement := range foreignKeyRequirements {
-		keys, err := loadForeignKeys(ctx, db, dialect, requirement.Table)
+		keys, err := loadForeignKeys(ctx, db, requirement.Table)
 		if err != nil {
 			return err
 		}
@@ -133,7 +119,7 @@ func validateSchema(ctx context.Context, db *gorm.DB, dialect Dialect, models []
 	return nil
 }
 
-func logPreservedDrift(ctx context.Context, db *gorm.DB, dialect Dialect, models []any) error {
+func logPreservedDrift(ctx context.Context, db *gorm.DB, models []any) error {
 	expectedColumns, err := expectedSchemaColumns(db, models)
 	if err != nil {
 		return err
@@ -160,7 +146,7 @@ func logPreservedDrift(ctx context.Context, db *gorm.DB, dialect Dialect, models
 			}
 		}
 
-		indexes, err := loadUniqueIndexes(ctx, db, dialect, table)
+		indexes, err := loadUniqueIndexes(ctx, db, table)
 		if err != nil {
 			return err
 		}
@@ -170,7 +156,7 @@ func logPreservedDrift(ctx context.Context, db *gorm.DB, dialect Dialect, models
 			}
 		}
 
-		keys, err := loadForeignKeys(ctx, db, dialect, table)
+		keys, err := loadForeignKeys(ctx, db, table)
 		if err != nil {
 			return err
 		}

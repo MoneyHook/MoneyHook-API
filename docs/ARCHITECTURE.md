@@ -24,7 +24,6 @@ moneyHook_api/
 │   ├── subcategory/             # Subcategory Store interface
 │   ├── transaction/             # Transaction Store interfaceとdomain error
 │   ├── user/                    # User Store interfaceとdomain error
-│   ├── store_mysql/             # MySQL向けStore実装
 │   ├── store_postgres/          # PostgreSQL向けStore実装
 │   ├── db/                      # DB接続、Store生成、migration
 │   ├── model/                   # DB・domain間で共有するデータ構造
@@ -32,7 +31,6 @@ moneyHook_api/
 │   └── message/                 # 旧APIのメッセージ取得
 ├── firebase/                    # Firebase Emulator構成
 ├── psql/                        # PostgreSQLローカル構成
-├── sql/                         # MySQLローカル構成
 └── compose.yaml
 ```
 
@@ -46,15 +44,15 @@ moneyHook_api/
 
 ```text
 main
-  ├─ db ──> store_mysql / store_postgres ──> model
+  ├─ db ──> store_postgres ──> model
   └─ handler root
        ├─> feature handlers ──> feature Store interfaces ──> model
        └─> internal/httpx ──> router authentication
 ```
 
-- `main`がDB種別を選択し、具体的なStore実装を`handler.Dependencies`へ渡します。
+- `main`がPostgreSQLの具体的なStore実装を`handler.Dependencies`へ渡します。
 - `handler/routes.go`がURLとHTTPメソッドの唯一の一覧です。機能別Handlerはルートを登録しません。
-- 機能別Handlerは必要なStore interfaceだけに依存し、`store_mysql`や`store_postgres`を直接importしません。
+- 機能別Handlerは必要なStore interfaceだけに依存し、`store_postgres`を直接importしません。
 - Store実装はHTTP packageをimportしません。DB固有の処理は各Store実装に閉じ込めます。
 - 複数機能で共有するHTTP処理は`handler/internal/httpx`に限定します。機能固有のDTO、validation、response変換は各機能packageに置きます。
 
@@ -64,7 +62,7 @@ main
 2. `handler.Register`が`/api`以下にFirebase認証middlewareを適用します。
 3. middlewareがFirebase ID tokenとGoogle provider、verified emailを検証し、解決した`user_no`をrequest contextへ保存します。
 4. 機能別Handlerが入力を読み取り、Store interfaceを呼び出し、HTTP responseへ変換します。
-5. `db`で選択されたMySQLまたはPostgreSQLのStoreが永続化処理を行います。
+5. PostgreSQLのStoreが永続化処理を行います。
 
 ## APIバージョン
 
@@ -91,6 +89,5 @@ HTTP契約の機械可読な正本は隣接する`moneyhooks-react/contracts/ope
 - 旧APIはrequest structにvalidation tagがあってもEcho Validatorを実行しておらず、一部の不正入力はDB処理まで拒否されません。
 - 旧APIではendpointによってエラーstatus codeとresponse形式が異なります。
 - `model`はDB record、Store入出力、HTTP変換元の構造を広く共有しています。
-- MySQLとPostgreSQLのStoreには重複したquery実装があります。
 
 これらを改善する場合は、構造変更と混ぜず、HTTP・DB互換性とOpenAPI更新を含む独立した変更として扱います。

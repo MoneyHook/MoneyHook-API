@@ -1,6 +1,6 @@
 # MoneyHooks API
 
-MoneyHooksのバックエンドAPIです。GoとEchoでHTTP APIを提供し、Firebase Authenticationで利用者を認証します。データベースはMySQLとPostgreSQLの両方に対応しています。
+MoneyHooksのバックエンドAPIです。GoとEchoでHTTP APIを提供し、Firebase Authenticationで利用者を認証します。データベースはPostgreSQLを使用します。
 
 ## ローカル開発
 

@@ -7,7 +7,6 @@ import (
 	fixed "MoneyHook/MoneyHook-API/fixed"
 	job "MoneyHook/MoneyHook-API/job"
 	paymentresource "MoneyHook/MoneyHook-API/paymentresource"
-	"MoneyHook/MoneyHook-API/store_mysql"
 	"MoneyHook/MoneyHook-API/store_postgres"
 	subcategory "MoneyHook/MoneyHook-API/subcategory"
 	transaction "MoneyHook/MoneyHook-API/transaction"
@@ -21,7 +20,6 @@ import (
 	"strings"
 	"time"
 
-	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -36,67 +34,12 @@ type Store struct {
 	JobStore             job.Store
 }
 
-type DatabaseType string
-
-const (
-	MySQL      DatabaseType = "mysql"
-	PostgreSQL DatabaseType = "postgresql"
-)
-
 func New() (*Store, error) {
 	enableSeedData, err := SeedDataEnabledFromEnvironment()
 	if err != nil {
 		return nil, err
 	}
-	dbType := DatabaseType(strings.ToLower(common.GetEnv("DATABASE_TYPE", "MySQL")))
-
-	switch dbType {
-	case MySQL:
-		return newMysql(enableSeedData)
-	case PostgreSQL:
-		return newPostgres(enableSeedData)
-	default:
-		return nil, fmt.Errorf("unsupported DATABASE_TYPE %q: set MySQL or PostgreSQL", dbType)
-	}
-}
-
-func NewMysql() (*Store, error) {
-	enableSeedData, err := SeedDataEnabledFromEnvironment()
-	if err != nil {
-		return nil, err
-	}
-	return newMysql(enableSeedData)
-}
-
-func newMysql(enableSeedData bool) (*Store, error) {
-
-	log.Printf("Start MySQL Database Setup")
-	db, err := openWithRetry("MySQL", func() gorm.Dialector {
-		return mysql.Open(getMySqlConfig())
-	})
-	if err != nil {
-		return nil, err
-	}
-	if err := dbmigration.Run(
-		context.Background(),
-		db,
-		dbmigration.MySQL,
-		common.GetEnv("MYSQL_DATABASE", ""),
-		dbmigration.Options{EnableSeedData: enableSeedData},
-	); err != nil {
-		return nil, err
-	}
-	log.Printf("Finish MySQL Database Setup")
-
-	us := store_mysql.NewUserStore(db)
-	ts := store_mysql.NewTransactionStore(db)
-	fs := store_mysql.NewFixedStore(db)
-	cs := store_mysql.NewCategoryStore(db)
-	scs := store_mysql.NewSubCategoryStore(db)
-	pr := store_mysql.NewPaymentResourceStore(db)
-	job := store_mysql.NewJobStore(db)
-
-	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobStore: job}, nil
+	return newPostgres(enableSeedData)
 }
 
 func NewPostgres() (*Store, error) {
@@ -123,7 +66,6 @@ func newPostgres(enableSeedData bool) (*Store, error) {
 	if err := dbmigration.Run(
 		context.Background(),
 		db,
-		dbmigration.PostgreSQL,
 		databaseName,
 		dbmigration.Options{EnableSeedData: enableSeedData},
 	); err != nil {
