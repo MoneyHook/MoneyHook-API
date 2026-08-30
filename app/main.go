@@ -6,6 +6,7 @@ import (
 	"MoneyHook/MoneyHook-API/handler"
 	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/router"
+	"context"
 	"log"
 	"net/http"
 
@@ -28,13 +29,26 @@ func main() {
 
 	api := e.Group("/api")
 
-	d, err := db.New()
+	seedDataEnabled, err := db.SeedDataEnabledFromEnvironment()
 	if err != nil {
 		log.Fatalf("Database setup failed: %v", err)
+	}
+	developmentUserEnabled, err := router.DevelopmentUserEnabledFromEnvironment()
+	if err != nil {
+		log.Fatalf("Development user setup failed: %v", err)
 	}
 	client, err := router.NewFirebaseAuth()
 	if err != nil {
 		log.Fatalf("Firebase setup failed: %v", err)
+	}
+	if seedDataEnabled && developmentUserEnabled {
+		if err := router.EnsureDevelopmentUser(context.Background(), client); err != nil {
+			log.Fatalf("Development user setup failed: %v", err)
+		}
+	}
+	d, err := db.New()
+	if err != nil {
+		log.Fatalf("Database setup failed: %v", err)
 	}
 	h := handler.New(handler.Dependencies{
 		FirebaseClient:       client,

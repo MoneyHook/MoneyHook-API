@@ -44,7 +44,7 @@ const (
 )
 
 func New() (*Store, error) {
-	enableSeedData, err := seedDataEnabledFromEnvironment()
+	enableSeedData, err := SeedDataEnabledFromEnvironment()
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func New() (*Store, error) {
 }
 
 func NewMysql() (*Store, error) {
-	enableSeedData, err := seedDataEnabledFromEnvironment()
+	enableSeedData, err := SeedDataEnabledFromEnvironment()
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func newMysql(enableSeedData bool) (*Store, error) {
 }
 
 func NewPostgres() (*Store, error) {
-	enableSeedData, err := seedDataEnabledFromEnvironment()
+	enableSeedData, err := SeedDataEnabledFromEnvironment()
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func newPostgres(enableSeedData bool) (*Store, error) {
 	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobStore: job}, nil
 }
 
-func seedDataEnabledFromEnvironment() (bool, error) {
+func SeedDataEnabledFromEnvironment() (bool, error) {
 	value, exists := os.LookupEnv("ENABLE_SEED_DATA")
 	return parseSeedDataEnabled(value, exists)
 }

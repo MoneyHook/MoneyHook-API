@@ -28,13 +28,19 @@ moneyHook_api/
 │   ├── store_postgres/          # PostgreSQL向けStore実装
 │   ├── db/                      # DB接続、Store生成、migration
 │   ├── model/                   # DB・domain間で共有するデータ構造
-│   ├── router/                  # Firebase初期化と認証middleware
+│   ├── router/                  # Firebase初期化、開発ユーザーprovision、認証middleware
 │   └── message/                 # 旧APIのメッセージ取得
 ├── firebase/                    # Firebase Emulator構成
 ├── psql/                        # PostgreSQLローカル構成
 ├── sql/                         # MySQLローカル構成
 └── compose.yaml
 ```
+
+## 起動時の初期化
+
+`main.go`はFirebase Auth clientを初期化し、`ENABLE_SEED_DATA=true`かつ`ENABLE_DEVELOPMENT_USER=true`の場合に固定UIDの開発ユーザーを冪等にprovisionします。その後、DB接続、migration、master data、sample dataを実行してからHTTP APIを起動します。ComposeではFirebase Auth EmulatorがhealthyになってからAPIコンテナを起動します。
+
+開発ユーザーのUID・表示名・emailは`app/common`で定義し、Auth provisionとsample seedで共有します。Auth userが既に存在する場合は必要なプロフィールとGoogle provider情報を補正し、provider UIDの競合や予期しないAuthエラーは起動失敗として扱います。
 
 ## 依存方向
 
