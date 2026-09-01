@@ -77,6 +77,18 @@ func synchronizeSequences(ctx context.Context, db *gorm.DB) error {
 	return nil
 }
 
+func supportsSequenceSynchronization(ctx context.Context, db *gorm.DB) (bool, error) {
+	var version string
+	if err := db.WithContext(ctx).Raw("SELECT version()").Scan(&version).Error; err != nil {
+		return false, err
+	}
+	return supportsSequenceSynchronizationForVersion(version), nil
+}
+
+func supportsSequenceSynchronizationForVersion(version string) bool {
+	return !strings.Contains(strings.ToLower(version), "cockroachdb")
+}
+
 func validateSchema(ctx context.Context, db *gorm.DB, models []any) error {
 	expectedColumns, err := expectedSchemaColumns(db, models)
 	if err != nil {

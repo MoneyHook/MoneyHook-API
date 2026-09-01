@@ -34,6 +34,10 @@ func Run(parent context.Context, db *gorm.DB, databaseName string, options Optio
 	defer release()
 
 	migrationDB := db.WithContext(ctx)
+	synchronizeSequencesEnabled, err := supportsSequenceSynchronization(ctx, migrationDB)
+	if err != nil {
+		return fmt.Errorf("detect sequence synchronization support: %w", err)
+	}
 	if err := removeLegacyAuthSchema(ctx, migrationDB); err != nil {
 		return fmt.Errorf("remove legacy authentication schema: %w", err)
 	}
@@ -61,14 +65,20 @@ func Run(parent context.Context, db *gorm.DB, databaseName string, options Optio
 	if err := seedMasterData(ctx, migrationDB); err != nil {
 		return fmt.Errorf("seed master data: %w", err)
 	}
-	if err := synchronizeSequences(ctx, migrationDB); err != nil {
-		return fmt.Errorf("synchronize auto increment values after master seed: %w", err)
+	if synchronizeSequencesEnabled {
+		if err := synchronizeSequences(ctx, migrationDB); err != nil {
+			return fmt.Errorf("synchronize auto increment values after master seed: %w", err)
+		}
+	} else {
+		log.Printf("event=schema_migration_skip action=synchronize_sequences database=cockroachdb")
 	}
 	if err := seedSampleData(ctx, migrationDB, options); err != nil {
 		return fmt.Errorf("seed sample data: %w", err)
 	}
-	if err := synchronizeSequences(ctx, migrationDB); err != nil {
-		return fmt.Errorf("synchronize auto increment values: %w", err)
+	if synchronizeSequencesEnabled {
+		if err := synchronizeSequences(ctx, migrationDB); err != nil {
+			return fmt.Errorf("synchronize auto increment values: %w", err)
+		}
 	}
 	if err := validateSchema(ctx, migrationDB, models); err != nil {
 		return fmt.Errorf("validate migrated schema: %w", err)
