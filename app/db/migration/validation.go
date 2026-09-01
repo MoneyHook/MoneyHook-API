@@ -131,6 +131,9 @@ func logPreservedDrift(ctx context.Context, db *gorm.DB, models []any) error {
 	}
 	sort.Strings(tables)
 	for _, table := range tables {
+		if table == migrationLockTable {
+			continue
+		}
 		expected, managed := expectedColumns[table]
 		if !managed {
 			log.Printf("event=schema_migration_warning type=extra_table table=%s action=preserved", table)

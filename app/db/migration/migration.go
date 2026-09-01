@@ -2,8 +2,6 @@ package migration
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"sort"
@@ -14,6 +12,8 @@ import (
 )
 
 const migrationTimeout = 60 * time.Second
+
+const migrationLockTable = "moneyhooks_schema_migration_lock"
 
 type Options struct {
 	EnableSeedData    bool
@@ -82,46 +82,40 @@ func Run(parent context.Context, db *gorm.DB, databaseName string, options Optio
 }
 
 func acquireLock(ctx context.Context, db *gorm.DB, databaseName string) (func(), error) {
-	sqlDB, err := db.DB()
-	if err != nil {
-		return nil, err
+	createTableQuery := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (lock_name TEXT PRIMARY KEY)", quoteIdentifier(migrationLockTable))
+	if err := db.WithContext(ctx).Exec(createTableQuery).Error; err != nil {
+		return nil, fmt.Errorf("create migration lock table: %w", err)
 	}
-	conn, err := sqlDB.Conn(ctx)
-	if err != nil {
+
+	lockDB := db.WithContext(ctx).Begin()
+	if lockDB.Error != nil {
+		return nil, lockDB.Error
+	}
+	rollback := func(err error) (func(), error) {
+		if rollbackErr := lockDB.Rollback().Error; rollbackErr != nil {
+			log.Printf("event=schema_migration_warning type=lock_rollback_failed dialect=postgresql error=%q", rollbackErr)
+		}
 		return nil, err
 	}
 
-	lockDigest := sha256.Sum256([]byte(databaseName))
-	lockName := "moneyhooks:schema:" + hex.EncodeToString(lockDigest[:16])
-	ticker := time.NewTicker(250 * time.Millisecond)
-	defer ticker.Stop()
-	for {
-		var locked bool
-		if err := conn.QueryRowContext(ctx, "SELECT pg_try_advisory_lock(hashtext($1))", lockName).Scan(&locked); err != nil {
-			conn.Close()
-			return nil, err
-		}
-		if locked {
-			break
-		}
-		select {
-		case <-ctx.Done():
-			conn.Close()
-			return nil, ctx.Err()
-		case <-ticker.C:
-		}
+	const lockName = "schema"
+	insertQuery := fmt.Sprintf("INSERT INTO %s (lock_name) VALUES (?) ON CONFLICT (lock_name) DO NOTHING", quoteIdentifier(migrationLockTable))
+	if err := lockDB.Exec(insertQuery, lockName).Error; err != nil {
+		return rollback(fmt.Errorf("create migration lock row: %w", err))
+	}
+	lockQuery := fmt.Sprintf("SELECT lock_name FROM %s WHERE lock_name = ? FOR UPDATE", quoteIdentifier(migrationLockTable))
+	var acquiredLockName string
+	if err := lockDB.Raw(lockQuery, lockName).Scan(&acquiredLockName).Error; err != nil {
+		return rollback(fmt.Errorf("lock migration row: %w", err))
+	}
+	if acquiredLockName != lockName {
+		return rollback(fmt.Errorf("migration lock row %q was not found", lockName))
 	}
 
 	log.Printf("event=schema_migration_lock_acquired dialect=postgresql database=%s", databaseName)
 	return func() {
-		releaseCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		var released bool
-		if err := conn.QueryRowContext(releaseCtx, "SELECT pg_advisory_unlock(hashtext($1))", lockName).Scan(&released); err != nil || !released {
+		if err := lockDB.Commit().Error; err != nil {
 			log.Printf("event=schema_migration_warning type=lock_release_failed dialect=postgresql error=%q", err)
-		}
-		if err := conn.Close(); err != nil {
-			log.Printf("event=schema_migration_warning type=lock_connection_close_failed dialect=postgresql error=%q", err)
 		}
 	}, nil
 }
