@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const migrationTimeout = 60 * time.Second
+const migrationTimeout = 3 * time.Minute
 
 const migrationLockTable = "moneyhooks_schema_migration_lock"
 
