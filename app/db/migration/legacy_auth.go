@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func removeLegacyAuthSchema(ctx context.Context, db *gorm.DB, dialect Dialect) error {
+func removeLegacyAuthSchema(ctx context.Context, db *gorm.DB) error {
 	if db.WithContext(ctx).Migrator().HasTable("user_token") {
 		if err := db.WithContext(ctx).Migrator().DropTable("user_token"); err != nil {
 			return fmt.Errorf("drop user_token table: %w", err)
@@ -30,8 +30,8 @@ func removeLegacyAuthSchema(ctx context.Context, db *gorm.DB, dialect Dialect) e
 		}
 		query := fmt.Sprintf(
 			"ALTER TABLE %s DROP COLUMN %s",
-			quoteIdentifier(dialect, "users"),
-			quoteIdentifier(dialect, column),
+			quoteIdentifier("users"),
+			quoteIdentifier(column),
 		)
 		if err := db.WithContext(ctx).Exec(query).Error; err != nil {
 			return fmt.Errorf("drop users.%s: %w", column, err)

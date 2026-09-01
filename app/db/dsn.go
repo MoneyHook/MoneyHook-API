@@ -2,39 +2,19 @@ package db
 
 import (
 	"fmt"
-	"time"
 
 	common "MoneyHook/MoneyHook-API/common"
-
-	"github.com/go-sql-driver/mysql"
 )
 
-func getMySqlConfig() string {
-
-	jst, err := time.LoadLocation("Asia/Tokyo")
-	if err != nil {
-		panic(err)
-	}
-
-	dsn := mysql.Config{
-		DBName:               common.GetEnv("MYSQL_DATABASE", ""),
-		User:                 common.GetEnv("MYSQL_USER", ""),
-		Passwd:               common.GetEnv("MYSQL_PASSWORD", ""),
-		Addr:                 common.GetEnv("MYSQL_HOST", ""),
-		Net:                  common.GetEnv("NET", ""),
-		ParseTime:            true,
-		Collation:            "utf8mb4_unicode_ci",
-		Loc:                  jst,
-		AllowNativePasswords: true,
-		Timeout:              5 * time.Second,
-		ReadTimeout:          30 * time.Second,
-		WriteTimeout:         30 * time.Second,
-	}
-	return dsn.FormatDSN()
+func getPostgresConfig() string {
+	return getPostgresConfigForDatabase(common.GetEnv("POSTGRES_DATABASE", ""))
 }
 
-func getPostgresConfig() string {
-	dbName := common.GetEnv("POSTGRES_DATABASE", "")
+func getPostgresAdminConfig() string {
+	return getPostgresConfigForDatabase("postgres")
+}
+
+func getPostgresConfigForDatabase(dbName string) string {
 	user := common.GetEnv("POSTGRES_USER", "")
 	password := common.GetEnv("POSTGRES_PASSWORD", "")
 	host := common.GetEnv("POSTGRES_HOST", "")

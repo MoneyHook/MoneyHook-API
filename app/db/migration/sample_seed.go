@@ -1,6 +1,7 @@
 package migration
 
 import (
+	common "MoneyHook/MoneyHook-API/common"
 	"context"
 	"fmt"
 	"log"
@@ -10,7 +11,7 @@ import (
 )
 
 const (
-	sampleUserID = "a77a6e94-6aa2-47ea-87dd-129f580fb669"
+	sampleUserID = common.DevelopmentUserID
 )
 
 type sampleSubCategoryDefinition struct {

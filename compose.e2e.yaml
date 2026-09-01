@@ -2,5 +2,6 @@ services:
   go:
     command: ["sh", "-c", "cd /workspace/app && go run ."]
     environment:
-      ENABLE_SEED_DATA: "false"
-      FRONT_URL: "http://localhost:3000"
+      ENABLE_SEED_DATA: "true"
+      ENABLE_DEVELOPMENT_USER: "true"
+      FRONT_URL: "${PLAYWRIGHT_FRONT_URL:-http://localhost:3000}"

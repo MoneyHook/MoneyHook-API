@@ -4,7 +4,6 @@ go 1.25.0
 
 require (
 	firebase.google.com/go/v4 v4.21.0
-	github.com/go-sql-driver/mysql v1.7.1
 	github.com/labstack/echo/v4 v4.15.4
 	google.golang.org/api v0.279.0
 	gorm.io/driver/postgres v1.5.11
@@ -78,5 +77,4 @@ require (
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
-	gorm.io/driver/mysql v1.5.4
 )

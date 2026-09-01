@@ -1,5 +1,4 @@
 # Database runtime data
-/sql/settings/
 /psql/data/
 
 # Build and runtime artifacts

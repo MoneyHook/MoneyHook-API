@@ -51,7 +51,7 @@ func TestMasterDataDefinitions(t *testing.T) {
 
 func TestSchemaModelCoverage(t *testing.T) {
 	wantTables := map[string]struct{}{
-		"users": {}, "category": {}, "sub_category": {},
+		"users": {}, "budget": {}, "category": {}, "sub_category": {},
 		"hidden_sub_category": {}, "payment_type": {}, "payment_resource": {},
 		"transaction": {}, "monthly_transaction": {},
 	}

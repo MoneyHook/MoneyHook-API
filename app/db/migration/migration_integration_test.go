@@ -3,6 +3,7 @@
 package migration
 
 import (
+	"MoneyHook/MoneyHook-API/model"
 	userdomain "MoneyHook/MoneyHook-API/user"
 	"context"
 	"crypto/sha256"
@@ -18,10 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"MoneyHook/MoneyHook-API/store_mysql"
 	"MoneyHook/MoneyHook-API/store_postgres"
-	mysqldriver "github.com/go-sql-driver/mysql"
-	mysqlgorm "gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -37,9 +35,9 @@ func TestIntegrationPostgreSQL(t *testing.T) {
 		t.Fatalf("connect to PostgreSQL test server: %v", err)
 	}
 	schemaName := fmt.Sprintf("moneyhooks_migration_test_%d", time.Now().UnixNano())
-	mustExec(t, admin, fmt.Sprintf("CREATE SCHEMA %s", quoteIdentifier(PostgreSQL, schemaName)))
+	mustExec(t, admin, fmt.Sprintf("CREATE SCHEMA %s", quoteIdentifier(schemaName)))
 	t.Cleanup(func() {
-		admin.Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE", quoteIdentifier(PostgreSQL, schemaName)))
+		admin.Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE", quoteIdentifier(schemaName)))
 		closeGormDB(admin)
 	})
 
@@ -59,50 +57,14 @@ func TestIntegrationPostgreSQL(t *testing.T) {
 	}
 	t.Cleanup(func() { closeGormDB(testDB) })
 
-	exerciseMigration(t, testDB, PostgreSQL, schemaName)
+	exerciseMigration(t, testDB, schemaName)
 }
 
-func TestIntegrationMySQL(t *testing.T) {
-	rawDSN := os.Getenv("MIGRATION_TEST_MYSQL_DSN")
-	if rawDSN == "" {
-		t.Skip("MIGRATION_TEST_MYSQL_DSN is not set")
-	}
-
-	config, err := mysqldriver.ParseDSN(rawDSN)
-	if err != nil {
-		t.Fatalf("parse MySQL DSN: %v", err)
-	}
-	config.DBName = ""
-	admin, err := gorm.Open(mysqlgorm.Open(config.FormatDSN()), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("connect to MySQL test server: %v", err)
-	}
-	databaseName := fmt.Sprintf("moneyhooks_migration_test_%d", time.Now().UnixNano())
-	mustExec(t, admin, fmt.Sprintf("CREATE DATABASE %s CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci", quoteIdentifier(MySQL, databaseName)))
-	t.Cleanup(func() {
-		admin.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s", quoteIdentifier(MySQL, databaseName)))
-		closeGormDB(admin)
-	})
-
-	config.DBName = databaseName
-	config.MultiStatements = true
-	testDB, err := gorm.Open(mysqlgorm.Open(config.FormatDSN()), &gorm.Config{
-		DisableForeignKeyConstraintWhenMigrating: true,
-		IgnoreRelationshipsWhenMigrating:         true,
-	})
-	if err != nil {
-		t.Fatalf("connect to MySQL test database: %v", err)
-	}
-	t.Cleanup(func() { closeGormDB(testDB) })
-
-	exerciseMigration(t, testDB, MySQL, databaseName)
-}
-
-func exerciseMigration(t *testing.T, db *gorm.DB, dialect Dialect, databaseName string) {
+func exerciseMigration(t *testing.T, db *gorm.DB, databaseName string) {
 	t.Helper()
 	ctx := context.Background()
-	createLegacyAuthSchema(t, db, dialect)
-	err := Run(ctx, db, dialect, databaseName, Options{})
+	createLegacyAuthSchema(t, db)
+	err := Run(ctx, db, databaseName, Options{})
 	if err == nil || !strings.Contains(err.Error(), "duplicated") {
 		t.Fatalf("duplicate legacy identity migration error = %v", err)
 	}
@@ -110,14 +72,35 @@ func exerciseMigration(t *testing.T, db *gorm.DB, dialect Dialect, databaseName 
 		t.Fatal("legacy authentication storage was not removed")
 	}
 	mustExec(t, db, "DELETE FROM users WHERE user_no = ?", 98)
-	if err := Run(ctx, db, dialect, databaseName, Options{}); err != nil {
+	createLegacyBudgetSchema(t, db)
+	if err := Run(ctx, db, databaseName, Options{}); err != nil {
 		t.Fatalf("migrate empty database: %v", err)
 	}
+	for _, column := range []string{"accent_color", "theme_mode"} {
+		if !db.Migrator().HasColumn("users", column) {
+			t.Fatalf("users.%s was not added by migration", column)
+		}
+	}
+	if !db.Migrator().HasTable("budget") {
+		t.Fatal("budget table was not added by migration")
+	}
+	if !db.Migrator().HasColumn("budget", "effective_from") {
+		t.Fatal("budget.effective_from was not added by migration")
+	}
+	budgetKeys, err := loadForeignKeys(ctx, db, "budget")
+	if err != nil || !containsForeignKey(budgetKeys, foreignKeyRequirement{Column: "user_no", ReferencedTable: "users", ReferencedColumn: "user_no"}) {
+		t.Fatalf("budget foreign key was not added: keys=%v error=%v", budgetKeys, err)
+	}
+	primaryKeyColumns, err := loadPrimaryKeyColumns(ctx, db, "budget")
+	if err != nil || !sameStringSlice(primaryKeyColumns, budgetPrimaryKeyColumns) {
+		t.Fatalf("budget primary key columns = %v, want %v (error=%v)", primaryKeyColumns, budgetPrimaryKeyColumns, err)
+	}
+	exerciseBudgetAndSettingsStores(t, db)
 	var preservedLegacyUser int64
 	if err := db.Table("users").Where("user_no = ? AND user_id = ?", 99, "duplicate-legacy-id").Count(&preservedLegacyUser).Error; err != nil || preservedLegacyUser != 1 {
 		t.Fatalf("legacy user identity was not preserved: count=%d error=%v", preservedLegacyUser, err)
 	}
-	exerciseFirebaseIdentityResolution(t, db, dialect)
+	exerciseFirebaseIdentityResolution(t, db)
 	assertCount(t, db, "category", 29)
 	assertCount(t, db, "sub_category", 91)
 	assertCount(t, db, "payment_type", 3)
@@ -134,10 +117,10 @@ func exerciseMigration(t *testing.T, db *gorm.DB, dialect Dialect, databaseName 
 	mustExec(t, db, "UPDATE category SET category_name = ?, order_num = ? WHERE category_id = ?", "broken", 999, 1)
 	mustExec(t, db, "DELETE FROM sub_category WHERE user_no = ? AND category_id = ? AND sub_category_name = ?", systemUserNo, 29, "なし")
 	mustExec(t, db, "INSERT INTO sub_category (user_no, category_id, sub_category_name) VALUES (?, ?, ?)", systemUserNo, 29, "custom")
-	mustExec(t, db, fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", quoteIdentifier(dialect, "monthly_transaction"), quoteIdentifier(dialect, "include_flg")))
-	mustExec(t, db, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s VARCHAR(32)", quoteIdentifier(dialect, "payment_type"), quoteIdentifier(dialect, "preserved_extra_column")))
-	mustExec(t, db, fmt.Sprintf("CREATE TABLE %s (%s INTEGER)", quoteIdentifier(dialect, "preserved_extra_table"), quoteIdentifier(dialect, "id")))
-	paymentTypeIndexes, err := loadUniqueIndexes(ctx, db, dialect, "payment_type")
+	mustExec(t, db, fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", quoteIdentifier("monthly_transaction"), quoteIdentifier("include_flg")))
+	mustExec(t, db, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s VARCHAR(32)", quoteIdentifier("payment_type"), quoteIdentifier("preserved_extra_column")))
+	mustExec(t, db, fmt.Sprintf("CREATE TABLE %s (%s INTEGER)", quoteIdentifier("preserved_extra_table"), quoteIdentifier("id")))
+	paymentTypeIndexes, err := loadUniqueIndexes(ctx, db, "payment_type")
 	if err != nil {
 		t.Fatalf("load payment type indexes: %v", err)
 	}
@@ -152,15 +135,10 @@ func exerciseMigration(t *testing.T, db *gorm.DB, dialect Dialect, databaseName 
 		t.Fatal("payment type unique index was not found before drift test")
 	}
 
-	if dialect == PostgreSQL {
-		mustExec(t, db, fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s", quoteIdentifier(dialect, "payment_type"), quoteIdentifier(dialect, paymentTypeIndexName)))
-		mustExec(t, db, fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s", quoteIdentifier(dialect, "monthly_transaction"), quoteIdentifier(dialect, "fk_monthly_transaction_user")))
-	} else {
-		mustExec(t, db, fmt.Sprintf("DROP INDEX %s ON %s", quoteIdentifier(dialect, paymentTypeIndexName), quoteIdentifier(dialect, "payment_type")))
-		mustExec(t, db, fmt.Sprintf("ALTER TABLE %s DROP FOREIGN KEY %s", quoteIdentifier(dialect, "monthly_transaction"), quoteIdentifier(dialect, "fk_monthly_transaction_user")))
-	}
+	mustExec(t, db, fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s", quoteIdentifier("payment_type"), quoteIdentifier(paymentTypeIndexName)))
+	mustExec(t, db, fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s", quoteIdentifier("monthly_transaction"), quoteIdentifier("fk_monthly_transaction_user")))
 
-	if err := Run(ctx, db, dialect, databaseName, Options{}); err != nil {
+	if err := Run(ctx, db, databaseName, Options{}); err != nil {
 		t.Fatalf("repair schema drift: %v", err)
 	}
 	if !db.Migrator().HasColumn("monthly_transaction", "include_flg") {
@@ -182,16 +160,16 @@ func exerciseMigration(t *testing.T, db *gorm.DB, dialect Dialect, databaseName 
 		t.Errorf("category was not reconciled: %+v", category)
 	}
 
-	indexes, err := loadUniqueIndexes(ctx, db, dialect, "payment_type")
+	indexes, err := loadUniqueIndexes(ctx, db, "payment_type")
 	if err != nil || !containsUniqueIndex(indexes, []string{"payment_type_name"}) {
 		t.Errorf("unique index was not restored: indexes=%v error=%v", indexes, err)
 	}
-	keys, err := loadForeignKeys(ctx, db, dialect, "monthly_transaction")
+	keys, err := loadForeignKeys(ctx, db, "monthly_transaction")
 	if err != nil || !containsForeignKey(keys, foreignKeyRequirement{Column: "user_no", ReferencedTable: "users", ReferencedColumn: "user_no"}) {
 		t.Errorf("foreign key was not restored: keys=%v error=%v", keys, err)
 	}
 
-	if err := Run(ctx, db, dialect, databaseName, Options{}); err != nil {
+	if err := Run(ctx, db, databaseName, Options{}); err != nil {
 		t.Fatalf("repeat idempotent migration: %v", err)
 	}
 	assertCount(t, db, "sub_category", 92)
@@ -202,7 +180,7 @@ func exerciseMigration(t *testing.T, db *gorm.DB, dialect Dialect, databaseName 
 		waitGroup.Add(1)
 		go func() {
 			defer waitGroup.Done()
-			errors <- Run(ctx, db, dialect, databaseName, Options{})
+			errors <- Run(ctx, db, databaseName, Options{})
 		}()
 	}
 	waitGroup.Wait()
@@ -214,24 +192,110 @@ func exerciseMigration(t *testing.T, db *gorm.DB, dialect Dialect, databaseName 
 	}
 
 	mustExec(t, db, "UPDATE users SET user_id = ? WHERE user_no = ?", "conflicting-system-user", systemUserNo)
-	err = Run(ctx, db, dialect, databaseName, Options{})
+	err = Run(ctx, db, databaseName, Options{})
 	if err == nil || !strings.Contains(err.Error(), "belongs to user_id") {
 		t.Fatalf("system user conflict error = %v", err)
 	}
 	mustExec(t, db, "UPDATE users SET user_id = ? WHERE user_no = ?", systemUserID, systemUserNo)
 
-	exerciseSampleSeed(t, db, dialect, databaseName)
-	exerciseLegacySchema(t, db, dialect, databaseName)
+	exerciseSampleSeed(t, db, databaseName)
+	exerciseLegacySchema(t, db, databaseName)
 }
 
-func exerciseFirebaseIdentityResolution(t *testing.T, db *gorm.DB, dialect Dialect) {
+func exerciseBudgetAndSettingsStores(t *testing.T, db *gorm.DB) {
 	t.Helper()
-	var store userdomain.Store
-	if dialect == PostgreSQL {
-		store = store_postgres.NewUserStore(db)
-	} else {
-		store = store_mysql.NewUserStore(db)
+	budgetStore := store_postgres.NewBudgetStore(db)
+	settingsStore := store_postgres.NewSettingsStore(db)
+	legacyBudget, err := budgetStore.GetBudget("99", "2026-07-01")
+	if err != nil {
+		t.Fatalf("get migrated legacy budget: %v", err)
 	}
+	if legacyBudget == nil || legacyBudget.MonthlyBudgetAmount != 100000 || legacyBudget.EffectiveFrom != "2026-07-01" {
+		t.Fatalf("migrated legacy budget = %+v", legacyBudget)
+	}
+
+	settings, err := settingsStore.GetSettings("1")
+	if err != nil {
+		t.Fatalf("get default user settings: %v", err)
+	}
+	if settings.AccentColor != "blue" || settings.ThemeMode != "system" {
+		t.Fatalf("default user settings = %+v", settings)
+	}
+	accentColor := "rose"
+	updatedSettings, err := settingsStore.UpdateSettings("1", &model.UserSettingsUpdate{AccentColor: &accentColor})
+	if err != nil {
+		t.Fatalf("update user settings: %v", err)
+	}
+	if updatedSettings.AccentColor != "rose" || updatedSettings.ThemeMode != "system" {
+		t.Fatalf("partially updated user settings = %+v", updatedSettings)
+	}
+
+	unconfiguredBudget, err := budgetStore.GetBudget("1", "2026-07-01")
+	if err != nil {
+		t.Fatalf("get unconfigured budget: %v", err)
+	}
+	if unconfiguredBudget != nil {
+		t.Fatalf("unconfigured budget = %+v, want nil", unconfiguredBudget)
+	}
+	firstBudget := &model.Budget{UserNo: "1", MonthlyBudgetAmount: 100000, EffectiveFrom: "2026-07-01"}
+	if err := budgetStore.UpsertBudget(firstBudget); err != nil {
+		t.Fatalf("create budget: %v", err)
+	}
+	storedBudget, err := budgetStore.GetBudget("1", "2026-07-01")
+	if err != nil {
+		t.Fatalf("get created budget: %v", err)
+	}
+	if *storedBudget != *firstBudget {
+		t.Fatalf("created budget = %+v, want %+v", storedBudget, firstBudget)
+	}
+	secondBudget := &model.Budget{UserNo: "1", MonthlyBudgetAmount: 200000, EffectiveFrom: "2026-08-01"}
+	if err := budgetStore.UpsertBudget(secondBudget); err != nil {
+		t.Fatalf("add budget history: %v", err)
+	}
+	storedBudget, err = budgetStore.GetBudget("1", "2026-08-01")
+	if err != nil {
+		t.Fatalf("get August budget: %v", err)
+	}
+	if *storedBudget != *secondBudget {
+		t.Fatalf("August budget = %+v, want %+v", storedBudget, secondBudget)
+	}
+	storedBudget, err = budgetStore.GetBudget("1", "2026-07-01")
+	if err != nil {
+		t.Fatalf("get July budget after August update: %v", err)
+	}
+	if *storedBudget != *firstBudget {
+		t.Fatalf("July budget after August update = %+v, want %+v", storedBudget, firstBudget)
+	}
+	storedBudget, err = budgetStore.GetBudget("1", "2026-09-01")
+	if err != nil {
+		t.Fatalf("get September budget: %v", err)
+	}
+	if *storedBudget != *secondBudget {
+		t.Fatalf("September budget = %+v, want %+v", storedBudget, secondBudget)
+	}
+	updatedAugust := &model.Budget{UserNo: "1", MonthlyBudgetAmount: 250000, EffectiveFrom: "2026-08-01"}
+	if err := budgetStore.UpsertBudget(updatedAugust); err != nil {
+		t.Fatalf("update August budget: %v", err)
+	}
+	storedBudget, err = budgetStore.GetBudget("1", "2026-08-01")
+	if err != nil {
+		t.Fatalf("get updated August budget: %v", err)
+	}
+	if *storedBudget != *updatedAugust {
+		t.Fatalf("updated August budget = %+v, want %+v", storedBudget, updatedAugust)
+	}
+	storedBudget, err = budgetStore.GetBudget("1", "2026-07-01")
+	if err != nil {
+		t.Fatalf("get preserved July budget after August overwrite: %v", err)
+	}
+	if *storedBudget != *firstBudget {
+		t.Fatalf("preserved July budget = %+v, want %+v", storedBudget, firstBudget)
+	}
+}
+
+func exerciseFirebaseIdentityResolution(t *testing.T, db *gorm.DB) {
+	t.Helper()
+	var store userdomain.Store = store_postgres.NewUserStore(db)
 
 	legacyDigest := sha256.Sum256([]byte("second@example.com"))
 	legacyUserID := hex.EncodeToString(legacyDigest[:])
@@ -307,7 +371,7 @@ func exerciseFirebaseIdentityResolution(t *testing.T, db *gorm.DB, dialect Diale
 	}
 }
 
-func exerciseSampleSeed(t *testing.T, db *gorm.DB, dialect Dialect, databaseName string) {
+func exerciseSampleSeed(t *testing.T, db *gorm.DB, databaseName string) {
 	t.Helper()
 	ctx := context.Background()
 	var sampleCount int64
@@ -321,7 +385,7 @@ func exerciseSampleSeed(t *testing.T, db *gorm.DB, dialect Dialect, databaseName
 		EnableSeedData:    true,
 		SeedReferenceTime: time.Date(2026, time.August, 29, 12, 0, 0, 0, time.FixedZone("Asia/Tokyo", 9*60*60)),
 	}
-	if err := Run(ctx, db, dialect, databaseName, options); err != nil {
+	if err := Run(ctx, db, databaseName, options); err != nil {
 		t.Fatalf("insert sample seed: %v", err)
 	}
 	var sampleUser userSchema
@@ -339,7 +403,7 @@ func exerciseSampleSeed(t *testing.T, db *gorm.DB, dialect Dialect, databaseName
 		t.Fatalf("load first sample transaction: %v", err)
 	}
 	mustExec(t, db, "UPDATE transaction SET transaction_name = ? WHERE transaction_id = ?", "手動変更", firstTransaction.TransactionID)
-	if err := Run(ctx, db, dialect, databaseName, options); err != nil {
+	if err := Run(ctx, db, databaseName, options); err != nil {
 		t.Fatalf("repeat sample seed: %v", err)
 	}
 	assertUserCount(t, db, "transaction", sampleUser.UserNo, 72)
@@ -352,38 +416,47 @@ func exerciseSampleSeed(t *testing.T, db *gorm.DB, dialect Dialect, databaseName
 	}
 }
 
-func createLegacyAuthSchema(t *testing.T, db *gorm.DB, dialect Dialect) {
+func createLegacyAuthSchema(t *testing.T, db *gorm.DB) {
 	t.Helper()
-	userNoType := "BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY"
-	if dialect == PostgreSQL {
-		userNoType = "BIGSERIAL PRIMARY KEY"
-	}
+	userNoType := "BIGSERIAL PRIMARY KEY"
 	mustExec(t, db, fmt.Sprintf(
 		"CREATE TABLE %s (%s VARCHAR(64) NOT NULL, %s %s, %s VARCHAR(128) UNIQUE, %s TEXT)",
-		quoteIdentifier(dialect, "users"),
-		quoteIdentifier(dialect, "user_id"),
-		quoteIdentifier(dialect, "user_no"),
+		quoteIdentifier("users"),
+		quoteIdentifier("user_id"),
+		quoteIdentifier("user_no"),
 		userNoType,
-		quoteIdentifier(dialect, "email"),
-		quoteIdentifier(dialect, "PASSWORD"),
+		quoteIdentifier("email"),
+		quoteIdentifier("PASSWORD"),
 	))
 	mustExec(t, db, fmt.Sprintf(
 		"CREATE TABLE %s (%s BIGINT NOT NULL, %s VARCHAR(64) NOT NULL)",
-		quoteIdentifier(dialect, "user_token"),
-		quoteIdentifier(dialect, "user_no"),
-		quoteIdentifier(dialect, "token"),
+		quoteIdentifier("user_token"),
+		quoteIdentifier("user_no"),
+		quoteIdentifier("token"),
 	))
 	insertLegacyUser := fmt.Sprintf(
 		"INSERT INTO %s (%s, %s, %s, %s) VALUES (?, ?, ?, ?)",
-		quoteIdentifier(dialect, "users"),
-		quoteIdentifier(dialect, "user_id"),
-		quoteIdentifier(dialect, "user_no"),
-		quoteIdentifier(dialect, "email"),
-		quoteIdentifier(dialect, "PASSWORD"),
+		quoteIdentifier("users"),
+		quoteIdentifier("user_id"),
+		quoteIdentifier("user_no"),
+		quoteIdentifier("email"),
+		quoteIdentifier("PASSWORD"),
 	)
 	mustExec(t, db, insertLegacyUser, "duplicate-legacy-id", 98, "first@example.com", "password")
 	mustExec(t, db, insertLegacyUser, "duplicate-legacy-id", 99, "second@example.com", "password")
 	mustExec(t, db, "INSERT INTO user_token (user_no, token) VALUES (?, ?)", 99, "legacy-token")
+}
+
+func createLegacyBudgetSchema(t *testing.T, db *gorm.DB) {
+	t.Helper()
+	mustExec(t, db, `
+		CREATE TABLE budget (
+			user_no BIGINT NOT NULL PRIMARY KEY,
+			monthly_budget_amount BIGINT NOT NULL,
+			start_month DATE NOT NULL,
+			CONSTRAINT fk_budget_user FOREIGN KEY (user_no) REFERENCES users (user_no)
+		)`)
+	mustExec(t, db, "INSERT INTO budget (user_no, monthly_budget_amount, start_month) VALUES (?, ?, ?)", 99, 100000, "2026-07-01")
 }
 
 func assertUserCount(t *testing.T, db *gorm.DB, table string, userNo uint64, want int64) {
@@ -397,17 +470,14 @@ func assertUserCount(t *testing.T, db *gorm.DB, table string, userNo uint64, wan
 	}
 }
 
-func exerciseLegacySchema(t *testing.T, db *gorm.DB, dialect Dialect, databaseName string) {
+func exerciseLegacySchema(t *testing.T, db *gorm.DB, databaseName string) {
 	t.Helper()
 	_, currentFile, _, ok := runtime.Caller(0)
 	if !ok {
 		t.Fatal("resolve integration test path")
 	}
+	directory := filepath.Join("psql", "init")
 	fileName := "init.sql"
-	directory := "sql"
-	if dialect == PostgreSQL {
-		directory = filepath.Join("psql", "init")
-	}
 	legacyPath := filepath.Join(filepath.Dir(currentFile), "..", "..", "..", directory, fileName)
 	legacySQL, err := os.ReadFile(legacyPath)
 	if err != nil {
@@ -418,12 +488,8 @@ func exerciseLegacySchema(t *testing.T, db *gorm.DB, dialect Dialect, databaseNa
 	}
 	// PostgreSQL sequences are not advanced by the fixed IDs in init.sql. Run the
 	// normal startup repair once before loading the compatibility sample fixture.
-	// The MySQL fixture itself contains its required master rows, so it must be
-	// loaded before the first migration.
-	if dialect == PostgreSQL {
-		if err := Run(context.Background(), db, dialect, databaseName, Options{}); err != nil {
-			t.Fatalf("migrate legacy schema before loading compatibility data: %v", err)
-		}
+	if err := Run(context.Background(), db, databaseName, Options{}); err != nil {
+		t.Fatalf("migrate legacy schema before loading compatibility data: %v", err)
 	}
 	legacyDataPath := filepath.Join(filepath.Dir(currentFile), "..", "..", "..", directory, "moneyhooks_data.sql")
 	legacyDataSQL, err := os.ReadFile(legacyDataPath)
@@ -446,7 +512,7 @@ func exerciseLegacySchema(t *testing.T, db *gorm.DB, dialect Dialect, databaseNa
 		EnableSeedData:    true,
 		SeedReferenceTime: time.Date(2026, time.August, 29, 12, 0, 0, 0, time.FixedZone("Asia/Tokyo", 9*60*60)),
 	}
-	if err := Run(context.Background(), db, dialect, databaseName, options); err != nil {
+	if err := Run(context.Background(), db, databaseName, options); err != nil {
 		t.Fatalf("migrate legacy schema: %v", err)
 	}
 	assertCount(t, db, "category", 29)
@@ -472,7 +538,7 @@ func exerciseLegacySchema(t *testing.T, db *gorm.DB, dialect Dialect, databaseNa
 		t.Fatalf("legacy generated user number = %d, want greater than 99", generatedUserNo)
 	}
 
-	if err := Run(context.Background(), db, dialect, databaseName, options); err != nil {
+	if err := Run(context.Background(), db, databaseName, options); err != nil {
 		t.Fatalf("migrate legacy database with existing sample user: %v", err)
 	}
 	assertUserCount(t, db, "payment_resource", 2, 3)

@@ -6,6 +6,7 @@ import (
 	"MoneyHook/MoneyHook-API/handler"
 	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/router"
+	"context"
 	"log"
 	"net/http"
 
@@ -19,29 +20,57 @@ func main() {
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins:  []string{common.GetEnv("FRONT_URL", "http://localhost:3000")},
-		AllowMethods:  []string{echo.GET, echo.PATCH, echo.POST, echo.DELETE},
+		AllowMethods:  []string{echo.GET, echo.PATCH, echo.PUT, echo.POST, echo.DELETE},
 		AllowHeaders:  []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 		ExposeHeaders: []string{"Content-Length"},
 	}))
 
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Success, running")
-	})
+	registerHealthRoute(e)
 
-	v1 := e.Group("/api")
+	api := e.Group("/api")
 
-	d, err := db.New()
+	seedDataEnabled, err := db.SeedDataEnabledFromEnvironment()
 	if err != nil {
 		log.Fatalf("Database setup failed: %v", err)
+	}
+	developmentUserEnabled, err := router.DevelopmentUserEnabledFromEnvironment()
+	if err != nil {
+		log.Fatalf("Development user setup failed: %v", err)
 	}
 	client, err := router.NewFirebaseAuth()
 	if err != nil {
 		log.Fatalf("Firebase setup failed: %v", err)
 	}
-	h := handler.NewHandler(client, d.UserStore, d.TransactionStore, d.FixedStore, d.CategoryStore, d.SubCategoryStore, d.PaymentResourceStore, d.JobsStore)
-	h.Register(v1)
+	if seedDataEnabled && developmentUserEnabled {
+		if err := router.EnsureDevelopmentUser(context.Background(), client); err != nil {
+			log.Fatalf("Development user setup failed: %v", err)
+		}
+	}
+	d, err := db.New()
+	if err != nil {
+		log.Fatalf("Database setup failed: %v", err)
+	}
+	h := handler.New(handler.Dependencies{
+		FirebaseClient:       client,
+		UserStore:            d.UserStore,
+		BudgetStore:          d.BudgetStore,
+		SettingsStore:        d.SettingsStore,
+		TransactionStore:     d.TransactionStore,
+		FixedStore:           d.FixedStore,
+		CategoryStore:        d.CategoryStore,
+		SubCategoryStore:     d.SubCategoryStore,
+		PaymentResourceStore: d.PaymentResourceStore,
+		JobStore:             d.JobStore,
+	})
+	h.Register(api)
 
 	message.Read()
 
 	e.Logger.Fatal(e.Start(":8080"))
+}
+
+func registerHealthRoute(e *echo.Echo) {
+	e.GET("/", func(c echo.Context) error {
+		return c.String(http.StatusOK, "Success, running")
+	})
 }

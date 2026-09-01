@@ -2,6 +2,7 @@
 CREATE TABLES
 ============================================================ */
 DROP TABLE IF EXISTS user_token,
+budget,
 users,
 category,
 sub_category,
@@ -14,7 +15,18 @@ payment_resource CASCADE;
 CREATE TABLE
     users (
         user_id VARCHAR(128) NOT NULL UNIQUE,
+        accent_color VARCHAR(16) NOT NULL DEFAULT 'blue',
+        theme_mode VARCHAR(16) NOT NULL DEFAULT 'system',
         user_no BIGSERIAL PRIMARY KEY
+    );
+
+CREATE TABLE
+    budget (
+        user_no BIGINT NOT NULL,
+        effective_from DATE NOT NULL,
+        monthly_budget_amount BIGINT NOT NULL,
+        PRIMARY KEY (user_no, effective_from),
+        CONSTRAINT fk_budget_user FOREIGN KEY (user_no) REFERENCES users (user_no)
     );
 
 CREATE TABLE

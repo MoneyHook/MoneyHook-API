@@ -1,15 +1,16 @@
 package db
 
 import (
-	category "MoneyHook/MoneyHook-API/cagegory"
+	budget "MoneyHook/MoneyHook-API/budget"
+	category "MoneyHook/MoneyHook-API/category"
 	common "MoneyHook/MoneyHook-API/common"
 	dbmigration "MoneyHook/MoneyHook-API/db/migration"
 	fixed "MoneyHook/MoneyHook-API/fixed"
 	job "MoneyHook/MoneyHook-API/job"
-	payment_resource "MoneyHook/MoneyHook-API/payment_resource"
-	"MoneyHook/MoneyHook-API/store_mysql"
+	paymentresource "MoneyHook/MoneyHook-API/paymentresource"
+	settings "MoneyHook/MoneyHook-API/settings"
 	"MoneyHook/MoneyHook-API/store_postgres"
-	sub_category "MoneyHook/MoneyHook-API/sub_cagegory"
+	subcategory "MoneyHook/MoneyHook-API/subcategory"
 	transaction "MoneyHook/MoneyHook-API/transaction"
 	user "MoneyHook/MoneyHook-API/user"
 
@@ -21,86 +22,32 @@ import (
 	"strings"
 	"time"
 
-	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 type Store struct {
 	UserStore            user.Store
+	BudgetStore          budget.Store
+	SettingsStore        settings.Store
 	TransactionStore     transaction.Store
 	FixedStore           fixed.Store
 	CategoryStore        category.Store
-	SubCategoryStore     sub_category.Store
-	PaymentResourceStore payment_resource.Store
-	JobsStore            job.Store
+	SubCategoryStore     subcategory.Store
+	PaymentResourceStore paymentresource.Store
+	JobStore             job.Store
 }
-
-type DatabaseType string
-
-const (
-	MySQL      DatabaseType = "mysql"
-	PostgreSQL DatabaseType = "postgresql"
-)
 
 func New() (*Store, error) {
-	enableSeedData, err := seedDataEnabledFromEnvironment()
+	enableSeedData, err := SeedDataEnabledFromEnvironment()
 	if err != nil {
 		return nil, err
 	}
-	dbType := DatabaseType(strings.ToLower(common.GetEnv("DATABASE_TYPE", "MySQL")))
-
-	switch dbType {
-	case MySQL:
-		return newMysql(enableSeedData)
-	case PostgreSQL:
-		return newPostgres(enableSeedData)
-	default:
-		return nil, fmt.Errorf("unsupported DATABASE_TYPE %q: set MySQL or PostgreSQL", dbType)
-	}
-}
-
-func NewMysql() (*Store, error) {
-	enableSeedData, err := seedDataEnabledFromEnvironment()
-	if err != nil {
-		return nil, err
-	}
-	return newMysql(enableSeedData)
-}
-
-func newMysql(enableSeedData bool) (*Store, error) {
-
-	log.Printf("Start MySQL Database Setup")
-	db, err := openWithRetry("MySQL", func() gorm.Dialector {
-		return mysql.Open(getMySqlConfig())
-	})
-	if err != nil {
-		return nil, err
-	}
-	if err := dbmigration.Run(
-		context.Background(),
-		db,
-		dbmigration.MySQL,
-		common.GetEnv("MYSQL_DATABASE", ""),
-		dbmigration.Options{EnableSeedData: enableSeedData},
-	); err != nil {
-		return nil, err
-	}
-	log.Printf("Finish MySQL Database Setup")
-
-	us := store_mysql.NewUserStore(db)
-	ts := store_mysql.NewTransactionStore(db)
-	fs := store_mysql.NewFixedStore(db)
-	cs := store_mysql.NewCategoryStore(db)
-	scs := store_mysql.NewSubCategoryStore(db)
-	pr := store_mysql.NewPaymentResourceStore(db)
-	job := store_mysql.NewJobStore(db)
-
-	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobsStore: job}, nil
+	return newPostgres(enableSeedData)
 }
 
 func NewPostgres() (*Store, error) {
-	enableSeedData, err := seedDataEnabledFromEnvironment()
+	enableSeedData, err := SeedDataEnabledFromEnvironment()
 	if err != nil {
 		return nil, err
 	}
@@ -110,6 +57,10 @@ func NewPostgres() (*Store, error) {
 func newPostgres(enableSeedData bool) (*Store, error) {
 
 	log.Printf("Start PostgreSQL Database Setup")
+	databaseName := common.GetEnv("POSTGRES_DATABASE", "")
+	if err := ensurePostgresDatabase(context.Background(), databaseName); err != nil {
+		return nil, err
+	}
 	db, err := openWithRetry("PostgreSQL", func() gorm.Dialector {
 		return postgres.Open(getPostgresConfig())
 	})
@@ -119,8 +70,7 @@ func newPostgres(enableSeedData bool) (*Store, error) {
 	if err := dbmigration.Run(
 		context.Background(),
 		db,
-		dbmigration.PostgreSQL,
-		common.GetEnv("POSTGRES_DATABASE", ""),
+		databaseName,
 		dbmigration.Options{EnableSeedData: enableSeedData},
 	); err != nil {
 		return nil, err
@@ -128,6 +78,8 @@ func newPostgres(enableSeedData bool) (*Store, error) {
 	log.Printf("Finish PostgreSQL Database Setup")
 
 	us := store_postgres.NewUserStore(db)
+	bs := store_postgres.NewBudgetStore(db)
+	ss := store_postgres.NewSettingsStore(db)
 	ts := store_postgres.NewTransactionStore(db)
 	fs := store_postgres.NewFixedStore(db)
 	cs := store_postgres.NewCategoryStore(db)
@@ -135,10 +87,57 @@ func newPostgres(enableSeedData bool) (*Store, error) {
 	pr := store_postgres.NewPaymentResourceStore(db)
 	job := store_postgres.NewJobStore(db)
 
-	return &Store{UserStore: us, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobsStore: job}, nil
+	return &Store{UserStore: us, BudgetStore: bs, SettingsStore: ss, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobStore: job}, nil
 }
 
-func seedDataEnabledFromEnvironment() (bool, error) {
+func ensurePostgresDatabase(ctx context.Context, databaseName string) error {
+	if strings.TrimSpace(databaseName) == "" {
+		return fmt.Errorf("POSTGRES_DATABASE must not be empty")
+	}
+
+	adminDB, err := openWithRetry("PostgreSQL admin database", func() gorm.Dialector {
+		return postgres.Open(getPostgresAdminConfig())
+	})
+	if err != nil {
+		return err
+	}
+	sqlDB, err := adminDB.DB()
+	if err != nil {
+		return fmt.Errorf("get PostgreSQL admin database handle: %w", err)
+	}
+	defer sqlDB.Close()
+
+	var exists bool
+	if err := adminDB.WithContext(ctx).
+		Raw("SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = ?)", databaseName).
+		Scan(&exists).Error; err != nil {
+		return fmt.Errorf("check PostgreSQL database %q: %w", databaseName, err)
+	}
+	if exists {
+		log.Printf("event=database_creation status=already_exists dialect=postgresql database=%s", databaseName)
+		return nil
+	}
+
+	query := fmt.Sprintf("CREATE DATABASE %s", quotePostgresIdentifier(databaseName))
+	if err := adminDB.WithContext(ctx).Exec(query).Error; err != nil {
+		if checkErr := adminDB.WithContext(ctx).
+			Raw("SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = ?)", databaseName).
+			Scan(&exists).Error; checkErr == nil && exists {
+			log.Printf("event=database_creation status=already_exists dialect=postgresql database=%s", databaseName)
+			return nil
+		}
+		return fmt.Errorf("create PostgreSQL database %q: %w", databaseName, err)
+	}
+
+	log.Printf("event=database_creation status=created dialect=postgresql database=%s", databaseName)
+	return nil
+}
+
+func quotePostgresIdentifier(identifier string) string {
+	return `"` + strings.ReplaceAll(identifier, `"`, `""`) + `"`
+}
+
+func SeedDataEnabledFromEnvironment() (bool, error) {
 	value, exists := os.LookupEnv("ENABLE_SEED_DATA")
 	return parseSeedDataEnabled(value, exists)
 }
