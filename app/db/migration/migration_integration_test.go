@@ -396,23 +396,40 @@ func exerciseSampleSeed(t *testing.T, db *gorm.DB, databaseName string) {
 	assertUserCount(t, db, "sub_category", sampleUser.UserNo, 7)
 	assertUserCount(t, db, "hidden_sub_category", sampleUser.UserNo, 3)
 	assertUserCount(t, db, "monthly_transaction", sampleUser.UserNo, 6)
-	assertUserCount(t, db, "transaction", sampleUser.UserNo, 72)
+	assertUserCount(t, db, "transaction", sampleUser.UserNo, int64(sampleTransactionCount()))
+	assertUserCount(t, db, "budget", sampleUser.UserNo, 6)
+	var latestBudget budgetSchema
+	if err := db.Where("user_no = ? AND effective_from = ?", sampleUser.UserNo, "2026-08-01").Take(&latestBudget).Error; err != nil {
+		t.Fatalf("load latest sample budget: %v", err)
+	}
+	if latestBudget.MonthlyBudgetAmount != 260000 {
+		t.Fatalf("latest sample budget = %d, want 260000", latestBudget.MonthlyBudgetAmount)
+	}
 
 	var firstTransaction transactionSchema
 	if err := db.Where("user_no = ?", sampleUser.UserNo).Order("transaction_id").Take(&firstTransaction).Error; err != nil {
 		t.Fatalf("load first sample transaction: %v", err)
 	}
 	mustExec(t, db, "UPDATE transaction SET transaction_name = ? WHERE transaction_id = ?", "手動変更", firstTransaction.TransactionID)
+	mustExec(t, db, "UPDATE users SET accent_color = ?, theme_mode = ? WHERE user_no = ?", "purple", "dark", sampleUser.UserNo)
 	if err := Run(ctx, db, databaseName, options); err != nil {
 		t.Fatalf("repeat sample seed: %v", err)
 	}
-	assertUserCount(t, db, "transaction", sampleUser.UserNo, 72)
-	var preservedName string
-	if err := db.Table("transaction").Select("transaction_name").Where("transaction_id = ?", firstTransaction.TransactionID).Scan(&preservedName).Error; err != nil {
-		t.Fatalf("read manually changed sample transaction: %v", err)
+	assertUserCount(t, db, "transaction", sampleUser.UserNo, int64(sampleTransactionCount()))
+	assertUserCount(t, db, "budget", sampleUser.UserNo, 6)
+	var changedCount int64
+	if err := db.Table("transaction").Where("user_no = ? AND transaction_name = ?", sampleUser.UserNo, "手動変更").Count(&changedCount).Error; err != nil {
+		t.Fatalf("count manually changed sample transactions: %v", err)
 	}
-	if preservedName != "手動変更" {
-		t.Fatalf("sample data was overwritten: transaction_name=%q", preservedName)
+	if changedCount != 0 {
+		t.Fatalf("sample data was not regenerated: changed transaction count=%d", changedCount)
+	}
+	var refreshedUser userSchema
+	if err := db.Where("user_no = ?", sampleUser.UserNo).Take(&refreshedUser).Error; err != nil {
+		t.Fatalf("load refreshed sample user: %v", err)
+	}
+	if refreshedUser.AccentColor != "blue" || refreshedUser.ThemeMode != "system" {
+		t.Fatalf("sample user settings = (%q, %q), want (blue, system)", refreshedUser.AccentColor, refreshedUser.ThemeMode)
 	}
 }
 
@@ -470,6 +487,62 @@ func assertUserCount(t *testing.T, db *gorm.DB, table string, userNo uint64, wan
 	}
 }
 
+const legacyFixtureUserID = "legacy-fixture-user"
+
+func insertLegacyCompatibilityFixture(t *testing.T, db *gorm.DB) userSchema {
+	t.Helper()
+	user := userSchema{UserID: legacyFixtureUserID}
+	if err := db.Create(&user).Error; err != nil {
+		t.Fatalf("create legacy fixture user: %v", err)
+	}
+	masterIDs, err := resolveMasterSubCategories(db, []sampleSubCategoryDefinition{
+		{CategoryID: 1, Name: "なし"},
+		{CategoryID: 5, Name: "スポーツ用品"},
+		{CategoryID: 22, Name: "家賃"},
+		{CategoryID: 27, Name: "なし"},
+	})
+	if err != nil {
+		t.Fatalf("resolve legacy fixture master sub-categories: %v", err)
+	}
+	custom := subCategorySchema{UserNo: user.UserNo, CategoryID: 2, SubCategoryName: "旧カスタム"}
+	if err := db.Create(&custom).Error; err != nil {
+		t.Fatalf("create legacy fixture sub-category: %v", err)
+	}
+	if err := db.Create(&hiddenSubCategorySchema{UserNo: user.UserNo, SubCategoryID: masterIDs[sampleSubCategoryKey(5, "スポーツ用品")]}).Error; err != nil {
+		t.Fatalf("create legacy fixture hidden sub-category: %v", err)
+	}
+	paymentDate, closingDate := int32(27), int32(31)
+	payments := []paymentResourceSchema{
+		{PaymentTypeID: 2, UserNo: user.UserNo, PaymentName: "旧カード", PaymentDate: &paymentDate, ClosingDate: &closingDate},
+		{PaymentTypeID: 1, UserNo: user.UserNo, PaymentName: "旧現金"},
+		{PaymentTypeID: 3, UserNo: user.UserNo, PaymentName: "旧PayPay"},
+	}
+	paymentIDs := make(map[string]uint64, len(payments))
+	for index := range payments {
+		if err := db.Create(&payments[index]).Error; err != nil {
+			t.Fatalf("create legacy fixture payment %q: %v", payments[index].PaymentName, err)
+		}
+		paymentIDs[payments[index].PaymentName] = payments[index].PaymentID
+	}
+	monthlyTransactions := []monthlyTransactionSchema{
+		{UserNo: user.UserNo, MonthlyTransactionName: "旧家賃", MonthlyTransactionAmount: -78000, MonthlyTransactionDate: 27, CategoryID: 22, SubCategoryID: masterIDs[sampleSubCategoryKey(22, "家賃")], IncludeFlg: true, PaymentID: paymentIDPointer(paymentIDs, "旧カード")},
+		{UserNo: user.UserNo, MonthlyTransactionName: "旧給与", MonthlyTransactionAmount: 200000, MonthlyTransactionDate: 25, CategoryID: 27, SubCategoryID: masterIDs[sampleSubCategoryKey(27, "なし")], IncludeFlg: true, PaymentID: paymentIDPointer(paymentIDs, "旧現金")},
+	}
+	if err := db.Create(&monthlyTransactions).Error; err != nil {
+		t.Fatalf("create legacy fixture monthly transactions: %v", err)
+	}
+	transactionTime := "12:00:00"
+	transactions := []transactionSchema{
+		{UserNo: user.UserNo, TransactionName: "旧食費", TransactionAmount: -1500, TransactionDate: "2026-08-03", TransactionTime: &transactionTime, CategoryID: 1, SubCategoryID: masterIDs[sampleSubCategoryKey(1, "なし")], PaymentID: paymentIDPointer(paymentIDs, "旧現金")},
+		{UserNo: user.UserNo, TransactionName: "旧外食", TransactionAmount: -2500, TransactionDate: "2026-08-10", CategoryID: 2, SubCategoryID: custom.SubCategoryID, PaymentID: paymentIDPointer(paymentIDs, "旧PayPay")},
+		{UserNo: user.UserNo, TransactionName: "旧家賃", TransactionAmount: -78000, TransactionDate: "2026-08-27", CategoryID: 22, SubCategoryID: masterIDs[sampleSubCategoryKey(22, "家賃")], FixedFlg: true, PaymentID: paymentIDPointer(paymentIDs, "旧カード")},
+	}
+	if err := db.Create(&transactions).Error; err != nil {
+		t.Fatalf("create legacy fixture transactions: %v", err)
+	}
+	return user
+}
+
 func exerciseLegacySchema(t *testing.T, db *gorm.DB, databaseName string) {
 	t.Helper()
 	_, currentFile, _, ok := runtime.Caller(0)
@@ -491,21 +564,7 @@ func exerciseLegacySchema(t *testing.T, db *gorm.DB, databaseName string) {
 	if err := Run(context.Background(), db, databaseName, Options{}); err != nil {
 		t.Fatalf("migrate legacy schema before loading compatibility data: %v", err)
 	}
-	legacyDataPath := filepath.Join(filepath.Dir(currentFile), "..", "..", "..", directory, "moneyhooks_data.sql")
-	legacyDataSQL, err := os.ReadFile(legacyDataPath)
-	if err != nil {
-		t.Fatalf("read legacy data %s: %v", legacyDataPath, err)
-	}
-	if err := db.Exec(string(legacyDataSQL)).Error; err != nil {
-		t.Fatalf("apply legacy data %s: %v", legacyDataPath, err)
-	}
-	var legacySampleTransactionCount int64
-	if err := db.Table("transaction").Where("user_no = ?", 2).Count(&legacySampleTransactionCount).Error; err != nil {
-		t.Fatalf("count legacy sample transactions: %v", err)
-	}
-	if legacySampleTransactionCount == 0 {
-		t.Fatal("legacy sample data contains no transactions")
-	}
+	legacyFixtureUser := insertLegacyCompatibilityFixture(t, db)
 
 	mustExec(t, db, "INSERT INTO users (user_id, user_no) VALUES (?, ?)", "legacy-preserved-user", 99)
 	options := Options{
@@ -516,11 +575,11 @@ func exerciseLegacySchema(t *testing.T, db *gorm.DB, databaseName string) {
 		t.Fatalf("migrate legacy schema: %v", err)
 	}
 	assertCount(t, db, "category", 29)
-	assertCount(t, db, "sub_category", 98)
+	assertCount(t, db, "sub_category", 99)
 	assertCount(t, db, "payment_type", 3)
-	assertUserCount(t, db, "payment_resource", 2, 3)
-	assertUserCount(t, db, "monthly_transaction", 2, 6)
-	assertUserCount(t, db, "transaction", 2, legacySampleTransactionCount)
+	assertUserCount(t, db, "payment_resource", legacyFixtureUser.UserNo, 3)
+	assertUserCount(t, db, "monthly_transaction", legacyFixtureUser.UserNo, 2)
+	assertUserCount(t, db, "transaction", legacyFixtureUser.UserNo, 3)
 
 	var preservedCount int64
 	if err := db.Table("users").Where("user_no = ? AND user_id = ?", 99, "legacy-preserved-user").Count(&preservedCount).Error; err != nil {
@@ -541,9 +600,9 @@ func exerciseLegacySchema(t *testing.T, db *gorm.DB, databaseName string) {
 	if err := Run(context.Background(), db, databaseName, options); err != nil {
 		t.Fatalf("migrate legacy database with existing sample user: %v", err)
 	}
-	assertUserCount(t, db, "payment_resource", 2, 3)
-	assertUserCount(t, db, "monthly_transaction", 2, 6)
-	assertUserCount(t, db, "transaction", 2, legacySampleTransactionCount)
+	assertUserCount(t, db, "payment_resource", legacyFixtureUser.UserNo, 3)
+	assertUserCount(t, db, "monthly_transaction", legacyFixtureUser.UserNo, 2)
+	assertUserCount(t, db, "transaction", legacyFixtureUser.UserNo, 3)
 }
 
 func assertCount(t *testing.T, db *gorm.DB, table string, want int64) {

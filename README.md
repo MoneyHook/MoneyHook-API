@@ -20,6 +20,8 @@ curl http://localhost:8080/
 
 Compose起動時は、Firebase Auth Emulatorの初期化、開発ユーザーのprovision、PostgreSQLのmigration・master data・sample data、API起動の順で処理されます。`compose.yaml`では`ENABLE_SEED_DATA=true`と`ENABLE_DEVELOPMENT_USER=true`を設定しているため、固定UID `a77a6e94-6aa2-47ea-87dd-129f580fb669`のGoogleユーザー（表示名「開発ユーザー」、`developer@example.com`）と、そのユーザーに紐づくサンプルデータが利用できます。
 
+`ENABLE_SEED_DATA=true`で起動するたびに、この開発ユーザーの取引・固定費・予算履歴・支払い方法・カスタム設定は最新のサンプルシナリオへ再生成されます。手動で変更した内容を残したい場合は、このフラグを無効にしてください。
+
 開発ユーザー作成は`ENABLE_DEVELOPMENT_USER`がtrue、かつサンプルデータ投入が有効な場合だけ実行されます。未設定またはfalseがデフォルトで、本番環境では開発用フラグを有効にしないでください。
 
 ## 開発コマンド
@@ -34,7 +36,7 @@ go test ./...
 go build ./...
 ```
 
-DB migrationの詳細は[マイグレーションガイド](app/db/migration/README.md)を参照してください。
+DB migrationと開発環境の詳細は[開発ガイド](docs/DEVELOPMENT.md)を参照してください。
 
 ## ドキュメント
 

@@ -36,7 +36,7 @@ moneyHook_api/
 
 ## 起動時の初期化
 
-`main.go`はFirebase Auth clientを初期化し、`ENABLE_SEED_DATA=true`かつ`ENABLE_DEVELOPMENT_USER=true`の場合に固定UIDの開発ユーザーを冪等にprovisionします。その後、DB接続、migration、master data、sample dataを実行してからHTTP APIを起動します。ComposeではFirebase Auth EmulatorがhealthyになってからAPIコンテナを起動します。
+`main.go`はFirebase Auth clientを初期化し、`ENABLE_SEED_DATA=true`かつ`ENABLE_DEVELOPMENT_USER=true`の場合に固定UIDの開発ユーザーを冪等にprovisionします。その後、DB接続、migration、master data、sample dataを実行してからHTTP APIを起動します。サンプルデータが有効な場合、固定開発ユーザーのユーザー固有データは毎回シナリオへ再生成されます。ComposeではFirebase Auth EmulatorがhealthyになってからAPIコンテナを起動します。
 
 開発ユーザーのUID・表示名・emailは`app/common`で定義し、Auth provisionとsample seedで共有します。Auth userが既に存在する場合は必要なプロフィールとGoogle provider情報を補正し、provider UIDの競合や予期しないAuthエラーは起動失敗として扱います。
 
