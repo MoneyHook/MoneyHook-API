@@ -86,3 +86,12 @@ func TestSameStringSet(t *testing.T) {
 		t.Fatal("sameStringSet accepted different columns")
 	}
 }
+
+func TestSupportsSequenceSynchronizationForVersion(t *testing.T) {
+	if !supportsSequenceSynchronizationForVersion("PostgreSQL 17.0") {
+		t.Fatal("PostgreSQL should synchronize serial sequences")
+	}
+	if supportsSequenceSynchronizationForVersion("CockroachDB CCL v25.1.0") {
+		t.Fatal("CockroachDB should not synchronize serial sequences")
+	}
+}
