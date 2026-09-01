@@ -1,6 +1,6 @@
 services:
   go:
-    command: ["sh", "-c", "cd /workspace/app && go run ."]
+    command: ["sh", "-c", "cd /workspace/app && go run ./cmd/migrate && go run ."]
     environment:
       ENABLE_SEED_DATA: "true"
       ENABLE_DEVELOPMENT_USER: "true"

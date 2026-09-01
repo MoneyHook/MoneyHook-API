@@ -1,0 +1,89 @@
+name: Deploy API
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: moneyhook-api-production
+  cancel-in-progress: false
+
+env:
+  PROJECT_ID: moneyhooks
+  REGION: asia-northeast1
+  REPOSITORY: moneyhook
+  SERVICE: moneyhook-api
+  MIGRATION_JOB: moneyhook-api-migrate
+  RUNTIME_SERVICE_ACCOUNT: moneyhook@moneyhooks.iam.gserviceaccount.com
+  POSTGRES_HOST: moneyhook-db-5360.jxf.gcp-asia-southeast1.cockroachlabs.cloud
+  POSTGRES_PORT: "26257"
+  POSTGRES_DATABASE: moneyhook
+  POSTGRES_USER: moneyhook
+  SSLMODE: verify-full
+  POSTGRES_PASSWORD_SECRET: moneyhook-postgres-password
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_DEPLOYER_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: app/go.mod
+
+      - name: Test
+        working-directory: app
+        run: go test ./...
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - id: image
+        name: Build and push image
+        env:
+          IMAGE: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/moneyhook-api:${{ github.sha }}
+        run: |
+          docker build --tag "$IMAGE" .
+          docker push "$IMAGE"
+          digest="$(gcloud artifacts docker images describe "$IMAGE" --format='value(image_summary.digest)')"
+          echo "uri=${IMAGE}@${digest}" >> "$GITHUB_OUTPUT"
+
+      - name: Configure migration job
+        run: |
+          gcloud run jobs deploy "$MIGRATION_JOB" \
+            --project="$PROJECT_ID" \
+            --region="$REGION" \
+            --image="${{ steps.image.outputs.uri }}" \
+            --command=/app/migrate \
+            --service-account="$RUNTIME_SERVICE_ACCOUNT" \
+            --task-timeout=15m \
+            --max-retries=0 \
+            --set-env-vars="POSTGRES_HOST=$POSTGRES_HOST,POSTGRES_PORT=$POSTGRES_PORT,POSTGRES_DATABASE=$POSTGRES_DATABASE,POSTGRES_USER=$POSTGRES_USER,SSLMODE=$SSLMODE,ENABLE_SEED_DATA=false" \
+            --set-secrets="POSTGRES_PASSWORD=$POSTGRES_PASSWORD_SECRET:latest"
+
+      - name: Run migration
+        run: |
+          gcloud run jobs execute "$MIGRATION_JOB" \
+            --project="$PROJECT_ID" \
+            --region="$REGION" \
+            --wait
+
+      - name: Release API
+        run: |
+          gcloud run services update "$SERVICE" \
+            --project="$PROJECT_ID" \
+            --region="$REGION" \
+            --image="${{ steps.image.outputs.uri }}" \
+            --update-secrets="POSTGRES_PASSWORD=$POSTGRES_PASSWORD_SECRET:latest"

@@ -18,7 +18,7 @@ curl http://localhost:8080/
 
 業務APIは`/api`以下にあり、GoogleプロバイダーのFirebase ID tokenをBearer tokenとして要求します。ローカル構成ではFirebase Auth Emulatorを使用します。
 
-Compose起動時は、Firebase Auth Emulatorの初期化、開発ユーザーのprovision、PostgreSQLのmigration・master data・sample data、API起動の順で処理されます。`compose.yaml`では`ENABLE_SEED_DATA=true`と`ENABLE_DEVELOPMENT_USER=true`を設定しているため、固定UID `a77a6e94-6aa2-47ea-87dd-129f580fb669`のGoogleユーザー（表示名「開発ユーザー」、`developer@example.com`）と、そのユーザーに紐づくサンプルデータが利用できます。
+Compose起動時は、Firebase Auth Emulatorの初期化、PostgreSQLのmigration・master data・sample data、API起動、開発ユーザーのprovisionの順で処理されます。`compose.yaml`では`ENABLE_SEED_DATA=true`と`ENABLE_DEVELOPMENT_USER=true`を設定しているため、固定UID `a77a6e94-6aa2-47ea-87dd-129f580fb669`のGoogleユーザー（表示名「開発ユーザー」、`developer@example.com`）と、そのユーザーに紐づくサンプルデータが利用できます。
 
 `ENABLE_SEED_DATA=true`で起動するたびに、この開発ユーザーの取引・固定費・予算履歴・支払い方法・カスタム設定は最新のサンプルシナリオへ再生成されます。手動で変更した内容を残したい場合は、このフラグを無効にしてください。
 

@@ -39,44 +39,51 @@ type Store struct {
 }
 
 func New() (*Store, error) {
-	enableSeedData, err := SeedDataEnabledFromEnvironment()
+	db, err := openPostgres()
 	if err != nil {
 		return nil, err
 	}
-	return newPostgres(enableSeedData)
+	return newStore(db), nil
 }
 
 func NewPostgres() (*Store, error) {
-	enableSeedData, err := SeedDataEnabledFromEnvironment()
-	if err != nil {
-		return nil, err
-	}
-	return newPostgres(enableSeedData)
+	return New()
 }
 
-func newPostgres(enableSeedData bool) (*Store, error) {
+func Migrate(ctx context.Context) error {
+	enableSeedData, err := SeedDataEnabledFromEnvironment()
+	if err != nil {
+		return err
+	}
 
 	log.Printf("Start PostgreSQL Database Setup")
 	databaseName := common.GetEnv("POSTGRES_DATABASE", "")
-	if err := ensurePostgresDatabase(context.Background(), databaseName); err != nil {
-		return nil, err
+	if err := ensurePostgresDatabase(ctx, databaseName); err != nil {
+		return err
 	}
-	db, err := openWithRetry("PostgreSQL", func() gorm.Dialector {
-		return postgres.Open(getPostgresConfig())
-	})
+	db, err := openPostgres()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if err := dbmigration.Run(
-		context.Background(),
+		ctx,
 		db,
 		databaseName,
 		dbmigration.Options{EnableSeedData: enableSeedData},
 	); err != nil {
-		return nil, err
+		return err
 	}
 	log.Printf("Finish PostgreSQL Database Setup")
+	return nil
+}
 
+func openPostgres() (*gorm.DB, error) {
+	return openWithRetry("PostgreSQL", func() gorm.Dialector {
+		return postgres.Open(getPostgresConfig())
+	})
+}
+
+func newStore(db *gorm.DB) *Store {
 	us := store_postgres.NewUserStore(db)
 	bs := store_postgres.NewBudgetStore(db)
 	ss := store_postgres.NewSettingsStore(db)
@@ -87,7 +94,7 @@ func newPostgres(enableSeedData bool) (*Store, error) {
 	pr := store_postgres.NewPaymentResourceStore(db)
 	job := store_postgres.NewJobStore(db)
 
-	return &Store{UserStore: us, BudgetStore: bs, SettingsStore: ss, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobStore: job}, nil
+	return &Store{UserStore: us, BudgetStore: bs, SettingsStore: ss, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobStore: job}
 }
 
 func ensurePostgresDatabase(ctx context.Context, databaseName string) error {
