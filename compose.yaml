@@ -69,4 +69,4 @@ services:
       FIREBASE_AUTH_EMULATOR_HOST: "firebase:9099"
       ENABLE_SEED_DATA: "true"
       ENABLE_DEVELOPMENT_USER: "true"
-    command: ["sh", "-c", "cd /workspace/app && go run ."]
+    command: ["sh", "-c", "cd /workspace/app && go run ./cmd/migrate && go run ."]
