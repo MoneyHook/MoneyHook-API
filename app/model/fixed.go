@@ -23,9 +23,13 @@ type GetDeletedFixed struct {
 	MonthlyTransactionId     string
 	MonthlyTransactionName   string
 	MonthlyTransactionAmount int
+	MonthlyTransactionSign   int
 	MonthlyTransactionDate   int
+	CategoryId               string
 	CategoryName             string
+	SubCategoryId            string
 	SubCategoryName          string
+	PaymentId                string
 }
 
 type AddFixed struct {

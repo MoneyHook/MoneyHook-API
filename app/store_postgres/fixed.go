@@ -48,9 +48,13 @@ func (fs *FixedStore) GetFixedDeletedData(userId string) *[]model.GetDeletedFixe
 		Select("mt.monthly_transaction_id",
 			"mt.monthly_transaction_name",
 			"ABS(mt.monthly_transaction_amount) AS monthly_transaction_amount",
+			"(CASE WHEN mt.monthly_transaction_amount > 0 THEN 1 ELSE -1 END) AS monthly_transaction_sign",
 			"mt.monthly_transaction_date",
+			"mt.category_id",
 			"c.category_name",
-			"sc.sub_category_name").
+			"mt.sub_category_id",
+			"sc.sub_category_name",
+			"mt.payment_id").
 		Table("monthly_transaction mt").
 		Joins("INNER JOIN category c ON c.category_id = mt.category_id").
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = mt.sub_category_id").
