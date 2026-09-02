@@ -141,7 +141,7 @@ func clearSampleUserData(db *gorm.DB, userNo uint64) error {
 }
 
 func resetSampleUserSettings(db *gorm.DB, userNo uint64) error {
-	if err := db.Model(&userSchema{}).Where("user_no = ?", userNo).Updates(map[string]any{"accent_color": "blue", "theme_mode": "system"}).Error; err != nil {
+	if err := db.Model(&userSchema{}).Where("user_no = ?", userNo).Updates(map[string]any{"accent_color": "blue", "theme_mode": "system", "chart_palette": "default"}).Error; err != nil {
 		return fmt.Errorf("reset sample user settings: %w", err)
 	}
 	return nil

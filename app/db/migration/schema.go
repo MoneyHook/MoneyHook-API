@@ -1,10 +1,11 @@
 package migration
 
 type userSchema struct {
-	UserID      string `gorm:"column:user_id;type:varchar(128);not null;unique"`
-	UserNo      uint64 `gorm:"column:user_no;primaryKey;autoIncrement"`
-	AccentColor string `gorm:"column:accent_color;type:varchar(16);not null;default:blue"`
-	ThemeMode   string `gorm:"column:theme_mode;type:varchar(16);not null;default:system"`
+	UserID       string `gorm:"column:user_id;type:varchar(128);not null;unique"`
+	UserNo       uint64 `gorm:"column:user_no;primaryKey;autoIncrement"`
+	AccentColor  string `gorm:"column:accent_color;type:varchar(16);not null;default:blue"`
+	ThemeMode    string `gorm:"column:theme_mode;type:varchar(16);not null;default:system"`
+	ChartPalette string `gorm:"column:chart_palette;type:varchar(16);not null;default:default"`
 }
 
 func (userSchema) TableName() string { return "users" }

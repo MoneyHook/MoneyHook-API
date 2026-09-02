@@ -17,6 +17,7 @@ CREATE TABLE
         user_id VARCHAR(128) NOT NULL UNIQUE,
         accent_color VARCHAR(16) NOT NULL DEFAULT 'blue',
         theme_mode VARCHAR(16) NOT NULL DEFAULT 'system',
+        chart_palette VARCHAR(16) NOT NULL DEFAULT 'default',
         user_no BIGSERIAL PRIMARY KEY
     );
 

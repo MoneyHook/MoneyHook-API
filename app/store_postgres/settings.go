@@ -15,19 +15,20 @@ func NewSettingsStore(db *gorm.DB) *SettingsStore {
 }
 
 type postgresUserSettingsRecord struct {
-	AccentColor string `gorm:"column:accent_color"`
-	ThemeMode   string `gorm:"column:theme_mode"`
+	AccentColor  string `gorm:"column:accent_color"`
+	ThemeMode    string `gorm:"column:theme_mode"`
+	ChartPalette string `gorm:"column:chart_palette"`
 }
 
 func (ss *SettingsStore) GetSettings(userNo string) (*model.UserSettings, error) {
 	var record postgresUserSettingsRecord
 	if err := ss.db.Table("users").
-		Select("accent_color", "theme_mode").
+		Select("accent_color", "theme_mode", "chart_palette").
 		Where("user_no = ?", userNo).
 		Take(&record).Error; err != nil {
 		return nil, err
 	}
-	return &model.UserSettings{AccentColor: record.AccentColor, ThemeMode: record.ThemeMode}, nil
+	return &model.UserSettings{AccentColor: record.AccentColor, ThemeMode: record.ThemeMode, ChartPalette: record.ChartPalette}, nil
 }
 
 func (ss *SettingsStore) UpdateSettings(userNo string, update *model.UserSettingsUpdate) (*model.UserSettings, error) {
@@ -37,6 +38,9 @@ func (ss *SettingsStore) UpdateSettings(userNo string, update *model.UserSetting
 	}
 	if update.ThemeMode != nil {
 		values["theme_mode"] = *update.ThemeMode
+	}
+	if update.ChartPalette != nil {
+		values["chart_palette"] = *update.ChartPalette
 	}
 	if len(values) > 0 {
 		if err := ss.db.Table("users").Where("user_no = ?", userNo).Updates(values).Error; err != nil {
