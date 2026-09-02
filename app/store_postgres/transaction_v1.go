@@ -9,6 +9,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const v1TransactionTimeSelect = "LEFT(CAST(t.transaction_time AS TEXT), 5) AS transaction_time"
+
 type v1TransactionRecord struct {
 	TransactionId     uint64  `gorm:"column:transaction_id;primaryKey;autoIncrement"`
 	UserId            string  `gorm:"column:user_no"`
@@ -34,7 +36,7 @@ func getPostgresV1Transaction(db *gorm.DB, userId string, transactionId string) 
 		Select(
 			"CAST(t.transaction_id AS TEXT) AS transaction_id",
 			"TO_CHAR(t.transaction_date, 'YYYY-MM-DD') AS transaction_date",
-			"TO_CHAR(t.transaction_time, 'HH24:MI') AS transaction_time",
+			v1TransactionTimeSelect,
 			"t.transaction_name",
 			"ABS(t.transaction_amount) AS amount",
 			"CASE WHEN t.transaction_amount > 0 THEN 1 ELSE -1 END AS sign",
@@ -143,7 +145,7 @@ func (ts *TransactionStore) GetV1AnalyticsTransactions(userId string, startDate 
 		Select(
 			"CAST(t.transaction_id AS TEXT) AS transaction_id",
 			"TO_CHAR(t.transaction_date, 'YYYY-MM-DD') AS transaction_date",
-			"TO_CHAR(t.transaction_time, 'HH24:MI') AS transaction_time",
+			v1TransactionTimeSelect,
 			"t.transaction_name",
 			"t.transaction_amount AS signed_amount",
 			"CAST(t.category_id AS TEXT) AS category_id",
