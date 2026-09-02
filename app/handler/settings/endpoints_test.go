@@ -28,20 +28,25 @@ func (s *fakeSettingsStore) UpdateSettings(_ string, update *model.UserSettingsU
 	if update.ThemeMode != nil {
 		s.settings.ThemeMode = *update.ThemeMode
 	}
+	if update.ChartPalette != nil {
+		s.settings.ChartPalette = *update.ChartPalette
+	}
 	return s.GetSettings("")
 }
 
 func TestValidateV1SettingsPatch(t *testing.T) {
 	accent := "violet"
 	mode := "dark"
-	if fieldErrors := validateV1SettingsPatch(v1SettingsPatchRequest{AccentColor: &accent, ThemeMode: &mode}); len(fieldErrors) != 0 {
+	palette := "colorful"
+	if fieldErrors := validateV1SettingsPatch(v1SettingsPatchRequest{AccentColor: &accent, ThemeMode: &mode, ChartPalette: &palette}); len(fieldErrors) != 0 {
 		t.Fatalf("valid patch returned errors: %v", fieldErrors)
 	}
 
 	invalidAccent := "orange"
 	invalidMode := "auto"
-	fieldErrors := validateV1SettingsPatch(v1SettingsPatchRequest{AccentColor: &invalidAccent, ThemeMode: &invalidMode})
-	for _, field := range []string{"accent_color", "theme_mode"} {
+	invalidPalette := "pastel"
+	fieldErrors := validateV1SettingsPatch(v1SettingsPatchRequest{AccentColor: &invalidAccent, ThemeMode: &invalidMode, ChartPalette: &invalidPalette})
+	for _, field := range []string{"accent_color", "theme_mode", "chart_palette"} {
 		if _, exists := fieldErrors[field]; !exists {
 			t.Errorf("missing validation error for %s: %v", field, fieldErrors)
 		}
@@ -53,7 +58,7 @@ func TestValidateV1SettingsPatch(t *testing.T) {
 }
 
 func TestPatchV1SettingsPreservesOmittedValue(t *testing.T) {
-	store := &fakeSettingsStore{settings: model.UserSettings{AccentColor: "blue", ThemeMode: "system"}}
+	store := &fakeSettingsStore{settings: model.UserSettings{AccentColor: "blue", ThemeMode: "system", ChartPalette: "default"}}
 	h := New(store)
 	e := echo.New()
 	request := httptest.NewRequest(http.MethodPatch, "/api/v1/settings", strings.NewReader(`{"accent_color":"rose"}`))
@@ -68,7 +73,7 @@ func TestPatchV1SettingsPreservesOmittedValue(t *testing.T) {
 	if context.Response().Status != http.StatusOK {
 		t.Fatalf("status = %d, want %d", context.Response().Status, http.StatusOK)
 	}
-	if store.settings.AccentColor != "rose" || store.settings.ThemeMode != "system" {
+	if store.settings.AccentColor != "rose" || store.settings.ThemeMode != "system" || store.settings.ChartPalette != "default" {
 		t.Fatalf("settings after partial update = %+v", store.settings)
 	}
 
@@ -76,7 +81,7 @@ func TestPatchV1SettingsPreservesOmittedValue(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
-	if response.AccentColor != "rose" || response.ThemeMode != "system" {
+	if response.AccentColor != "rose" || response.ThemeMode != "system" || response.ChartPalette != "default" {
 		t.Errorf("response = %+v", response)
 	}
 }

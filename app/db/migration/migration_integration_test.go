@@ -76,7 +76,7 @@ func exerciseMigration(t *testing.T, db *gorm.DB, databaseName string) {
 	if err := Run(ctx, db, databaseName, Options{}); err != nil {
 		t.Fatalf("migrate empty database: %v", err)
 	}
-	for _, column := range []string{"accent_color", "theme_mode"} {
+	for _, column := range []string{"accent_color", "theme_mode", "chart_palette"} {
 		if !db.Migrator().HasColumn("users", column) {
 			t.Fatalf("users.%s was not added by migration", column)
 		}
@@ -218,7 +218,7 @@ func exerciseBudgetAndSettingsStores(t *testing.T, db *gorm.DB) {
 	if err != nil {
 		t.Fatalf("get default user settings: %v", err)
 	}
-	if settings.AccentColor != "blue" || settings.ThemeMode != "system" {
+	if settings.AccentColor != "blue" || settings.ThemeMode != "system" || settings.ChartPalette != "default" {
 		t.Fatalf("default user settings = %+v", settings)
 	}
 	accentColor := "rose"
@@ -226,7 +226,7 @@ func exerciseBudgetAndSettingsStores(t *testing.T, db *gorm.DB) {
 	if err != nil {
 		t.Fatalf("update user settings: %v", err)
 	}
-	if updatedSettings.AccentColor != "rose" || updatedSettings.ThemeMode != "system" {
+	if updatedSettings.AccentColor != "rose" || updatedSettings.ThemeMode != "system" || updatedSettings.ChartPalette != "default" {
 		t.Fatalf("partially updated user settings = %+v", updatedSettings)
 	}
 
@@ -411,7 +411,7 @@ func exerciseSampleSeed(t *testing.T, db *gorm.DB, databaseName string) {
 		t.Fatalf("load first sample transaction: %v", err)
 	}
 	mustExec(t, db, "UPDATE transaction SET transaction_name = ? WHERE transaction_id = ?", "手動変更", firstTransaction.TransactionID)
-	mustExec(t, db, "UPDATE users SET accent_color = ?, theme_mode = ? WHERE user_no = ?", "purple", "dark", sampleUser.UserNo)
+	mustExec(t, db, "UPDATE users SET accent_color = ?, theme_mode = ?, chart_palette = ? WHERE user_no = ?", "purple", "dark", "colorful", sampleUser.UserNo)
 	if err := Run(ctx, db, databaseName, options); err != nil {
 		t.Fatalf("repeat sample seed: %v", err)
 	}
@@ -428,8 +428,8 @@ func exerciseSampleSeed(t *testing.T, db *gorm.DB, databaseName string) {
 	if err := db.Where("user_no = ?", sampleUser.UserNo).Take(&refreshedUser).Error; err != nil {
 		t.Fatalf("load refreshed sample user: %v", err)
 	}
-	if refreshedUser.AccentColor != "blue" || refreshedUser.ThemeMode != "system" {
-		t.Fatalf("sample user settings = (%q, %q), want (blue, system)", refreshedUser.AccentColor, refreshedUser.ThemeMode)
+	if refreshedUser.AccentColor != "blue" || refreshedUser.ThemeMode != "system" || refreshedUser.ChartPalette != "default" {
+		t.Fatalf("sample user settings = (%q, %q, %q), want (blue, system, default)", refreshedUser.AccentColor, refreshedUser.ThemeMode, refreshedUser.ChartPalette)
 	}
 }
 

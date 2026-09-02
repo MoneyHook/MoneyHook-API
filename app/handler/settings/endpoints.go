@@ -22,14 +22,22 @@ var validThemeModes = map[string]struct{}{
 	"system": {},
 }
 
+var validChartPalettes = map[string]struct{}{
+	"default":    {},
+	"colorful":   {},
+	"monochrome": {},
+}
+
 type v1SettingsPatchRequest struct {
-	AccentColor *string `json:"accent_color"`
-	ThemeMode   *string `json:"theme_mode"`
+	AccentColor  *string `json:"accent_color"`
+	ThemeMode    *string `json:"theme_mode"`
+	ChartPalette *string `json:"chart_palette"`
 }
 
 type v1SettingsResponse struct {
-	AccentColor string `json:"accent_color"`
-	ThemeMode   string `json:"theme_mode"`
+	AccentColor  string `json:"accent_color"`
+	ThemeMode    string `json:"theme_mode"`
+	ChartPalette string `json:"chart_palette"`
 }
 
 func (h *Handler) GetV1Settings(c echo.Context) error {
@@ -59,8 +67,9 @@ func (h *Handler) PatchV1Settings(c echo.Context) error {
 	}
 
 	result, err := h.settingsStore.UpdateSettings(userNo, &model.UserSettingsUpdate{
-		AccentColor: request.AccentColor,
-		ThemeMode:   request.ThemeMode,
+		AccentColor:  request.AccentColor,
+		ThemeMode:    request.ThemeMode,
+		ChartPalette: request.ChartPalette,
 	})
 	if err != nil {
 		return httpx.RespondV1Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "表示設定の保存に失敗しました", nil)
@@ -70,14 +79,15 @@ func (h *Handler) PatchV1Settings(c echo.Context) error {
 
 func newV1SettingsResponse(settings *model.UserSettings) v1SettingsResponse {
 	return v1SettingsResponse{
-		AccentColor: settings.AccentColor,
-		ThemeMode:   settings.ThemeMode,
+		AccentColor:  settings.AccentColor,
+		ThemeMode:    settings.ThemeMode,
+		ChartPalette: settings.ChartPalette,
 	}
 }
 
 func validateV1SettingsPatch(request v1SettingsPatchRequest) map[string]string {
 	fieldErrors := map[string]string{}
-	if request.AccentColor == nil && request.ThemeMode == nil {
+	if request.AccentColor == nil && request.ThemeMode == nil && request.ChartPalette == nil {
 		fieldErrors["settings"] = "少なくとも1つの設定項目を指定してください"
 	}
 	if request.AccentColor != nil {
@@ -88,6 +98,11 @@ func validateV1SettingsPatch(request v1SettingsPatchRequest) map[string]string {
 	if request.ThemeMode != nil {
 		if _, ok := validThemeModes[*request.ThemeMode]; !ok {
 			fieldErrors["theme_mode"] = "light、dark、systemのいずれかを指定してください"
+		}
+	}
+	if request.ChartPalette != nil {
+		if _, ok := validChartPalettes[*request.ChartPalette]; !ok {
+			fieldErrors["chart_palette"] = "default、colorful、monochromeのいずれかを指定してください"
 		}
 	}
 	return fieldErrors
