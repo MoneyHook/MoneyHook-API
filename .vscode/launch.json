@@ -2,8 +2,22 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Seed Database (Migration + Sample Data)",
+      "type": "go",
+      "debugAdapter": "dlv-dap",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/app/cmd/migrate",
+      "cwd": "${workspaceFolder}/app",
+      "env": {
+        "ENABLE_SEED_DATA": "true"
+      },
+      "showLog": true
+    },
+    {
       "name": "Launch Echo Server via Air (Hot Reload + Debug)",
       "type": "go",
+      "debugAdapter": "dlv-dap",
       "request": "attach",
       "mode": "remote",
       "host": "127.0.0.1",
