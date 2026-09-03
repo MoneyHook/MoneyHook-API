@@ -29,10 +29,6 @@ func main() {
 
 	api := e.Group("/api")
 
-	seedDataEnabled, err := db.SeedDataEnabledFromEnvironment()
-	if err != nil {
-		log.Fatalf("Database setup failed: %v", err)
-	}
 	developmentUserEnabled, err := router.DevelopmentUserEnabledFromEnvironment()
 	if err != nil {
 		log.Fatalf("Development user setup failed: %v", err)
@@ -41,7 +37,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Firebase setup failed: %v", err)
 	}
-	if seedDataEnabled && developmentUserEnabled {
+	if developmentUserEnabled {
 		if err := router.EnsureDevelopmentUser(context.Background(), client); err != nil {
 			log.Fatalf("Development user setup failed: %v", err)
 		}

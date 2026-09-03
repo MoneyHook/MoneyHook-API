@@ -1,7 +1,8 @@
 {
   "name": "Echo Container",
   "dockerComposeFile": [
-    "../compose.yaml"
+    "../compose.yaml",
+    "compose.devcontainer.yaml"
   ],
   "initializeCommand": "ls -al",
   "service": "go",
