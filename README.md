@@ -46,6 +46,7 @@ DB migrationと開発環境の詳細は[開発ガイド](docs/DEVELOPMENT.md)を
 ## ドキュメント
 
 - [アーキテクチャ](docs/ARCHITECTURE.md): ディレクトリ構造、package責務、依存方向、HTTP処理の流れ
+- [Git workflow](docs/GIT_WORKFLOW.md): branch、commit、PRの運用ルール
 - [開発エージェント向けガイド](AGENTS.md): 変更時の作業方針と検証ルール
 - OpenAPI契約: 隣接する`moneyhooks-react/contracts/openapi.yaml`
 
