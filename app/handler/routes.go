@@ -64,6 +64,7 @@ func (h *Handler) Register(api *echo.Group) {
 	payment.GET("/getPayment", h.payment.GetPaymentResourceList)
 	payment.POST("/addPayment", h.payment.AddPaymentResource)
 	payment.PATCH("/editPayment", h.payment.EditPaymentResource)
+	payment.PUT("/reorder", h.payment.ReorderPaymentResources)
 	payment.DELETE("/deletePayment/:paymentId", h.payment.DeletePaymentResource)
 	payment.GET("/getPaymentType", h.payment.GetPaymentTypeList)
 
