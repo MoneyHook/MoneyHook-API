@@ -6,6 +6,7 @@ type PaymentResource struct {
 	PaymentTypeId string
 	PaymentDate   int
 	ClosingDate   int
+	OrderNum      int
 }
 
 type AddPaymentResource struct {
@@ -14,6 +15,12 @@ type AddPaymentResource struct {
 	PaymentTypeId string
 	PaymentDate   *int
 	ClosingDate   *int
+	OrderNum      int
+}
+
+type ReorderPaymentResources struct {
+	UserNo     string
+	PaymentIDs []string
 }
 
 type EditPaymentResource struct {

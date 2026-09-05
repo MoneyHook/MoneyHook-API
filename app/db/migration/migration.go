@@ -52,6 +52,9 @@ func Run(parent context.Context, db *gorm.DB, databaseName string, options Optio
 	if err := migrationDB.AutoMigrate(models...); err != nil {
 		return fmt.Errorf("auto migrate schema: %w", err)
 	}
+	if err := backfillPaymentResourceOrder(ctx, migrationDB); err != nil {
+		return fmt.Errorf("backfill payment resource order: %w", err)
+	}
 	for _, change := range pendingChanges {
 		log.Printf("event=schema_migration_change action=%s table=%s column=%s", change.Action, change.Table, change.Column)
 	}

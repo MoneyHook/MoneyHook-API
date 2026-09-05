@@ -50,6 +50,7 @@ var expectedBusinessRoutes = map[string]struct{}{
 	"GET /api/payment/getPayment":                              {},
 	"POST /api/payment/addPayment":                             {},
 	"PATCH /api/payment/editPayment":                           {},
+	"PUT /api/payment/reorder":                                 {},
 	"DELETE /api/payment/deletePayment/:paymentId":             {},
 	"GET /api/payment/getPaymentType":                          {},
 	"POST /api/job/daily":                                      {},

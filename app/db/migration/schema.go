@@ -58,6 +58,7 @@ type paymentResourceSchema struct {
 	PaymentName   string `gorm:"column:payment_name;type:varchar(32);not null"`
 	PaymentDate   *int32 `gorm:"column:payment_date"`
 	ClosingDate   *int32 `gorm:"column:closing_date"`
+	OrderNum      int32  `gorm:"column:order_num;not null;default:0"`
 }
 
 func (paymentResourceSchema) TableName() string { return "payment_resource" }

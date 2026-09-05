@@ -4,7 +4,7 @@ MoneyHooksのバックエンドAPIです。GoとEchoでHTTP APIを提供し、Fi
 
 ## ローカル開発
 
-Docker Composeを使うと、PostgreSQL、Firebase Auth Emulator、APIをまとめて起動できます。
+Docker Composeを使うと、PostgreSQL、Firebase Auth Emulator、APIをまとめて起動できます。通常のComposeではFirebase Auth Emulatorのhealthy確認後、PostgreSQLのmigration・master data・sample dataを実行してからAPIを起動します。
 
 ```bash
 docker compose up --build
@@ -18,11 +18,16 @@ curl http://localhost:8080/
 
 業務APIは`/api`以下にあり、GoogleプロバイダーのFirebase ID tokenをBearer tokenとして要求します。ローカル構成ではFirebase Auth Emulatorを使用します。
 
-Compose起動時は、Firebase Auth Emulatorの初期化、PostgreSQLのmigration・master data・sample data、API起動、開発ユーザーのprovisionの順で処理されます。`compose.yaml`では`ENABLE_SEED_DATA=true`と`ENABLE_DEVELOPMENT_USER=true`を設定しているため、固定UID `a77a6e94-6aa2-47ea-87dd-129f580fb669`のGoogleユーザー（表示名「開発ユーザー」、`developer@example.com`）と、そのユーザーに紐づくサンプルデータが利用できます。
+通常のComposeでは`ENABLE_SEED_DATA=true`により、起動のたびに固定UID `a77a6e94-6aa2-47ea-87dd-129f580fb669`の開発ユーザーに紐づくsample dataを再生成します。API起動時は`ENABLE_DEVELOPMENT_USER=true`により、Firebaseの開発ユーザー（表示名「開発ユーザー」、`developer@example.com`）もprovisionされます。
 
-`ENABLE_SEED_DATA=true`で起動するたびに、この開発ユーザーの取引・固定費・予算履歴・支払い方法・カスタム設定は最新のサンプルシナリオへ再生成されます。手動で変更した内容を残したい場合は、このフラグを無効にしてください。
+Dev Containerは専用Compose上書きによりgoコンテナを待機状態で起動します。Run and Debugから次の順番で実行してください。
 
-開発ユーザー作成は`ENABLE_DEVELOPMENT_USER`がtrue、かつサンプルデータ投入が有効な場合だけ実行されます。未設定またはfalseがデフォルトで、本番環境では開発用フラグを有効にしないでください。
+1. `Seed Database (Migration + Sample Data)`
+2. `Launch Echo Server via Air (Hot Reload + Debug)`
+
+sample dataを再生成せずmigrationだけを実行したい場合は、`ENABLE_SEED_DATA=false go run ./cmd/migrate`を使用してください。これらの開発用フラグは本番環境では有効にしないでください。
+
+E2Eの`compose.e2e.yaml`は通常Composeの自動migration・seed・API起動を引き継ぎ、E2E用のCORS originだけを上書きします。
 
 ## 開発コマンド
 
