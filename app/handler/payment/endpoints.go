@@ -71,6 +71,25 @@ func (h *Handler) EditPaymentResource(c echo.Context) error {
 	return c.JSON(http.StatusOK, model.Success.Create(nil))
 }
 
+func (h *Handler) ReorderPaymentResources(c echo.Context) error {
+	userID, err := httpx.UserID(c)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
+	}
+
+	reorder := model.ReorderPaymentResources{UserNo: userID}
+	req := &ReorderPaymentResourcesRequest{}
+	if err := req.Bind(c, &reorder); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, "error")
+	}
+	if err := h.paymentResourceStore.ReorderPaymentResources(&reorder); err != nil {
+		log.Printf("ReorderPaymentResources: %v/n", err)
+		return c.JSON(http.StatusUnprocessableEntity, message.Get("edit_failed"))
+	}
+
+	return c.JSON(http.StatusOK, model.Success.Create(nil))
+}
+
 func (h *Handler) DeletePaymentResource(c echo.Context) error {
 	userId, err := httpx.UserID(c)
 	if err != nil {

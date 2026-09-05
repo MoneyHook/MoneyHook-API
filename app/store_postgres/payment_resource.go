@@ -2,6 +2,7 @@ package store_postgres
 
 import (
 	"MoneyHook/MoneyHook-API/model"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -18,7 +19,7 @@ func (pr *PaymentResourceStore) GetPaymentResourceList(userId string) *[]model.P
 	var payment_resource_list []model.PaymentResource
 	pr.db.Table("payment_resource").
 		Where("user_no = ?", userId).
-		Order("payment_id").
+		Order("order_num, payment_id").
 		Find(&payment_resource_list)
 
 	for i, item := range payment_resource_list {
@@ -31,7 +32,56 @@ func (pr *PaymentResourceStore) GetPaymentResourceList(userId string) *[]model.P
 }
 
 func (pr *PaymentResourceStore) AddPaymentResource(addPayment *model.AddPaymentResource) error {
-	return pr.db.Table("payment_resource").Create(&addPayment).Error
+	return pr.db.Transaction(func(tx *gorm.DB) error {
+		var maximumOrder int
+		if err := tx.Table("payment_resource").
+			Select("COALESCE(MAX(order_num), 0)").
+			Where("user_no = ?", addPayment.UserNo).
+			Scan(&maximumOrder).Error; err != nil {
+			return err
+		}
+		addPayment.OrderNum = maximumOrder + 1
+		return tx.Table("payment_resource").Create(addPayment).Error
+	})
+}
+
+func (pr *PaymentResourceStore) ReorderPaymentResources(reorder *model.ReorderPaymentResources) error {
+	if len(reorder.PaymentIDs) == 0 {
+		return fmt.Errorf("payment order must not be empty")
+	}
+	seen := make(map[string]struct{}, len(reorder.PaymentIDs))
+	for _, paymentID := range reorder.PaymentIDs {
+		if _, exists := seen[paymentID]; exists {
+			return fmt.Errorf("payment order contains duplicates")
+		}
+		seen[paymentID] = struct{}{}
+	}
+	return pr.db.Transaction(func(tx *gorm.DB) error {
+		var owned []model.PaymentResource
+		if err := tx.Table("payment_resource").
+			Select("payment_id").
+			Where("user_no = ?", reorder.UserNo).
+			Find(&owned).Error; err != nil {
+			return err
+		}
+		if len(owned) != len(reorder.PaymentIDs) {
+			return fmt.Errorf("payment order does not match owned payment resources")
+		}
+		for _, payment := range owned {
+			if _, exists := seen[payment.PaymentId]; !exists {
+				return fmt.Errorf("payment order contains an unowned payment resource")
+			}
+		}
+		for index, paymentID := range reorder.PaymentIDs {
+			if err := tx.Table("payment_resource").
+				Where("payment_id = ?", paymentID).
+				Where("user_no = ?", reorder.UserNo).
+				Update("order_num", index+1).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (pr *PaymentResourceStore) EditPaymentResource(editPayment *model.EditPaymentResource) error {

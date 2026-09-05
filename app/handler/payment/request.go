@@ -41,6 +41,21 @@ type EditPaymentRequest struct {
 	ClosingDate   *int    `json:"closing_date"`
 }
 
+type ReorderPaymentResourcesRequest struct {
+	PaymentIDs []string `json:"payment_ids"`
+}
+
+func (r *ReorderPaymentResourcesRequest) Bind(c echo.Context, u *model.ReorderPaymentResources) error {
+	if err := c.Bind(r); err != nil {
+		return err
+	}
+	if len(r.PaymentIDs) == 0 {
+		return echo.NewHTTPError(422, "payment_ids is required")
+	}
+	u.PaymentIDs = r.PaymentIDs
+	return nil
+}
+
 func (r *EditPaymentRequest) Bind(c echo.Context, u *model.EditPaymentResource) error {
 	if err := c.Bind(r); err != nil {
 		return err
