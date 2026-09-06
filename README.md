@@ -16,6 +16,8 @@ APIは`http://localhost:8080`で起動します。次の公開エンドポイン
 curl http://localhost:8080/
 ```
 
+Firebase Emulator UIは`http://localhost:4000/auth`、Auth Emulatorはホストの`http://localhost:9099`で公開されます。コンテナ間通信も`firebase:9099`を使用します。
+
 業務APIは`/api`以下にあり、GoogleプロバイダーのFirebase ID tokenをBearer tokenとして要求します。ローカル構成ではFirebase Auth Emulatorを使用します。
 
 通常のComposeでは`ENABLE_SEED_DATA=true`により、起動のたびに固定UID `a77a6e94-6aa2-47ea-87dd-129f580fb669`の開発ユーザーに紐づくsample dataを再生成します。API起動時は`ENABLE_DEVELOPMENT_USER=true`により、Firebaseの開発ユーザー（表示名「開発ユーザー」、`developer@example.com`）もprovisionされます。
