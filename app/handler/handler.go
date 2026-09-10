@@ -57,11 +57,10 @@ func New(dependencies Dependencies) *Handler {
 		settings:       settingshandler.New(dependencies.SettingsStore),
 		transaction: transactionhandler.New(
 			dependencies.TransactionStore,
-			dependencies.SubCategoryStore,
 			dependencies.PaymentResourceStore,
 		),
 		analytics:   analyticshandler.New(dependencies.TransactionStore),
-		fixed:       fixedhandler.New(dependencies.FixedStore, dependencies.SubCategoryStore),
+		fixed:       fixedhandler.New(dependencies.FixedStore),
 		category:    categoryhandler.New(dependencies.CategoryStore),
 		subcategory: subcategoryhandler.New(dependencies.SubCategoryStore),
 		payment:     paymenthandler.New(dependencies.PaymentResourceStore),

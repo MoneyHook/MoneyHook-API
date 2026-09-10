@@ -3,7 +3,7 @@ package paymentresource
 import "MoneyHook/MoneyHook-API/model"
 
 type Store interface {
-	GetPaymentResourceList(userId string) *[]model.PaymentResource
+	GetPaymentResourceList(userId string) (*[]model.PaymentResource, error)
 	AddPaymentResource(*model.AddPaymentResource) error
 	ReorderPaymentResources(*model.ReorderPaymentResources) error
 	EditPaymentResource(*model.EditPaymentResource) error

@@ -66,41 +66,70 @@ func (fs *FixedStore) GetFixedDeletedData(userId string) *[]model.GetDeletedFixe
 }
 
 func (ts *FixedStore) AddFixed(monthlyTransaction *model.AddFixed) error {
-	paymentId := interface{}(monthlyTransaction.PaymentId)
-	if monthlyTransaction.PaymentId == "" {
-		paymentId = nil
-	}
+	return ts.db.Transaction(func(tx *gorm.DB) error {
+		input := *monthlyTransaction
+		monthlyTransaction = &input
+		subCategoryID, err := resolveWriteSubCategory(tx, monthlyTransaction.UserId, monthlyTransaction.CategoryId, monthlyTransaction.SubCategoryId, monthlyTransaction.SubCategoryName)
+		if err != nil {
+			return err
+		}
+		monthlyTransaction.SubCategoryId = subCategoryID
 
-	return ts.db.Table("monthly_transaction").Create(map[string]interface{}{
-		"user_no":                    monthlyTransaction.UserId,
-		"monthly_transaction_name":   monthlyTransaction.MonthlyTransactionName,
-		"monthly_transaction_amount": monthlyTransaction.MonthlyTransactionAmount,
-		"monthly_transaction_date":   monthlyTransaction.MonthlyTransactionDate,
-		"category_id":                monthlyTransaction.CategoryId,
-		"sub_category_id":            monthlyTransaction.SubCategoryId,
-		"include_flg":                true,
-		"payment_id":                 paymentId,
-	}).Error
-}
+		paymentId := interface{}(monthlyTransaction.PaymentId)
+		if monthlyTransaction.PaymentId == "" {
+			paymentId = nil
+		}
 
-func (ts *FixedStore) EditFixed(monthlyTransaction *model.EditFixed) error {
-	paymentId := interface{}(monthlyTransaction.PaymentId)
-	if monthlyTransaction.PaymentId == "" {
-		paymentId = nil
-	}
-
-	return ts.db.Table("monthly_transaction").
-		Where("monthly_transaction_id = ?", monthlyTransaction.MonthlyTransactionId).
-		Where("user_no = ?", monthlyTransaction.UserId).
-		Updates(map[string]interface{}{
+		return tx.Table("monthly_transaction").Create(map[string]interface{}{
+			"user_no":                    monthlyTransaction.UserId,
 			"monthly_transaction_name":   monthlyTransaction.MonthlyTransactionName,
 			"monthly_transaction_amount": monthlyTransaction.MonthlyTransactionAmount,
 			"monthly_transaction_date":   monthlyTransaction.MonthlyTransactionDate,
 			"category_id":                monthlyTransaction.CategoryId,
 			"sub_category_id":            monthlyTransaction.SubCategoryId,
-			"include_flg":                monthlyTransaction.IncludeFlg,
+			"include_flg":                true,
 			"payment_id":                 paymentId,
 		}).Error
+
+	})
+}
+
+func (ts *FixedStore) EditFixed(monthlyTransaction *model.EditFixed) error {
+	return ts.db.Transaction(func(tx *gorm.DB) error {
+		input := *monthlyTransaction
+		monthlyTransaction = &input
+		subCategoryID, err := resolveWriteSubCategory(tx, monthlyTransaction.UserId, monthlyTransaction.CategoryId, monthlyTransaction.SubCategoryId, monthlyTransaction.SubCategoryName)
+		if err != nil {
+			return err
+		}
+		monthlyTransaction.SubCategoryId = subCategoryID
+
+		paymentId := interface{}(monthlyTransaction.PaymentId)
+		if monthlyTransaction.PaymentId == "" {
+			paymentId = nil
+		}
+
+		result := tx.Table("monthly_transaction").
+			Where("monthly_transaction_id = ?", monthlyTransaction.MonthlyTransactionId).
+			Where("user_no = ?", monthlyTransaction.UserId).
+			Updates(map[string]interface{}{
+				"monthly_transaction_name":   monthlyTransaction.MonthlyTransactionName,
+				"monthly_transaction_amount": monthlyTransaction.MonthlyTransactionAmount,
+				"monthly_transaction_date":   monthlyTransaction.MonthlyTransactionDate,
+				"category_id":                monthlyTransaction.CategoryId,
+				"sub_category_id":            monthlyTransaction.SubCategoryId,
+				"include_flg":                monthlyTransaction.IncludeFlg,
+				"payment_id":                 paymentId,
+			})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		return nil
+
+	})
 }
 
 func (ts *FixedStore) DeleteFixed(monthlyTransaction *model.DeleteFixed) error {

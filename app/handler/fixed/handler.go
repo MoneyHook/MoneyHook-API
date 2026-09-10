@@ -2,14 +2,12 @@ package fixed
 
 import (
 	fixeddomain "MoneyHook/MoneyHook-API/fixed"
-	subcategorydomain "MoneyHook/MoneyHook-API/subcategory"
 )
 
 type Handler struct {
-	fixedStore       fixeddomain.Store
-	subCategoryStore subcategorydomain.Store
+	fixedStore fixeddomain.Store
 }
 
-func New(fixedStore fixeddomain.Store, subCategoryStore subcategorydomain.Store) *Handler {
-	return &Handler{fixedStore: fixedStore, subCategoryStore: subCategoryStore}
+func New(fixedStore fixeddomain.Store) *Handler {
+	return &Handler{fixedStore: fixedStore}
 }

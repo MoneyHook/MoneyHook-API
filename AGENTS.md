@@ -6,6 +6,7 @@
 
 - 依頼内容と変更対象を確認し、関連する既存コードを読んでから変更する。
 - APIの構造と依存規則は`docs/ARCHITECTURE.md`、DB migrationと開発環境は`docs/DEVELOPMENT.md`を参照する。
+- branch、commit、PRの命名と言語ルールは`docs/GIT_WORKFLOW.md`を参照する。
 - ユーザーが指定していないHTTP契約、DB schema、認証・認可、別リポジトリを変更しない。
 - 既存のURL、JSON、status codeを変更する場合は、利用クライアントとOpenAPIへの影響を先に確認する。
 - 明示的に依頼されない限り、branch作成、commit、push、PR作成、tag操作を行わない。

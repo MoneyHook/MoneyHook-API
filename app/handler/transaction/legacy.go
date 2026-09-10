@@ -4,6 +4,8 @@ import (
 	"MoneyHook/MoneyHook-API/handler/internal/httpx"
 	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/model"
+	subcategorydomain "MoneyHook/MoneyHook-API/subcategory"
+	"errors"
 	"strconv"
 
 	"log"
@@ -13,6 +15,24 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+const (
+	defaultFrequentTransactionLimit = 20
+	maxFrequentTransactionLimit     = 100
+)
+
+func parseFrequentTransactionLimit(value string) (int, bool) {
+	if value == "" {
+		return defaultFrequentTransactionLimit, true
+	}
+
+	limit, err := strconv.Atoi(value)
+	if err != nil || limit < 1 || limit > maxFrequentTransactionLimit {
+		return 0, false
+	}
+
+	return limit, true
+}
+
 func (h *Handler) GetTimelineData(c echo.Context) error {
 	userId, err := httpx.UserID(c)
 	if err != nil {
@@ -21,7 +41,10 @@ func (h *Handler) GetTimelineData(c echo.Context) error {
 
 	month := c.QueryParam("month")
 
-	result := h.transactionStore.GetTimelineData(userId, month)
+	result, err := h.transactionStore.GetTimelineData(userId, month)
+	if err != nil {
+		return respondReadError(c, err)
+	}
 
 	result_list := GetTimelineListResponse(result)
 
@@ -36,7 +59,10 @@ func (h *Handler) GetMonthlySpendingData(c echo.Context) error {
 
 	month := c.QueryParam("month")
 
-	result := h.transactionStore.GetMonthlySpendingData(userId, month)
+	result, err := h.transactionStore.GetMonthlySpendingData(userId, month)
+	if err != nil {
+		return respondReadError(c, err)
+	}
 
 	result_list := GetmonthlySpendingDataResponse(result)
 
@@ -50,7 +76,10 @@ func (h *Handler) GetTransaction(c echo.Context) error {
 	}
 
 	transactionId := c.Param("transactionId")
-	result := h.transactionStore.GetTransactionData(userId, transactionId)
+	result, err := h.transactionStore.GetTransactionData(userId, transactionId)
+	if err != nil {
+		return respondReadError(c, err)
+	}
 
 	if result == nil {
 		return c.JSON(http.StatusNotFound, model.Error.Create(message.Get("transaction_not_found")))
@@ -69,7 +98,10 @@ func (h *Handler) GetMonthlyFixedIncome(c echo.Context) error {
 
 	month := c.QueryParam("month")
 
-	result := h.transactionStore.GetMonthlyFixedData(userId, month, false)
+	result, err := h.transactionStore.GetMonthlyFixedData(userId, month, false)
+	if err != nil {
+		return respondReadError(c, err)
+	}
 
 	result_list := GetMonthlyFixedResponse(result)
 
@@ -84,7 +116,10 @@ func (h *Handler) GetMonthlyFixedSpending(c echo.Context) error {
 
 	month := c.QueryParam("month")
 
-	result := h.transactionStore.GetMonthlyFixedData(userId, month, true)
+	result, err := h.transactionStore.GetMonthlyFixedData(userId, month, true)
+	if err != nil {
+		return respondReadError(c, err)
+	}
 
 	result_list := GetMonthlyFixedResponse(result)
 
@@ -99,7 +134,10 @@ func (h *Handler) GetHome(c echo.Context) error {
 
 	month := c.QueryParam("month")
 
-	result := h.transactionStore.GetHome(userId, month)
+	result, err := h.transactionStore.GetHome(userId, month)
+	if err != nil {
+		return respondReadError(c, err)
+	}
 
 	result_list := GetHomeResponse(result)
 
@@ -114,7 +152,10 @@ func (h *Handler) GetMonthlyVariableData(c echo.Context) error {
 
 	month := c.QueryParam("month")
 
-	result := h.transactionStore.GetMonthlyVariableData(userId, month)
+	result, err := h.transactionStore.GetMonthlyVariableData(userId, month)
+	if err != nil {
+		return respondReadError(c, err)
+	}
 
 	result_list := GetMonthlyVariableResponse(result)
 
@@ -132,7 +173,10 @@ func (h *Handler) GetTotalSpendingData(c echo.Context) error {
 	startMonth := c.QueryParam("start_month")
 	endMonth := c.QueryParam("end_month")
 
-	result := h.transactionStore.GetTotalSpending(userId, categoryId, subCategoryId, startMonth, endMonth)
+	result, err := h.transactionStore.GetTotalSpending(userId, categoryId, subCategoryId, startMonth, endMonth)
+	if err != nil {
+		return respondReadError(c, err)
+	}
 
 	result_list := GetTotalSpendingResponse(result)
 
@@ -147,14 +191,20 @@ func (h *Handler) GroupByPayment(c echo.Context) error {
 
 	month := c.QueryParam("month")
 
-	result := h.transactionStore.GetGroupByPayment(userId, month)
+	result, err := h.transactionStore.GetGroupByPayment(userId, month)
+	if err != nil {
+		return respondReadError(c, err)
+	}
 
 	last_month, err := time.Parse("2006-01-02", month)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("date_parse_error")))
 	}
 
-	last_month_result := h.transactionStore.GetLastMonthGroupByPayment(userId, last_month.AddDate(0, -1, 0).Format("2006-01-02"))
+	last_month_result, err := h.transactionStore.GetLastMonthGroupByPayment(userId, last_month.AddDate(0, -1, 0).Format("2006-01-02"))
+	if err != nil {
+		return respondReadError(c, err)
+	}
 
 	result_list := GetPaymentGroupResponse(result, last_month_result)
 
@@ -176,7 +226,10 @@ func (h *Handler) GetMonthlyWithdrawalAmount(c echo.Context) error {
 
 	var result []*model.MonthlyWithdrawalAmountList
 
-	payment_list := h.paymentResourceStore.GetPaymentResourceList(userId)
+	payment_list, err := h.paymentResourceStore.GetPaymentResourceList(userId)
+	if err != nil {
+		return respondReadError(c, err)
+	}
 	for _, payment := range *payment_list {
 		if payment.PaymentDate != 0 {
 			var startMonth time.Time
@@ -205,7 +258,10 @@ func (h *Handler) GetMonthlyWithdrawalAmount(c echo.Context) error {
 				endMonth = month.AddDate(0, -1, payment.ClosingDate-1)
 			}
 
-			monthlyWithdrawalAmount := h.transactionStore.GetMonthlyWithdrawalAmount(userId, payment.PaymentId, startMonth.Format("2006-01-02"), endMonth.Format("2006-01-02"))
+			monthlyWithdrawalAmount, err := h.transactionStore.GetMonthlyWithdrawalAmount(userId, payment.PaymentId, startMonth.Format("2006-01-02"), endMonth.Format("2006-01-02"))
+			if err != nil {
+				return respondReadError(c, err)
+			}
 			if monthlyWithdrawalAmount.PaymentId != "" {
 				result = append(result, monthlyWithdrawalAmount)
 			}
@@ -223,7 +279,18 @@ func (h *Handler) GetFrequentTransactionName(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
 	}
 
-	result := h.transactionStore.GetFrequentTransactionName(userId)
+	limit, valid := parseFrequentTransactionLimit(c.QueryParam("limit"))
+	if !valid {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"status":  "error",
+			"message": "limitは1〜100の整数で指定してください。",
+		})
+	}
+
+	result, err := h.transactionStore.GetFrequentTransactionName(userId, limit)
+	if err != nil {
+		return respondReadError(c, err)
+	}
 
 	result_list := GetFrequentTransactionResponse(result)
 
@@ -246,28 +313,11 @@ func (h *Handler) AddTransaction(c echo.Context) error {
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	if addTran.SubCategoryId == "" {
-		subCategory := model.SubCategoryModel{
-			UserNo:          addTran.UserId,
-			CategoryId:      addTran.CategoryId,
-			SubCategoryName: addTran.SubCategoryName,
-		}
-		// Createの前に、同じユーザー、同じカテゴリIDに紐づくサブカテゴリ名が存在するか確認
-		if !h.subCategoryStore.FindByName(&subCategory) {
-			// サブカテゴリ作成
-			error := h.subCategoryStore.CreateSubCategory(&subCategory)
-			if error != nil {
-				log.Printf("database insert error: %v\n", err)
-				log.Printf("'%v' is exist: %v\n", subCategory.SubCategoryName, subCategory.SubCategoryId != 0)
-				return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("sub_category_create_failed")))
-			}
-		}
-
-		addTran.SubCategoryId = strconv.FormatInt(subCategory.SubCategoryId, 10)
-	}
-
 	err = h.transactionStore.AddTransaction(&addTran)
 	if err != nil {
+		if errors.Is(err, subcategorydomain.ErrResolveFailed) {
+			return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("sub_category_create_failed")))
+		}
 		log.Printf("AddTransaction: %v\n", err)
 		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("add_failed")))
 	}
@@ -291,30 +341,11 @@ func (h *Handler) AddTransactionList(c echo.Context) error {
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	for i, addTran := range addTranList.TransactionList {
-		if addTran.SubCategoryId == "" {
-			subCategory := model.SubCategoryModel{
-				UserNo:          addTranList.UserId,
-				CategoryId:      addTran.CategoryId,
-				SubCategoryName: addTran.SubCategoryName,
-			}
-			// Createの前に、同じユーザー、同じカテゴリIDに紐づくサブカテゴリ名が存在するか確認
-			if !h.subCategoryStore.FindByName(&subCategory) {
-				// サブカテゴリ作成
-				error := h.subCategoryStore.CreateSubCategory(&subCategory)
-				if error != nil {
-					log.Printf("CreateSubCategory: %v\n", error)
-					log.Printf("'%v' is exist: %v\n", subCategory.SubCategoryName, subCategory.SubCategoryId != 0)
-					return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("sub_category_create_failed")))
-				}
-			}
-
-			addTranList.TransactionList[i].SubCategoryId = strconv.FormatInt(subCategory.SubCategoryId, 10)
-		}
-	}
-
 	err = h.transactionStore.AddTransactionList(&addTranList)
 	if err != nil {
+		if errors.Is(err, subcategorydomain.ErrResolveFailed) {
+			return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("sub_category_create_failed")))
+		}
 		log.Printf("AddTransactionList: %v\n", err)
 		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("add_failed")))
 	}
@@ -338,19 +369,11 @@ func (h *Handler) EditTransaction(c echo.Context) error {
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	if editTran.SubCategoryId == "" {
-		subCategory := model.SubCategoryModel{
-			UserNo:          editTran.UserId,
-			CategoryId:      editTran.CategoryId,
-			SubCategoryName: editTran.SubCategoryName,
-		}
-		// TODO Createの前に、同じユーザー、同じカテゴリIDに紐づくサブカテゴリ名が存在するか確認
-		h.subCategoryStore.CreateSubCategory(&subCategory)
-		editTran.SubCategoryId = strconv.FormatInt(subCategory.SubCategoryId, 10)
-	}
-
 	err = h.transactionStore.EditTransaction(&editTran)
 	if err != nil {
+		if errors.Is(err, subcategorydomain.ErrResolveFailed) {
+			return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("sub_category_create_failed")))
+		}
 		log.Printf("EditTransaction: %v/n", err)
 		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("edit_failed")))
 	}
@@ -374,4 +397,9 @@ func (h *Handler) DeleteTransaction(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, model.Success.Create(nil))
+}
+
+func respondReadError(c echo.Context, err error) error {
+	c.Logger().Error(err)
+	return httpx.RespondV1Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "データの取得に失敗しました", nil)
 }
