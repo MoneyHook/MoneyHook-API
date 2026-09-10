@@ -2,6 +2,11 @@ package store_postgres
 
 import (
 	"MoneyHook/MoneyHook-API/model"
+	subcategorydomain "MoneyHook/MoneyHook-API/subcategory"
+	"errors"
+	"fmt"
+	"gorm.io/gorm/clause"
+	"strconv"
 
 	"gorm.io/gorm"
 )
@@ -26,10 +31,6 @@ func (cs *SubCategoryStore) GetSubCategoryList(userId string, categoryId string)
 	return &sub_category_list
 }
 
-func (cs *SubCategoryStore) CreateSubCategory(subCategory *model.SubCategoryModel) error {
-	return cs.db.Table("sub_category").Create(&subCategory).Error
-}
-
 func (cs *SubCategoryStore) HideSubCategory(subCategory *model.EditSubCategoryModel) error {
 	return cs.db.Table("hidden_sub_category").Create(map[string]interface{}{
 		"user_no":         subCategory.UserId,
@@ -44,12 +45,26 @@ func (cs *SubCategoryStore) ExposeSubCategory(subCategory *model.EditSubCategory
 		Delete(&subCategory).Error
 }
 
-func (cs *SubCategoryStore) FindByName(subCategory *model.SubCategoryModel) bool {
-	cs.db.Table("sub_category").
-		Where("sub_category_name = ?", subCategory.SubCategoryName).
-		Where("category_id = ?", subCategory.CategoryId).
-		Where("user_no = ?", subCategory.UserNo).
-		Find(&subCategory)
-
-	return subCategory.SubCategoryId != 0
+// resolveWriteSubCategory must run inside the caller's write transaction.
+func resolveWriteSubCategory(tx *gorm.DB, userID, categoryID, subCategoryID, name string) (string, error) {
+	if subCategoryID != "" {
+		return subCategoryID, nil
+	}
+	subCategory := model.SubCategoryModel{UserNo: userID, CategoryId: categoryID, SubCategoryName: name}
+	query := func() *gorm.DB {
+		return tx.Table("sub_category").Where("user_no = ? AND category_id = ? AND sub_category_name = ?", userID, categoryID, name)
+	}
+	err := query().Take(&subCategory).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		err = tx.Table("sub_category").Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "user_no"}, {Name: "category_id"}, {Name: "sub_category_name"}}, DoNothing: true,
+		}).Create(&subCategory).Error
+		if err == nil {
+			err = query().Take(&subCategory).Error
+		}
+	}
+	if err != nil {
+		return "", fmt.Errorf("%w: %w", subcategorydomain.ErrResolveFailed, err)
+	}
+	return strconv.FormatInt(subCategory.SubCategoryId, 10), nil
 }

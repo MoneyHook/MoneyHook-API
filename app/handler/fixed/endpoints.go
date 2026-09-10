@@ -4,9 +4,10 @@ import (
 	"MoneyHook/MoneyHook-API/handler/internal/httpx"
 	"MoneyHook/MoneyHook-API/message"
 	"MoneyHook/MoneyHook-API/model"
+	subcategorydomain "MoneyHook/MoneyHook-API/subcategory"
+	"errors"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 )
@@ -53,19 +54,11 @@ func (h *Handler) AddFixed(c echo.Context) error {
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	if addFixed.SubCategoryId == "" {
-		subCategory := model.SubCategoryModel{
-			UserNo:          addFixed.UserId,
-			CategoryId:      addFixed.CategoryId,
-			SubCategoryName: addFixed.SubCategoryName,
-		}
-		// TODO Createの前に、同じユーザー、同じカテゴリIDに紐づくサブカテゴリ名が存在するか確認
-		h.subCategoryStore.CreateSubCategory(&subCategory)
-		addFixed.SubCategoryId = strconv.FormatInt(subCategory.SubCategoryId, 10)
-	}
-
 	err = h.fixedStore.AddFixed(&addFixed)
 	if err != nil {
+		if errors.Is(err, subcategorydomain.ErrResolveFailed) {
+			return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("sub_category_create_failed")))
+		}
 		log.Printf("AddFixed: %v\n", err)
 		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("add_failed")))
 	}
@@ -89,19 +82,11 @@ func (h *Handler) EditFixed(c echo.Context) error {
 		// return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	if editFixed.SubCategoryId == "" {
-		subCategory := model.SubCategoryModel{
-			UserNo:          editFixed.UserId,
-			CategoryId:      editFixed.CategoryId,
-			SubCategoryName: editFixed.SubCategoryName,
-		}
-		// TODO Createの前に、同じユーザー、同じカテゴリIDに紐づくサブカテゴリ名が存在するか確認
-		h.subCategoryStore.CreateSubCategory(&subCategory)
-		editFixed.SubCategoryId = strconv.FormatInt(subCategory.SubCategoryId, 10)
-	}
-
 	err = h.fixedStore.EditFixed(&editFixed)
 	if err != nil {
+		if errors.Is(err, subcategorydomain.ErrResolveFailed) {
+			return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("sub_category_create_failed")))
+		}
 		log.Printf("EditFixed: %v\n", err)
 		return c.JSON(http.StatusUnprocessableEntity, model.Error.Create(message.Get("edit_failed")))
 	}

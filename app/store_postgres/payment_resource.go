@@ -15,12 +15,12 @@ func NewPaymentResourceStore(db *gorm.DB) *PaymentResourceStore {
 	return &PaymentResourceStore{db: db}
 }
 
-func (pr *PaymentResourceStore) GetPaymentResourceList(userId string) *[]model.PaymentResource {
+func (pr *PaymentResourceStore) GetPaymentResourceList(userId string) (*[]model.PaymentResource, error) {
 	var payment_resource_list []model.PaymentResource
-	pr.db.Table("payment_resource").
+	err := pr.db.Table("payment_resource").
 		Where("user_no = ?", userId).
 		Order("order_num, payment_id").
-		Find(&payment_resource_list)
+		Find(&payment_resource_list).Error
 
 	for i, item := range payment_resource_list {
 		if item.ClosingDate == 0 {
@@ -28,7 +28,7 @@ func (pr *PaymentResourceStore) GetPaymentResourceList(userId string) *[]model.P
 		}
 	}
 
-	return &payment_resource_list
+	return &payment_resource_list, err
 }
 
 func (pr *PaymentResourceStore) AddPaymentResource(addPayment *model.AddPaymentResource) error {
