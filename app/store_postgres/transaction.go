@@ -17,10 +17,10 @@ func NewTransactionStore(db *gorm.DB) *TransactionStore {
 	return &TransactionStore{db: db}
 }
 
-func (ts *TransactionStore) GetTimelineData(userId string, month string) *[]model.Timeline {
+func (ts *TransactionStore) GetTimelineData(userId string, month string) (*[]model.Timeline, error) {
 	var timeline_list []model.Timeline
 
-	ts.db.Unscoped().Preload("Category").
+	err := ts.db.Unscoped().Preload("Category").
 		Preload("SubCategory").
 		Select("t.transaction_id", "t.transaction_name", "ABS(t.transaction_amount) AS transaction_amount",
 			"CASE WHEN t.transaction_amount > 0 THEN 1 ELSE -1 END AS transaction_sign",
@@ -33,9 +33,9 @@ func (ts *TransactionStore) GetTimelineData(userId string, month string) *[]mode
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", month, month).
 		Order("t.transaction_date DESC, t.transaction_id DESC").
-		Scan(&timeline_list)
+		Scan(&timeline_list).Error
 
-	return &timeline_list
+	return &timeline_list, err
 }
 
 func search_spending_data(data_list *[]model.MonthlySpendingData, key *string) *model.MonthlySpendingData {
@@ -50,11 +50,11 @@ func search_spending_data(data_list *[]model.MonthlySpendingData, key *string) *
 	return &result
 }
 
-func (ts *TransactionStore) GetMonthlySpendingData(userId string, month string) *[]model.MonthlySpendingData {
+func (ts *TransactionStore) GetMonthlySpendingData(userId string, month string) (*[]model.MonthlySpendingData, error) {
 	var result_list []model.MonthlySpendingData
 
 	var query_list []model.MonthlySpendingData
-	ts.db.Unscoped().
+	err := ts.db.Unscoped().
 		Select("SUM(transaction_amount) as total_amount",
 			"TO_CHAR(date_trunc('month', transaction_date), 'YYYY-MM-DD') as month").
 		Table("transaction").
@@ -63,8 +63,11 @@ func (ts *TransactionStore) GetMonthlySpendingData(userId string, month string) 
 		Where("transaction_date BETWEEN (?::date - INTERVAL '5 months') AND (date_trunc('month', ?::date) + INTERVAL '1 month' - INTERVAL '1 day')", month, month).
 		Group("month").
 		Order("month DESC").
-		Find(&query_list)
+		Find(&query_list).Error
 
+	if err != nil {
+		return nil, err
+	}
 	// 取得できた月のリストを取得
 	var query_month_list []string
 	for _, q := range query_list {
@@ -73,7 +76,10 @@ func (ts *TransactionStore) GetMonthlySpendingData(userId string, month string) 
 
 	// 6ヶ月分のデータを格納
 	for i := 0; i < 6; i++ {
-		s, _ := time.Parse("2006-01-02", month)
+		s, parseErr := time.Parse("2006-01-02", month)
+		if parseErr != nil {
+			return nil, parseErr
+		}
 		target_month := s.AddDate(0, -i, 0)
 		str_target_month := target_month.Format("2006-01-02")
 
@@ -85,10 +91,10 @@ func (ts *TransactionStore) GetMonthlySpendingData(userId string, month string) 
 		result_list = append(result_list, model.MonthlySpendingData{TotalAmount: 0, Month: str_target_month})
 	}
 
-	return &result_list
+	return &result_list, err
 }
 
-func (ts *TransactionStore) GetTransactionData(userId string, transactionId string) *model.TransactionData {
+func (ts *TransactionStore) GetTransactionData(userId string, transactionId string) (*model.TransactionData, error) {
 	var result model.TransactionData
 
 	tx := ts.db.Unscoped().
@@ -110,15 +116,15 @@ func (ts *TransactionStore) GetTransactionData(userId string, transactionId stri
 
 	if tx.Error != nil {
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
-			return nil
+			return nil, nil
 		}
-		return nil
+		return nil, tx.Error
 	}
 
-	return &result
+	return &result, nil
 }
 
-func (ts *TransactionStore) GetMonthlyFixedData(userId string, month string, isSpending bool) *[]model.MonthlyFixedData {
+func (ts *TransactionStore) GetMonthlyFixedData(userId string, month string, isSpending bool) (*[]model.MonthlyFixedData, error) {
 	var result_list []model.MonthlyFixedData
 
 	var amount_condition string
@@ -154,14 +160,14 @@ func (ts *TransactionStore) GetMonthlyFixedData(userId string, month string, isS
 		query = query.Where("t.fixed_flg = TRUE")
 	}
 
-	query.
+	err := query.
 		Order("total_category_amount, transaction_amount").
-		Find(&result_list)
+		Find(&result_list).Error
 
-	return &result_list
+	return &result_list, err
 }
 
-func (ts *TransactionStore) GetHome(userId string, month string) *[]model.HomeCategory {
+func (ts *TransactionStore) GetHome(userId string, month string) (*[]model.HomeCategory, error) {
 	var home_data []model.HomeCategory
 
 	subquery := ts.db.Select("st.sub_category_id",
@@ -174,7 +180,7 @@ func (ts *TransactionStore) GetHome(userId string, month string) *[]model.HomeCa
 		Where("st.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", month, month).
 		Group("st.sub_category_id, ssc.category_id, ssc.sub_category_name")
 
-	ts.db.Select("sub_tran.category_id",
+	err := ts.db.Select("sub_tran.category_id",
 		"(SELECT category_name FROM category WHERE category_id = sub_tran.category_id) AS category_name",
 		"SUM(sub_tran.sub_category_total_amount) OVER (PARTITION BY sub_tran.category_id) AS category_total_amount",
 		"sub_tran.category_id AS category_id_02",
@@ -188,12 +194,12 @@ func (ts *TransactionStore) GetHome(userId string, month string) *[]model.HomeCa
 		Where("t.transaction_amount < 0").
 		Group("sub_tran.category_id, sub_tran.sub_category_id, sub_tran.sub_category_name, sub_tran.sub_category_total_amount").
 		Order("category_total_amount, sub_tran.sub_category_id").
-		Scan(&home_data)
+		Scan(&home_data).Error
 
-	return &home_data
+	return &home_data, err
 }
 
-func (ts *TransactionStore) GetMonthlyVariableData(userId string, month string) *[]model.MonthlyVariableData {
+func (ts *TransactionStore) GetMonthlyVariableData(userId string, month string) (*[]model.MonthlyVariableData, error) {
 	var monthly_variable_data []model.MonthlyVariableData
 
 	subquery_1 := ts.db.Select("transaction_id",
@@ -215,7 +221,7 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId string, month string) 
 		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", month, month).
 		Group("t.sub_category_id, sc.sub_category_name")
 
-	ts.db.Select("c.category_id",
+	err := ts.db.Select("c.category_id",
 		"c.category_name",
 		"SUM(t.transaction_amount) OVER (PARTITION BY c.category_name) AS category_total_amount",
 		"sub_clist.sub_category_id",
@@ -240,12 +246,12 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId string, month string) 
 		Order("sub_category_total_amount").
 		Order("tran_list.transaction_date").
 		Order("tran_list.transaction_amount").
-		Scan(&monthly_variable_data)
+		Scan(&monthly_variable_data).Error
 
-	return &monthly_variable_data
+	return &monthly_variable_data, err
 }
 
-func (ts *TransactionStore) GetTotalSpending(userId string, categoryId string, subCategoryId string, startMonth string, endMonth string) *[]model.TotalSpendingData {
+func (ts *TransactionStore) GetTotalSpending(userId string, categoryId string, subCategoryId string, startMonth string, endMonth string) (*[]model.TotalSpendingData, error) {
 	var total_spending_data []model.TotalSpendingData
 
 	query := ts.db
@@ -275,7 +281,7 @@ func (ts *TransactionStore) GetTotalSpending(userId string, categoryId string, s
 		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", startMonth, endMonth).
 		Group("t.sub_category_id, sc.sub_category_name")
 
-	query.Select(
+	err := query.Select(
 		"c.category_name",
 		"SUM(t.transaction_amount) OVER (PARTITION BY c.category_name) AS category_total_amount",
 		"sub_clist.sub_category_id",
@@ -296,15 +302,15 @@ func (ts *TransactionStore) GetTotalSpending(userId string, categoryId string, s
 		Order("category_total_amount").
 		Order("sub_category_total_amount").
 		Order("tran_list.transaction_amount").
-		Scan(&total_spending_data)
+		Scan(&total_spending_data).Error
 
-	return &total_spending_data
+	return &total_spending_data, err
 }
 
-func (ts *TransactionStore) GetGroupByPayment(userId string, month string) *[]model.PaymentGroupTransaction {
+func (ts *TransactionStore) GetGroupByPayment(userId string, month string) (*[]model.PaymentGroupTransaction, error) {
 	var payment_group_transaction []model.PaymentGroupTransaction
 
-	ts.db.Select(
+	err := ts.db.Select(
 		"pr.payment_id",
 		"pr.payment_name",
 		"SUM(t.transaction_amount) OVER (PARTITION BY pr.payment_name) AS payment_amount",
@@ -331,15 +337,15 @@ func (ts *TransactionStore) GetGroupByPayment(userId string, month string) *[]mo
 		Order("payment_amount").
 		Order("t.transaction_date DESC").
 		Order("t.transaction_id DESC").
-		Scan(&payment_group_transaction)
+		Scan(&payment_group_transaction).Error
 
-	return &payment_group_transaction
+	return &payment_group_transaction, err
 }
 
-func (ts *TransactionStore) GetLastMonthGroupByPayment(userId string, month string) *[]model.PaymentGroupTransaction {
+func (ts *TransactionStore) GetLastMonthGroupByPayment(userId string, month string) (*[]model.PaymentGroupTransaction, error) {
 	var payment_group_transaction []model.PaymentGroupTransaction
 
-	ts.db.Select(
+	err := ts.db.Select(
 		"t.payment_id",
 		"SUM(t.transaction_amount) AS payment_amount").
 		Table("transaction t").
@@ -348,15 +354,15 @@ func (ts *TransactionStore) GetLastMonthGroupByPayment(userId string, month stri
 		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", month, month).
 		Group("t.payment_id").
 		Order("payment_amount").
-		Scan(&payment_group_transaction)
+		Scan(&payment_group_transaction).Error
 
-	return &payment_group_transaction
+	return &payment_group_transaction, err
 }
 
-func (ts *TransactionStore) GetMonthlyWithdrawalAmount(userId string, paymentId string, startMonth string, endMonth string) *model.MonthlyWithdrawalAmountList {
+func (ts *TransactionStore) GetMonthlyWithdrawalAmount(userId string, paymentId string, startMonth string, endMonth string) (*model.MonthlyWithdrawalAmountList, error) {
 	var monthlyWithdrawalAmount model.MonthlyWithdrawalAmountList
 
-	ts.db.Select(
+	err := ts.db.Select(
 		"t.payment_id",
 		"pr.payment_name",
 		"pr.payment_date",
@@ -371,18 +377,24 @@ func (ts *TransactionStore) GetMonthlyWithdrawalAmount(userId string, paymentId 
 			AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')
 		`, startMonth, endMonth).
 		Group("t.payment_id, pr.payment_name, pr.payment_date").
-		Scan(&monthlyWithdrawalAmount)
+		Scan(&monthlyWithdrawalAmount).Error
 
 	monthlyWithdrawalAmount.AggregationStartDate = startMonth
 	monthlyWithdrawalAmount.AggregationEndDate = endMonth
 
-	return &monthlyWithdrawalAmount
+	return &monthlyWithdrawalAmount, err
 }
 
-func (ts *TransactionStore) GetFrequentTransactionName(userId string) *[]model.FrequentTransactionName {
+func (ts *TransactionStore) GetFrequentTransactionName(userId string, limit int) (*[]model.FrequentTransactionName, error) {
 	var frequent_transaction_name_list []model.FrequentTransactionName
 
-	ts.db.Table("transaction tran").
+	err := frequentTransactionNameQuery(ts.db, userId, limit).Scan(&frequent_transaction_name_list).Error
+
+	return &frequent_transaction_name_list, err
+}
+
+func frequentTransactionNameQuery(db *gorm.DB, userId string, limit int) *gorm.DB {
+	frequentTransactions := db.Table("transaction tran").
 		Select("tran.transaction_name",
 			"tran.category_id",
 			"c.category_name",
@@ -390,69 +402,37 @@ func (ts *TransactionStore) GetFrequentTransactionName(userId string) *[]model.F
 			"sc.sub_category_name",
 			"tran.fixed_flg",
 			"tran.payment_id",
-			"COUNT(*) AS usage_count").
+			"COUNT(*) AS usage_count",
+			"ROW_NUMBER() OVER (PARTITION BY tran.transaction_name ORDER BY COUNT(*) DESC, tran.category_id ASC, tran.sub_category_id ASC, tran.fixed_flg ASC, tran.payment_id ASC NULLS FIRST) AS row_num").
 		Joins("INNER JOIN category c ON tran.category_id = c.category_id").
 		Joins("INNER JOIN sub_category sc ON tran.sub_category_id = sc.sub_category_id").
 		Where("tran.user_no = ?", userId).
 		Group("tran.transaction_name, tran.category_id, c.category_name, tran.sub_category_id, sc.sub_category_name, tran.fixed_flg, tran.payment_id").
-		Order("usage_count DESC").
-		Scan(&frequent_transaction_name_list)
+		Order("usage_count DESC, tran.transaction_name ASC, tran.category_id ASC, tran.sub_category_id ASC, tran.fixed_flg ASC, tran.payment_id ASC NULLS FIRST")
 
-	return &frequent_transaction_name_list
+	return db.Table("(?) AS frequent_transactions", frequentTransactions).
+		Where("row_num = ?", 1).
+		Order("usage_count DESC, transaction_name ASC").
+		Limit(limit)
 }
 
 func (ts *TransactionStore) AddTransaction(transaction *model.AddTransaction) error {
-	paymentId := interface{}(transaction.PaymentId)
-	if transaction.PaymentId == "" {
-		paymentId = nil
-	}
+	return ts.db.Transaction(func(tx *gorm.DB) error {
+		input := *transaction
+		transaction = &input
+		subCategoryID, err := resolveWriteSubCategory(tx, transaction.UserId, transaction.CategoryId, transaction.SubCategoryId, transaction.SubCategoryName)
+		if err != nil {
+			return err
+		}
+		transaction.SubCategoryId = subCategoryID
 
-	return ts.db.Table("transaction").Create(map[string]interface{}{
-		"user_no":            transaction.UserId,
-		"transaction_name":   transaction.TransactionName,
-		"transaction_amount": transaction.TransactionAmount,
-		"transaction_date":   transaction.TransactionDate,
-		"category_id":        transaction.CategoryId,
-		"sub_category_id":    transaction.SubCategoryId,
-		"fixed_flg":          transaction.FixedFlg,
-		"payment_id":         paymentId,
-	}).Error
-}
-
-func (ts *TransactionStore) AddTransactionList(transaction *model.AddTransactionList) error {
-	var insert_val []map[string]any
-
-	for _, tran := range transaction.TransactionList {
-		paymentId := interface{}(tran.PaymentId)
-		if tran.PaymentId == "" {
+		paymentId := interface{}(transaction.PaymentId)
+		if transaction.PaymentId == "" {
 			paymentId = nil
 		}
-		insert_val = append(insert_val, map[string]any{
+
+		return tx.Table("transaction").Create(map[string]interface{}{
 			"user_no":            transaction.UserId,
-			"transaction_name":   tran.TransactionName,
-			"transaction_amount": tran.TransactionAmount,
-			"transaction_date":   tran.TransactionDate,
-			"category_id":        tran.CategoryId,
-			"sub_category_id":    tran.SubCategoryId,
-			"fixed_flg":          tran.FixedFlg,
-			"payment_id":         paymentId,
-		})
-	}
-
-	return ts.db.Table("transaction").
-		Create(insert_val).Error
-}
-
-func (ts *TransactionStore) EditTransaction(transaction *model.EditTransaction) error {
-	paymentId := interface{}(transaction.PaymentId)
-	if transaction.PaymentId == "" {
-		paymentId = nil
-	}
-
-	return ts.db.Table("transaction").
-		Where("transaction_id = ?", transaction.TransactionId).
-		Where("user_no = ?", transaction.UserId).
-		Updates(map[string]interface{}{
 			"transaction_name":   transaction.TransactionName,
 			"transaction_amount": transaction.TransactionAmount,
 			"transaction_date":   transaction.TransactionDate,
@@ -461,6 +441,81 @@ func (ts *TransactionStore) EditTransaction(transaction *model.EditTransaction) 
 			"fixed_flg":          transaction.FixedFlg,
 			"payment_id":         paymentId,
 		}).Error
+
+	})
+}
+
+func (ts *TransactionStore) AddTransactionList(transaction *model.AddTransactionList) error {
+	return ts.db.Transaction(func(tx *gorm.DB) error {
+		if len(transaction.TransactionList) == 0 {
+			return errors.New("transaction list is empty")
+		}
+		var insert_val []map[string]any
+
+		for _, tran := range transaction.TransactionList {
+			subCategoryID, err := resolveWriteSubCategory(tx, transaction.UserId, tran.CategoryId, tran.SubCategoryId, tran.SubCategoryName)
+			if err != nil {
+				return err
+			}
+			tran.SubCategoryId = subCategoryID
+			paymentId := interface{}(tran.PaymentId)
+			if tran.PaymentId == "" {
+				paymentId = nil
+			}
+			insert_val = append(insert_val, map[string]any{
+				"user_no":            transaction.UserId,
+				"transaction_name":   tran.TransactionName,
+				"transaction_amount": tran.TransactionAmount,
+				"transaction_date":   tran.TransactionDate,
+				"category_id":        tran.CategoryId,
+				"sub_category_id":    tran.SubCategoryId,
+				"fixed_flg":          tran.FixedFlg,
+				"payment_id":         paymentId,
+			})
+		}
+
+		return tx.Table("transaction").
+			Create(insert_val).Error
+
+	})
+}
+
+func (ts *TransactionStore) EditTransaction(transaction *model.EditTransaction) error {
+	return ts.db.Transaction(func(tx *gorm.DB) error {
+		input := *transaction
+		transaction = &input
+		subCategoryID, err := resolveWriteSubCategory(tx, transaction.UserId, transaction.CategoryId, transaction.SubCategoryId, transaction.SubCategoryName)
+		if err != nil {
+			return err
+		}
+		transaction.SubCategoryId = subCategoryID
+
+		paymentId := interface{}(transaction.PaymentId)
+		if transaction.PaymentId == "" {
+			paymentId = nil
+		}
+
+		result := tx.Table("transaction").
+			Where("transaction_id = ?", transaction.TransactionId).
+			Where("user_no = ?", transaction.UserId).
+			Updates(map[string]interface{}{
+				"transaction_name":   transaction.TransactionName,
+				"transaction_amount": transaction.TransactionAmount,
+				"transaction_date":   transaction.TransactionDate,
+				"category_id":        transaction.CategoryId,
+				"sub_category_id":    transaction.SubCategoryId,
+				"fixed_flg":          transaction.FixedFlg,
+				"payment_id":         paymentId,
+			})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		return nil
+
+	})
 }
 
 func (ts *TransactionStore) DeleteTransaction(transaction *model.DeleteTransaction) error {

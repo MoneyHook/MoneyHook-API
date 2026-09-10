@@ -16,7 +16,11 @@ func (h *Handler) GetPaymentResourceList(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, model.Error.Create(message.Get("token_expired_error")))
 	}
 
-	result := h.paymentResourceStore.GetPaymentResourceList(userId)
+	result, err := h.paymentResourceStore.GetPaymentResourceList(userId)
+	if err != nil {
+		c.Logger().Error(err)
+		return httpx.RespondV1Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "データの取得に失敗しました", nil)
+	}
 
 	result_list := GetPaymentResourceListResponse(result)
 
