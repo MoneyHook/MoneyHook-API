@@ -2,6 +2,7 @@ package job
 
 import (
 	common "MoneyHook/MoneyHook-API/common"
+	"MoneyHook/MoneyHook-API/handler/internal/httpx"
 	"MoneyHook/MoneyHook-API/model"
 	"fmt"
 	"log"
@@ -19,7 +20,11 @@ func (h *Handler) ProcessDailyJob(c echo.Context) error {
 		return c.JSON(http.StatusForbidden, error)
 	}
 
-	fixed_list := selectMonthlyTransactions(h)
+	fixed_list, err := selectMonthlyTransactions(h)
+	if err != nil {
+		log.Printf("Failed to select monthly transactions: %v", err)
+		return httpx.RespondV1Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to select monthly transactions", nil)
+	}
 
 	if len(*fixed_list) == 0 {
 		return c.String(http.StatusOK, "Today is Nothing, Success Jobs")
@@ -41,7 +46,7 @@ func (h *Handler) ProcessDailyJob(c echo.Context) error {
 		transactions = append(transactions, transaction)
 	}
 
-	err := h.jobsStore.InsertTransaction(&transactions)
+	err = h.jobsStore.InsertTransaction(&transactions)
 	if err != nil {
 		log.Printf("=== Failed InsertTransaction: %v ===\n", err)
 		message := "Failed to insert transaction"
@@ -86,7 +91,7 @@ func validHeaders(c echo.Context) map[string]string {
 	return nil
 }
 
-func selectMonthlyTransactions(h *Handler) *[]model.JobMonthlyTransaction {
+func selectMonthlyTransactions(h *Handler) (*[]model.JobMonthlyTransaction, error) {
 	jst, _ := time.LoadLocation("Asia/Tokyo")
 	today := time.Now().In(jst)
 	log.Printf("Today is %s\n", today.Format("2006-01-02"))

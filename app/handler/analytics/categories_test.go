@@ -27,9 +27,19 @@ func TestBuildV1CategoriesResponseKeepsExpenseHierarchyConsistent(t *testing.T) 
 	if category.ExpenseAmount != 1500 || len(category.TransactionList) != 2 || len(category.SubCategoryList) != 2 {
 		t.Fatalf("unexpected category: %+v", category)
 	}
+	if category.Series[0].ExpenseAmount != 1000 || category.Series[1].ExpenseAmount != 500 {
+		t.Fatalf("unexpected category series: %+v", category.Series)
+	}
 	var subTotal int64
 	for _, subCategory := range category.SubCategoryList {
 		subTotal += subCategory.ExpenseAmount
+		var seriesTotal int64
+		for _, item := range subCategory.Series {
+			seriesTotal += item.ExpenseAmount
+		}
+		if seriesTotal != subCategory.ExpenseAmount {
+			t.Fatalf("subcategory series total %d != %d", seriesTotal, subCategory.ExpenseAmount)
+		}
 		if len(subCategory.Series) != 2 {
 			t.Fatalf("subcategory series was not zero-filled: %+v", subCategory.Series)
 		}

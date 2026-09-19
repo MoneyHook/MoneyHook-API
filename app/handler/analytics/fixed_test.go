@@ -30,4 +30,16 @@ func TestBuildV1FixedResponseUsesOnlyFixedExpenses(t *testing.T) {
 	if len(response.CategoryList) != 2 || len(response.Series) != 2 {
 		t.Fatalf("unexpected response: %+v", response)
 	}
+	if response.Series[0].ExpenseAmount != 1000 || response.Series[1].ExpenseAmount != 500 || response.Summary.LatestBucketAmount != 500 || response.Summary.PreviousBucketAmount != 1000 {
+		t.Fatalf("unexpected series or bucket summary: %+v", response)
+	}
+	for _, category := range response.CategoryList {
+		var total int64
+		for _, item := range category.Series {
+			total += item.ExpenseAmount
+		}
+		if total != category.ExpenseAmount {
+			t.Fatalf("category series total %d != %d", total, category.ExpenseAmount)
+		}
+	}
 }

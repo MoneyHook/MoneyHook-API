@@ -98,7 +98,6 @@ func buildV1PaymentsResponse(query v1AnalysisQuery, transactions []model.V1Analy
 	for _, payment := range payments {
 		payment.Ratio = percentage(payment.ExpenseAmount, response.TotalExpenseAmount)
 		payment.AverageAmount = int64(math.Round(float64(payment.ExpenseAmount) / float64(payment.TransactionCount)))
-		payment.Series = materializeExpenseSeries(payment.Series, payment.seriesByBucket)
 		payment.seriesByBucket = nil
 		response.PaymentList = append(response.PaymentList, *payment)
 	}

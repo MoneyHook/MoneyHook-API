@@ -14,17 +14,17 @@ func NewJobStore(db *gorm.DB) *JobStore {
 	return &JobStore{db: db}
 }
 
-func (js *JobStore) SelectMonthlyTransaction(date int, is_last_day bool) *[]model.JobMonthlyTransaction {
+func (js *JobStore) SelectMonthlyTransaction(date int, isLastDay bool) (*[]model.JobMonthlyTransaction, error) {
 	var fixed_list []model.JobMonthlyTransaction
 
 	var mt_date_condition string
-	if is_last_day {
+	if isLastDay {
 		mt_date_condition = "? <= monthly_transaction_date"
 	} else {
 		mt_date_condition = "? = monthly_transaction_date"
 	}
 
-	js.db.Unscoped().
+	err := js.db.Unscoped().
 		Select("monthly_transaction_id",
 			"user_no",
 			"monthly_transaction_name",
@@ -37,9 +37,9 @@ func (js *JobStore) SelectMonthlyTransaction(date int, is_last_day bool) *[]mode
 		Table("monthly_transaction").
 		Where(mt_date_condition, date).
 		Where("include_flg = TRUE").
-		Find(&fixed_list)
+		Find(&fixed_list).Error
 
-	return &fixed_list
+	return &fixed_list, err
 }
 
 func (js *JobStore) InsertTransaction(transactions *[]model.JobTransaction) error {
