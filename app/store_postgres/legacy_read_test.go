@@ -18,6 +18,7 @@ func TestLegacyReadStoresPropagateDatabaseErrors(t *testing.T) {
 	sqlDB.Close()
 	store := NewTransactionStore(db)
 	for name, read := range map[string]func() error{
+		"SelectMonthlyTransaction":   func() error { _, err := NewJobStore(db).SelectMonthlyTransaction(30, true); return err },
 		"GetTimelineData":            func() error { _, err := store.GetTimelineData("2", "2026-09-01"); return err },
 		"GetMonthlySpendingData":     func() error { _, err := store.GetMonthlySpendingData("2", "2026-09-01"); return err },
 		"GetTransactionData":         func() error { _, err := store.GetTransactionData("2", "7"); return err },
