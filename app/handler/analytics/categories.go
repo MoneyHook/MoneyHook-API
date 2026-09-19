@@ -127,11 +127,10 @@ func buildV1CategoriesResponse(query v1AnalysisQuery, transactions []model.V1Ana
 	}
 
 	for _, category := range categories {
-		category.Series = materializeExpenseSeries(category.Series, category.seriesByBucket)
 		category.Ratio = percentage(category.ExpenseAmount, response.TotalExpenseAmount)
 		for _, subCategory := range category.subCategories {
-			subCategory.Series = materializeExpenseSeries(subCategory.Series, subCategory.seriesByBucket)
 			subCategory.Ratio = percentage(subCategory.ExpenseAmount, category.ExpenseAmount)
+			subCategory.seriesByBucket = nil
 			category.SubCategoryList = append(category.SubCategoryList, *subCategory)
 		}
 		sort.Slice(category.SubCategoryList, func(i, j int) bool {
@@ -167,13 +166,6 @@ func indexExpenseSeries(series []v1ExpenseSeriesItem) map[string]*v1ExpenseSerie
 		result[series[index].Bucket] = &series[index]
 	}
 	return result
-}
-
-func materializeExpenseSeries(series []v1ExpenseSeriesItem, indexed map[string]*v1ExpenseSeriesItem) []v1ExpenseSeriesItem {
-	for index := range series {
-		series[index] = *indexed[series[index].Bucket]
-	}
-	return series
 }
 
 func percentage(part int64, total int64) float64 {

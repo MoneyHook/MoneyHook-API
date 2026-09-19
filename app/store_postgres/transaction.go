@@ -3,7 +3,6 @@ package store_postgres
 import (
 	"MoneyHook/MoneyHook-API/model"
 	"errors"
-	"slices"
 	"time"
 
 	"gorm.io/gorm"
@@ -38,21 +37,7 @@ func (ts *TransactionStore) GetTimelineData(userId string, month string) (*[]mod
 	return &timeline_list, err
 }
 
-func search_spending_data(data_list *[]model.MonthlySpendingData, key *string) *model.MonthlySpendingData {
-	var result model.MonthlySpendingData
-	result.Month = *key
-
-	for _, d := range *data_list {
-		if d.Month == *key {
-			result.TotalAmount = d.TotalAmount
-		}
-	}
-	return &result
-}
-
 func (ts *TransactionStore) GetMonthlySpendingData(userId string, month string) (*[]model.MonthlySpendingData, error) {
-	var result_list []model.MonthlySpendingData
-
 	var query_list []model.MonthlySpendingData
 	err := ts.db.Unscoped().
 		Select("SUM(transaction_amount) as total_amount",
@@ -68,30 +53,24 @@ func (ts *TransactionStore) GetMonthlySpendingData(userId string, month string) 
 	if err != nil {
 		return nil, err
 	}
-	// 取得できた月のリストを取得
-	var query_month_list []string
-	for _, q := range query_list {
-		query_month_list = append(query_month_list, q.Month)
-	}
+	return fillMonthlySpendingData(query_list, month)
+}
 
-	// 6ヶ月分のデータを格納
+func fillMonthlySpendingData(rows []model.MonthlySpendingData, month string) (*[]model.MonthlySpendingData, error) {
+	start, err := time.Parse("2006-01-02", month)
+	if err != nil {
+		return nil, err
+	}
+	amounts := make(map[string]int, len(rows))
+	for _, row := range rows {
+		amounts[row.Month] = row.TotalAmount
+	}
+	result := make([]model.MonthlySpendingData, 0, 6)
 	for i := 0; i < 6; i++ {
-		s, parseErr := time.Parse("2006-01-02", month)
-		if parseErr != nil {
-			return nil, parseErr
-		}
-		target_month := s.AddDate(0, -i, 0)
-		str_target_month := target_month.Format("2006-01-02")
-
-		if slices.Contains(query_month_list, str_target_month) {
-			result_list = append(result_list, *search_spending_data(&query_list, &str_target_month))
-			continue
-		}
-
-		result_list = append(result_list, model.MonthlySpendingData{TotalAmount: 0, Month: str_target_month})
+		month := start.AddDate(0, -i, 0).Format("2006-01-02")
+		result = append(result, model.MonthlySpendingData{Month: month, TotalAmount: amounts[month]})
 	}
-
-	return &result_list, err
+	return &result, nil
 }
 
 func (ts *TransactionStore) GetTransactionData(userId string, transactionId string) (*model.TransactionData, error) {
@@ -388,31 +367,41 @@ func (ts *TransactionStore) GetMonthlyWithdrawalAmount(userId string, paymentId 
 func (ts *TransactionStore) GetFrequentTransactionName(userId string, limit int) (*[]model.FrequentTransactionName, error) {
 	var frequent_transaction_name_list []model.FrequentTransactionName
 
-	err := frequentTransactionNameQuery(ts.db, userId, limit).Scan(&frequent_transaction_name_list).Error
+	err := frequentTransactionNameQuery(ts.db, userId, limit, frequentTransactionReferenceDate(time.Now())).Scan(&frequent_transaction_name_list).Error
 
 	return &frequent_transaction_name_list, err
 }
 
-func frequentTransactionNameQuery(db *gorm.DB, userId string, limit int) *gorm.DB {
-	frequentTransactions := db.Table("transaction tran").
-		Select("tran.transaction_name",
-			"tran.category_id",
-			"c.category_name",
-			"tran.sub_category_id",
-			"sc.sub_category_name",
-			"tran.fixed_flg",
-			"tran.payment_id",
-			"COUNT(*) AS usage_count",
-			"ROW_NUMBER() OVER (PARTITION BY tran.transaction_name ORDER BY COUNT(*) DESC, tran.category_id ASC, tran.sub_category_id ASC, tran.fixed_flg ASC, tran.payment_id ASC NULLS FIRST) AS row_num").
+// frequentTransactionReferenceDate uses Japan's calendar day, independent of the host timezone.
+func frequentTransactionReferenceDate(now time.Time) string {
+	return now.In(time.FixedZone("JST", 9*60*60)).Format("2006-01-02")
+}
+
+func frequentTransactionNameQuery(db *gorm.DB, userId string, limit int, referenceDate string) *gorm.DB {
+	configurations := db.Table("transaction tran").
+		Select(`tran.transaction_name, tran.category_id, c.category_name,
+			tran.sub_category_id, sc.sub_category_name, tran.fixed_flg, tran.payment_id,
+			SUM(POWER(0.5::numeric, (?::date - tran.transaction_date) / 60.0)) AS score,
+			MAX(tran.transaction_date) AS last_used_date, COUNT(*) AS usage_count`, referenceDate).
 		Joins("INNER JOIN category c ON tran.category_id = c.category_id").
 		Joins("INNER JOIN sub_category sc ON tran.sub_category_id = sc.sub_category_id").
 		Where("tran.user_no = ?", userId).
-		Group("tran.transaction_name, tran.category_id, c.category_name, tran.sub_category_id, sc.sub_category_name, tran.fixed_flg, tran.payment_id").
-		Order("usage_count DESC, tran.transaction_name ASC, tran.category_id ASC, tran.sub_category_id ASC, tran.fixed_flg ASC, tran.payment_id ASC NULLS FIRST")
+		Where("tran.transaction_date <= ?::date", referenceDate).
+		Group("tran.transaction_name, tran.category_id, c.category_name, tran.sub_category_id, sc.sub_category_name, tran.fixed_flg, tran.payment_id")
 
-	return db.Table("(?) AS frequent_transactions", frequentTransactions).
+	// Name totals include every configuration, before choosing the one to suggest.
+	ranked := db.Table("(?) AS configurations", configurations).
+		Select(`configurations.*,
+			SUM(score) OVER (PARTITION BY transaction_name) AS name_score,
+			MAX(last_used_date) OVER (PARTITION BY transaction_name) AS name_last_used_date,
+			SUM(usage_count) OVER (PARTITION BY transaction_name) AS name_usage_count,
+			ROW_NUMBER() OVER (PARTITION BY transaction_name ORDER BY
+				score DESC, last_used_date DESC, usage_count DESC,
+				category_id ASC, sub_category_id ASC, fixed_flg ASC, payment_id ASC NULLS FIRST) AS row_num`)
+
+	return db.Table("(?) AS frequent_transactions", ranked).
 		Where("row_num = ?", 1).
-		Order("usage_count DESC, transaction_name ASC").
+		Order("name_score DESC, name_last_used_date DESC, name_usage_count DESC, transaction_name ASC").
 		Limit(limit)
 }
 

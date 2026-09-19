@@ -100,7 +100,6 @@ func buildV1FixedResponse(query v1AnalysisQuery, transactions []model.V1Analytic
 		category.TransactionList = append(category.TransactionList, newV1AnalyticsTransactionResource(transaction))
 	}
 
-	response.Series = materializeExpenseSeries(response.Series, seriesByBucket)
 	response.Summary.MonthlyAverage = int64(math.Round(float64(response.Summary.ExpenseAmount) / float64(monthCount)))
 	response.Summary.AnnualizedAmount = response.Summary.MonthlyAverage * 12
 	response.Summary.TotalExpenseRatio = percentage(response.Summary.ExpenseAmount, totalExpense)
@@ -117,7 +116,6 @@ func buildV1FixedResponse(query v1AnalysisQuery, transactions []model.V1Analytic
 	}
 
 	for _, category := range categories {
-		category.Series = materializeExpenseSeries(category.Series, category.seriesByBucket)
 		category.Ratio = percentage(category.ExpenseAmount, response.Summary.ExpenseAmount)
 		category.MonthlyAverage = int64(math.Round(float64(category.ExpenseAmount) / float64(monthCount)))
 		category.AnnualizedAmount = category.MonthlyAverage * 12

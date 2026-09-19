@@ -32,4 +32,7 @@ func TestBuildV1PaymentsResponseIncludesUnclassifiedExpenses(t *testing.T) {
 	if response.PaymentList[1].PaymentId != nil || response.PaymentList[1].PaymentName != "未分類" {
 		t.Fatalf("unexpected unclassified payment: %+v", response.PaymentList[1])
 	}
+	if response.PaymentList[0].Series[0].ExpenseAmount != 1000 || response.PaymentList[0].Series[1].ExpenseAmount != 500 || response.PaymentList[1].Series[0].ExpenseAmount != 0 || response.PaymentList[1].Series[1].ExpenseAmount != 300 {
+		t.Fatalf("unexpected payment series: %+v", response.PaymentList)
+	}
 }
