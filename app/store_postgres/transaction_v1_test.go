@@ -3,6 +3,7 @@ package store_postgres
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -25,13 +26,13 @@ func TestFrequentTransactionNameQueryDeduplicatesAndLimits(t *testing.T) {
 	}
 
 	query := db.ToSQL(func(tx *gorm.DB) *gorm.DB {
-		return frequentTransactionNameQuery(tx, "user-1", 20).Find(&[]frequentTransactionNameRecord{})
+		return frequentTransactionNameQuery(tx, "user-1", 20, "2026-09-19").Find(&[]frequentTransactionNameRecord{})
 	})
 
 	for _, fragment := range []string{
-		"ROW_NUMBER() OVER (PARTITION BY tran.transaction_name",
+		"ROW_NUMBER() OVER (PARTITION BY transaction_name",
 		"row_num = 1",
-		"ORDER BY usage_count DESC, transaction_name ASC",
+		"ORDER BY name_score DESC, name_last_used_date DESC, name_usage_count DESC, transaction_name ASC",
 		"LIMIT 20",
 	} {
 		if !strings.Contains(query, fragment) {
@@ -43,3 +44,18 @@ func TestFrequentTransactionNameQueryDeduplicatesAndLimits(t *testing.T) {
 type frequentTransactionNameRecord struct{}
 
 func (frequentTransactionNameRecord) TableName() string { return "frequent_transactions" }
+
+func TestFrequentTransactionReferenceDate(t *testing.T) {
+	for _, tc := range []struct{ instant, want string }{
+		{"2026-09-18T14:59:59Z", "2026-09-18"},
+		{"2026-09-18T15:00:00Z", "2026-09-19"},
+	} {
+		instant, err := time.Parse(time.RFC3339, tc.instant)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := frequentTransactionReferenceDate(instant); got != tc.want {
+			t.Fatalf("got %s, want %s", got, tc.want)
+		}
+	}
+}

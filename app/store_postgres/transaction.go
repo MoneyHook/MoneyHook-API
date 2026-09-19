@@ -367,31 +367,41 @@ func (ts *TransactionStore) GetMonthlyWithdrawalAmount(userId string, paymentId 
 func (ts *TransactionStore) GetFrequentTransactionName(userId string, limit int) (*[]model.FrequentTransactionName, error) {
 	var frequent_transaction_name_list []model.FrequentTransactionName
 
-	err := frequentTransactionNameQuery(ts.db, userId, limit).Scan(&frequent_transaction_name_list).Error
+	err := frequentTransactionNameQuery(ts.db, userId, limit, frequentTransactionReferenceDate(time.Now())).Scan(&frequent_transaction_name_list).Error
 
 	return &frequent_transaction_name_list, err
 }
 
-func frequentTransactionNameQuery(db *gorm.DB, userId string, limit int) *gorm.DB {
-	frequentTransactions := db.Table("transaction tran").
-		Select("tran.transaction_name",
-			"tran.category_id",
-			"c.category_name",
-			"tran.sub_category_id",
-			"sc.sub_category_name",
-			"tran.fixed_flg",
-			"tran.payment_id",
-			"COUNT(*) AS usage_count",
-			"ROW_NUMBER() OVER (PARTITION BY tran.transaction_name ORDER BY COUNT(*) DESC, tran.category_id ASC, tran.sub_category_id ASC, tran.fixed_flg ASC, tran.payment_id ASC NULLS FIRST) AS row_num").
+// frequentTransactionReferenceDate uses Japan's calendar day, independent of the host timezone.
+func frequentTransactionReferenceDate(now time.Time) string {
+	return now.In(time.FixedZone("JST", 9*60*60)).Format("2006-01-02")
+}
+
+func frequentTransactionNameQuery(db *gorm.DB, userId string, limit int, referenceDate string) *gorm.DB {
+	configurations := db.Table("transaction tran").
+		Select(`tran.transaction_name, tran.category_id, c.category_name,
+			tran.sub_category_id, sc.sub_category_name, tran.fixed_flg, tran.payment_id,
+			SUM(POWER(0.5::numeric, (?::date - tran.transaction_date) / 60.0)) AS score,
+			MAX(tran.transaction_date) AS last_used_date, COUNT(*) AS usage_count`, referenceDate).
 		Joins("INNER JOIN category c ON tran.category_id = c.category_id").
 		Joins("INNER JOIN sub_category sc ON tran.sub_category_id = sc.sub_category_id").
 		Where("tran.user_no = ?", userId).
-		Group("tran.transaction_name, tran.category_id, c.category_name, tran.sub_category_id, sc.sub_category_name, tran.fixed_flg, tran.payment_id").
-		Order("usage_count DESC, tran.transaction_name ASC, tran.category_id ASC, tran.sub_category_id ASC, tran.fixed_flg ASC, tran.payment_id ASC NULLS FIRST")
+		Where("tran.transaction_date <= ?::date", referenceDate).
+		Group("tran.transaction_name, tran.category_id, c.category_name, tran.sub_category_id, sc.sub_category_name, tran.fixed_flg, tran.payment_id")
 
-	return db.Table("(?) AS frequent_transactions", frequentTransactions).
+	// Name totals include every configuration, before choosing the one to suggest.
+	ranked := db.Table("(?) AS configurations", configurations).
+		Select(`configurations.*,
+			SUM(score) OVER (PARTITION BY transaction_name) AS name_score,
+			MAX(last_used_date) OVER (PARTITION BY transaction_name) AS name_last_used_date,
+			SUM(usage_count) OVER (PARTITION BY transaction_name) AS name_usage_count,
+			ROW_NUMBER() OVER (PARTITION BY transaction_name ORDER BY
+				score DESC, last_used_date DESC, usage_count DESC,
+				category_id ASC, sub_category_id ASC, fixed_flg ASC, payment_id ASC NULLS FIRST) AS row_num`)
+
+	return db.Table("(?) AS frequent_transactions", ranked).
 		Where("row_num = ?", 1).
-		Order("usage_count DESC, transaction_name ASC").
+		Order("name_score DESC, name_last_used_date DESC, name_usage_count DESC, transaction_name ASC").
 		Limit(limit)
 }
 
