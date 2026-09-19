@@ -3,7 +3,6 @@ package store_postgres
 import (
 	"MoneyHook/MoneyHook-API/model"
 	"errors"
-	"slices"
 	"time"
 
 	"gorm.io/gorm"
@@ -38,21 +37,7 @@ func (ts *TransactionStore) GetTimelineData(userId string, month string) (*[]mod
 	return &timeline_list, err
 }
 
-func search_spending_data(data_list *[]model.MonthlySpendingData, key *string) *model.MonthlySpendingData {
-	var result model.MonthlySpendingData
-	result.Month = *key
-
-	for _, d := range *data_list {
-		if d.Month == *key {
-			result.TotalAmount = d.TotalAmount
-		}
-	}
-	return &result
-}
-
 func (ts *TransactionStore) GetMonthlySpendingData(userId string, month string) (*[]model.MonthlySpendingData, error) {
-	var result_list []model.MonthlySpendingData
-
 	var query_list []model.MonthlySpendingData
 	err := ts.db.Unscoped().
 		Select("SUM(transaction_amount) as total_amount",
@@ -68,30 +53,24 @@ func (ts *TransactionStore) GetMonthlySpendingData(userId string, month string) 
 	if err != nil {
 		return nil, err
 	}
-	// 取得できた月のリストを取得
-	var query_month_list []string
-	for _, q := range query_list {
-		query_month_list = append(query_month_list, q.Month)
-	}
+	return fillMonthlySpendingData(query_list, month)
+}
 
-	// 6ヶ月分のデータを格納
+func fillMonthlySpendingData(rows []model.MonthlySpendingData, month string) (*[]model.MonthlySpendingData, error) {
+	start, err := time.Parse("2006-01-02", month)
+	if err != nil {
+		return nil, err
+	}
+	amounts := make(map[string]int, len(rows))
+	for _, row := range rows {
+		amounts[row.Month] = row.TotalAmount
+	}
+	result := make([]model.MonthlySpendingData, 0, 6)
 	for i := 0; i < 6; i++ {
-		s, parseErr := time.Parse("2006-01-02", month)
-		if parseErr != nil {
-			return nil, parseErr
-		}
-		target_month := s.AddDate(0, -i, 0)
-		str_target_month := target_month.Format("2006-01-02")
-
-		if slices.Contains(query_month_list, str_target_month) {
-			result_list = append(result_list, *search_spending_data(&query_list, &str_target_month))
-			continue
-		}
-
-		result_list = append(result_list, model.MonthlySpendingData{TotalAmount: 0, Month: str_target_month})
+		month := start.AddDate(0, -i, 0).Format("2006-01-02")
+		result = append(result, model.MonthlySpendingData{Month: month, TotalAmount: amounts[month]})
 	}
-
-	return &result_list, err
+	return &result, nil
 }
 
 func (ts *TransactionStore) GetTransactionData(userId string, transactionId string) (*model.TransactionData, error) {
