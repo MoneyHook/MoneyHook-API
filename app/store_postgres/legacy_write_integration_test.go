@@ -5,6 +5,7 @@ package store_postgres
 import (
 	"MoneyHook/MoneyHook-API/model"
 	subcategorydomain "MoneyHook/MoneyHook-API/subcategory"
+	transactiondomain "MoneyHook/MoneyHook-API/transaction"
 	"errors"
 	"fmt"
 	"net/url"
@@ -47,9 +48,13 @@ func legacyTestDB(t *testing.T) *gorm.DB {
 	}
 	t.Cleanup(func() { sqlDB, _ := db.DB(); sqlDB.Close() })
 	statements := []string{
+		`CREATE TABLE category (category_id BIGINT PRIMARY KEY, category_name VARCHAR(16) NOT NULL, order_num INT NOT NULL DEFAULT 0)`,
 		`CREATE TABLE sub_category (sub_category_id BIGSERIAL PRIMARY KEY, user_no BIGINT NOT NULL, category_id BIGINT NOT NULL, sub_category_name VARCHAR(16) NOT NULL, UNIQUE(user_no,category_id,sub_category_name))`,
-		`CREATE TABLE "transaction" (transaction_id BIGSERIAL PRIMARY KEY, user_no BIGINT NOT NULL, transaction_name VARCHAR(32) NOT NULL, transaction_amount BIGINT NOT NULL, transaction_date DATE NOT NULL, category_id BIGINT NOT NULL, sub_category_id BIGINT NOT NULL REFERENCES sub_category(sub_category_id), fixed_flg BOOLEAN NOT NULL, payment_id BIGINT)`,
+		`CREATE TABLE hidden_sub_category (user_no BIGINT NOT NULL, sub_category_id BIGINT NOT NULL, UNIQUE(user_no,sub_category_id))`,
+		`CREATE TABLE payment_resource (payment_id BIGSERIAL PRIMARY KEY, user_no BIGINT NOT NULL, payment_name VARCHAR(32) NOT NULL)`,
+		`CREATE TABLE "transaction" (transaction_id BIGSERIAL PRIMARY KEY, user_no BIGINT NOT NULL, transaction_name VARCHAR(32) NOT NULL, transaction_amount BIGINT NOT NULL, transaction_date DATE NOT NULL, transaction_time TIME, category_id BIGINT NOT NULL, sub_category_id BIGINT NOT NULL REFERENCES sub_category(sub_category_id), fixed_flg BOOLEAN NOT NULL, payment_id BIGINT)`,
 		`CREATE TABLE monthly_transaction (monthly_transaction_id BIGSERIAL PRIMARY KEY, user_no BIGINT NOT NULL, monthly_transaction_name VARCHAR(32) NOT NULL, monthly_transaction_amount BIGINT NOT NULL, monthly_transaction_date INTEGER NOT NULL CHECK(monthly_transaction_date BETWEEN 1 AND 31), category_id BIGINT NOT NULL, sub_category_id BIGINT NOT NULL REFERENCES sub_category(sub_category_id), include_flg BOOLEAN NOT NULL, payment_id BIGINT)`,
+		`INSERT INTO category (category_id, category_name) VALUES (1, '食費'), (2, '日用品')`,
 	}
 	for _, statement := range statements {
 		if err := db.Exec(statement).Error; err != nil {
@@ -58,6 +63,127 @@ func legacyTestDB(t *testing.T) *gorm.DB {
 	}
 	return db
 }
+
+func v1Row() model.V1TransactionWrite {
+	return model.V1TransactionWrite{
+		UserId:          "2",
+		TransactionDate: "2026-09-25",
+		TransactionName: "ランチ",
+		Amount:          1200,
+		Sign:            -1,
+		CategoryId:      "1",
+		SubCategoryName: "外食",
+	}
+}
+
+func TestV1CreateTransactionResolvesAndExposesSubcategories(t *testing.T) {
+	db := legacyTestDB(t)
+	store := NewTransactionStore(db)
+	if err := db.Exec(`INSERT INTO sub_category (sub_category_id, user_no, category_id, sub_category_name) VALUES (10, 1, 1, '外食')`).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec(`INSERT INTO hidden_sub_category (user_no, sub_category_id) VALUES (2, 10)`).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	created, err := store.CreateV1Transaction(ptr(v1Row()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created.SubCategoryId != "10" || created.SubCategoryName != "外食" {
+		t.Fatalf("unexpected subcategory: %#v", created)
+	}
+	assertLegacyCount(t, db, "sub_category", 1)
+	assertLegacyCount(t, db, "hidden_sub_category", 0)
+}
+
+func TestV1CreateTransactionPrefersEnabledThenMasterSubcategory(t *testing.T) {
+	db := legacyTestDB(t)
+	store := NewTransactionStore(db)
+	if err := db.Exec(`INSERT INTO sub_category (sub_category_id, user_no, category_id, sub_category_name) VALUES (10, 1, 1, '外食'), (11, 2, 1, '外食')`).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec(`INSERT INTO hidden_sub_category (user_no, sub_category_id) VALUES (2, 10)`).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	created, err := store.CreateV1Transaction(ptr(v1Row()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created.SubCategoryId != "11" {
+		t.Fatalf("enabled user subcategory should win, got %s", created.SubCategoryId)
+	}
+}
+
+func TestV1CreateTransactionRollsBackNewSubcategory(t *testing.T) {
+	db := legacyTestDB(t)
+	store := NewTransactionStore(db)
+	input := v1Row()
+	input.TransactionDate = "invalid"
+	if _, err := store.CreateV1Transaction(&input); err == nil {
+		t.Fatal("invalid transaction should fail")
+	}
+	assertLegacyCount(t, db, "sub_category", 0)
+	assertLegacyCount(t, db, "transaction", 0)
+}
+
+func TestV1CreateTransactionRejectsAnotherUsersSubcategory(t *testing.T) {
+	db := legacyTestDB(t)
+	store := NewTransactionStore(db)
+	if err := db.Exec(`INSERT INTO sub_category (sub_category_id, user_no, category_id, sub_category_name) VALUES (12, 3, 1, '他人')`).Error; err != nil {
+		t.Fatal(err)
+	}
+	input := v1Row()
+	input.SubCategoryName = ""
+	input.SubCategoryId = "12"
+	if _, err := store.CreateV1Transaction(&input); !errors.Is(err, transactiondomain.ErrInvalidRelation) {
+		t.Fatalf("expected invalid relation, got %v", err)
+	}
+}
+
+func TestSubCategoryVisibilityIsUserScopedAndIdempotent(t *testing.T) {
+	db := legacyTestDB(t)
+	if err := db.Exec(`INSERT INTO sub_category (sub_category_id, user_no, category_id, sub_category_name) VALUES (10, 1, 1, '外食'), (11, 3, 1, '他人')`).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec(`INSERT INTO hidden_sub_category (user_no, sub_category_id) VALUES (3, 10)`).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	categoryStore := NewCategoryStore(db)
+	categories := categoryStore.GetCategoryWithSubCategoryList("2")
+	if len(*categories) == 0 || len((*categories)[0].SubCategoryList) == 0 || !(*categories)[0].SubCategoryList[0].Enable {
+		t.Fatalf("another user's hidden marker must not affect user 2: %#v", categories)
+	}
+
+	store := NewSubCategoryStore(db)
+	visibility := model.EditSubCategoryModel{UserId: "2", SubCategoryId: "10", IsEnable: false}
+	if err := store.HideSubCategory(&visibility); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.HideSubCategory(&visibility); err != nil {
+		t.Fatalf("repeated hide must be idempotent: %v", err)
+	}
+	var count int64
+	db.Table("hidden_sub_category").Where("user_no = ?", "2").Count(&count)
+	if count != 1 {
+		t.Fatalf("hidden marker count=%d want=1", count)
+	}
+	if err := store.ExposeSubCategory(&visibility); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.ExposeSubCategory(&visibility); err != nil {
+		t.Fatalf("repeated expose must be idempotent: %v", err)
+	}
+
+	visibility.SubCategoryId = "11"
+	if err := store.HideSubCategory(&visibility); !errors.Is(err, subcategorydomain.ErrNotFound) {
+		t.Fatalf("another user's subcategory must be rejected, got %v", err)
+	}
+}
+
+func ptr[T any](value T) *T { return &value }
 func legacyRow(name string) model.AddTransaction {
 	return model.AddTransaction{UserId: "2", TransactionDate: "2026-09-01", TransactionAmount: -1200, TransactionName: "ランチ", CategoryId: "2", SubCategoryName: name}
 }
