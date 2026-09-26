@@ -19,6 +19,10 @@ env:
   SERVICE: moneyhook-api
   MIGRATION_JOB: moneyhook-api-migrate
   RUNTIME_SERVICE_ACCOUNT: moneyhook@moneyhooks.iam.gserviceaccount.com
+  SCHEDULER_JOB: money-hooks-batch-schedule
+  SCHEDULER_URI: https://moneyhook-api-275345655452.asia-northeast1.run.app/api/job/daily
+  SCHEDULER_AUDIENCE: https://moneyhook-api-275345655452.asia-northeast1.run.app/api/job/daily
+  SCHEDULER_SERVICE_ACCOUNT: moneyhook-scheduler@moneyhooks.iam.gserviceaccount.com
   POSTGRES_HOST: moneyhook-db-5360.jxf.gcp-asia-southeast1.cockroachlabs.cloud
   POSTGRES_PORT: "26257"
   POSTGRES_DATABASE: moneyhook
@@ -86,4 +90,23 @@ jobs:
             --project="$PROJECT_ID" \
             --region="$REGION" \
             --image="${{ steps.image.outputs.uri }}" \
+            --update-env-vars="JOB_NAME=$SCHEDULER_JOB,SCHEDULER_AUDIENCE=$SCHEDULER_AUDIENCE,SCHEDULER_SERVICE_ACCOUNT_EMAIL=$SCHEDULER_SERVICE_ACCOUNT" \
             --update-secrets="POSTGRES_PASSWORD=$POSTGRES_PASSWORD_SECRET:latest"
+
+      - name: Configure daily scheduler authentication
+        run: |
+          gcloud scheduler jobs update http "$SCHEDULER_JOB" \
+            --project="$PROJECT_ID" \
+            --location="$REGION" \
+            --uri="$SCHEDULER_URI" \
+            --http-method=POST \
+            --schedule="30 0 * * *" \
+            --time-zone="Asia/Tokyo" \
+            --attempt-deadline=180s \
+            --update-headers="Content-Type=application/octet-stream,User-Agent=Google-Cloud-Scheduler" \
+            --min-backoff=5s \
+            --max-backoff=3600s \
+            --max-doublings=5 \
+            --max-retry-duration=0s \
+            --oidc-service-account-email="$SCHEDULER_SERVICE_ACCOUNT" \
+            --oidc-token-audience="$SCHEDULER_AUDIENCE"

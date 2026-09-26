@@ -1,6 +1,10 @@
 package handler
 
 import (
+	jobdomain "MoneyHook/MoneyHook-API/job"
+	"MoneyHook/MoneyHook-API/model"
+	"MoneyHook/MoneyHook-API/router"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -8,7 +12,39 @@ import (
 	"testing"
 
 	"github.com/labstack/echo/v4"
+	"google.golang.org/api/idtoken"
 )
+
+type routeSchedulerTokenValidator struct{}
+
+func (routeSchedulerTokenValidator) Validate(context.Context, string, string) (*idtoken.Payload, error) {
+	return &idtoken.Payload{
+		Issuer: "https://accounts.google.com",
+		Claims: map[string]interface{}{
+			"email":          "scheduler@example-project.iam.gserviceaccount.com",
+			"email_verified": true,
+		},
+	}, nil
+}
+
+type routeJobStore struct{}
+
+var _ jobdomain.Store = routeJobStore{}
+
+func (routeJobStore) SelectMonthlyTransaction(int, bool) (*[]model.JobMonthlyTransaction, error) {
+	rows := []model.JobMonthlyTransaction{}
+	return &rows, nil
+}
+
+func (routeJobStore) InsertTransaction(*[]model.JobTransaction) error { return nil }
+
+func routeSchedulerConfig() router.SchedulerAuthConfig {
+	return router.SchedulerAuthConfig{
+		Audience:            "https://api.example.com/api/job/daily",
+		ServiceAccountEmail: "scheduler@example-project.iam.gserviceaccount.com",
+		JobName:             "daily",
+	}
+}
 
 var expectedBusinessRoutes = map[string]struct{}{
 	"GET /api/v1/budget":                                       {},
@@ -78,11 +114,14 @@ func TestRegisterIncludesCompleteBusinessRouteSet(t *testing.T) {
 	}
 }
 
-func TestAllBusinessRoutesRequireBearerAuthentication(t *testing.T) {
+func TestUserBusinessRoutesRequireFirebaseBearerAuthentication(t *testing.T) {
 	e := echo.New()
 	New(Dependencies{}).Register(e.Group("/api"))
 
 	for route := range expectedBusinessRoutes {
+		if route == "POST /api/job/daily" {
+			continue
+		}
 		method, path, _ := strings.Cut(route, " ")
 		path = strings.ReplaceAll(path, ":transactionId", "1")
 		path = strings.ReplaceAll(path, ":monthly_transaction_id", "1")
@@ -107,5 +146,28 @@ func TestAllBusinessRoutesRequireBearerAuthentication(t *testing.T) {
 				t.Fatalf("code = %q, want UNAUTHORIZED", response.Code)
 			}
 		})
+	}
+}
+
+func TestDailyJobAcceptsOnlyConfiguredSchedulerIdentity(t *testing.T) {
+	e := echo.New()
+	New(Dependencies{
+		SchedulerToken: routeSchedulerTokenValidator{},
+		SchedulerAuth:  routeSchedulerConfig(),
+		JobStore:       routeJobStore{},
+	}).Register(e.Group("/api"))
+
+	request := httptest.NewRequest(http.MethodPost, "/api/job/daily", nil)
+	request.Header.Set(echo.HeaderAuthorization, "Bearer scheduler-token")
+	request.Header.Set(model.UserAgent, "Google-Cloud-Scheduler")
+	request.Header.Set(model.ContentType, "application/octet-stream")
+	request.Header.Set(model.XCloudScheduler, "true")
+	request.Header.Set(model.XCloudSchedulerJobName, "daily")
+	request.Header.Set(model.XCloudSchedulerScheduleTime, "2026-09-18T00:00:00Z")
+	recorder := httptest.NewRecorder()
+	e.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK || recorder.Body.String() != "Today is Nothing, Success Jobs" {
+		t.Fatalf("response = %d %q", recorder.Code, recorder.Body.String())
 	}
 }

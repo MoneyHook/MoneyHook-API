@@ -24,6 +24,8 @@ import (
 
 type Dependencies struct {
 	FirebaseClient       router.IDTokenVerifier
+	SchedulerToken       router.SchedulerIDTokenValidator
+	SchedulerAuth        router.SchedulerAuthConfig
 	UserStore            user.Store
 	BudgetStore          budgetdomain.Store
 	SettingsStore        settingsdomain.Store
@@ -37,6 +39,8 @@ type Dependencies struct {
 
 type Handler struct {
 	firebaseClient router.IDTokenVerifier
+	schedulerToken router.SchedulerIDTokenValidator
+	schedulerAuth  router.SchedulerAuthConfig
 	userStore      user.Store
 	budget         *budgethandler.Handler
 	settings       *settingshandler.Handler
@@ -52,6 +56,8 @@ type Handler struct {
 func New(dependencies Dependencies) *Handler {
 	return &Handler{
 		firebaseClient: dependencies.FirebaseClient,
+		schedulerToken: dependencies.SchedulerToken,
+		schedulerAuth:  dependencies.SchedulerAuth,
 		userStore:      dependencies.UserStore,
 		budget:         budgethandler.New(dependencies.BudgetStore),
 		settings:       settingshandler.New(dependencies.SettingsStore),
@@ -64,6 +70,6 @@ func New(dependencies Dependencies) *Handler {
 		category:    categoryhandler.New(dependencies.CategoryStore),
 		subcategory: subcategoryhandler.New(dependencies.SubCategoryStore),
 		payment:     paymenthandler.New(dependencies.PaymentResourceStore),
-		job:         jobhandler.New(dependencies.JobStore),
+		job:         jobhandler.New(dependencies.JobStore, dependencies.SchedulerAuth.JobName),
 	}
 }

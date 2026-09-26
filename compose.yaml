@@ -57,6 +57,8 @@ services:
         condition: service_healthy
     environment:
       JOB_NAME: "money-hooks-batch-schedule"
+      SCHEDULER_AUDIENCE: "http://localhost:8080/api/job/daily"
+      SCHEDULER_SERVICE_ACCOUNT_EMAIL: "moneyhook-scheduler@demo-moneyhooks.iam.gserviceaccount.com"
       # PostgreSQL
       POSTGRES_HOST: "psql"
       POSTGRES_PORT: "5432"

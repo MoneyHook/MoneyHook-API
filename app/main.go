@@ -33,6 +33,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Development user setup failed: %v", err)
 	}
+	schedulerAuth, err := router.SchedulerAuthConfigFromEnvironment()
+	if err != nil {
+		log.Fatalf("Scheduler authentication setup failed: %v", err)
+	}
 	client, err := router.NewFirebaseAuth()
 	if err != nil {
 		log.Fatalf("Firebase setup failed: %v", err)
@@ -48,6 +52,8 @@ func main() {
 	}
 	h := handler.New(handler.Dependencies{
 		FirebaseClient:       client,
+		SchedulerToken:       router.GoogleSchedulerIDTokenValidator{},
+		SchedulerAuth:        schedulerAuth,
 		UserStore:            d.UserStore,
 		BudgetStore:          d.BudgetStore,
 		SettingsStore:        d.SettingsStore,

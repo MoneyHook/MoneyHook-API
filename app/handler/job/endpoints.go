@@ -1,7 +1,6 @@
 package job
 
 import (
-	common "MoneyHook/MoneyHook-API/common"
 	"MoneyHook/MoneyHook-API/handler/internal/httpx"
 	"MoneyHook/MoneyHook-API/model"
 	"fmt"
@@ -14,7 +13,7 @@ import (
 )
 
 func (h *Handler) ProcessDailyJob(c echo.Context) error {
-	error := validHeaders(c)
+	error := validHeaders(c, h.jobName)
 	if error != nil {
 		fmt.Println(error)
 		return c.JSON(http.StatusForbidden, error)
@@ -57,19 +56,13 @@ func (h *Handler) ProcessDailyJob(c echo.Context) error {
 	return c.String(http.StatusOK, "Success Jobs")
 }
 
-func validHeaders(c echo.Context) map[string]string {
+func validHeaders(c echo.Context, expectedJobName string) map[string]string {
 	user_agent := c.Request().Header.Get(model.UserAgent)
 	content_type := c.Request().Header.Get(model.ContentType)
 	x_cloud_scheduler, err := strconv.ParseBool(c.Request().Header.Get(model.XCloudScheduler))
 	x_cloud_scheduler_job_name := c.Request().Header.Get(model.XCloudSchedulerJobName)
 	x_cloud_scheduler_schedule_time := c.Request().Header.Get(model.XCloudSchedulerScheduleTime)
 	invalidRequest := "Invalid Request"
-
-	fmt.Println("user_agent:", user_agent)
-	fmt.Println("content_type:", content_type)
-	fmt.Println("x_cloud_scheduler:", x_cloud_scheduler)
-	fmt.Println("x_cloud_scheduler_job_name:", x_cloud_scheduler_job_name)
-	fmt.Println("x_cloud_scheduler_schedule_time:", x_cloud_scheduler_schedule_time)
 
 	switch {
 	case user_agent != "Google-Cloud-Scheduler":
@@ -81,12 +74,12 @@ func validHeaders(c echo.Context) map[string]string {
 	case !x_cloud_scheduler || err != nil:
 		log.Printf("Invalid X-CloudScheduler: '%s'", c.Request().Header.Get(model.XCloudScheduler))
 		return model.Error.Create(&invalidRequest)
-	case x_cloud_scheduler_job_name != common.GetEnv("JOB_NAME", ""):
+	case expectedJobName == "" || x_cloud_scheduler_job_name != expectedJobName:
 		log.Printf("Invalid X-CloudScheduler-JobName: '%s'", x_cloud_scheduler_job_name)
 		return model.Error.Create(&invalidRequest)
-		// case x_cloud_scheduler_schedule_time == "":
-		// log.Printf("Invalid X-CloudScheduler-ScheduleTime: '%s'", x_cloud_scheduler_schedule_time)
-		// return model.Error.Create(&invalidRequest)
+	case x_cloud_scheduler_schedule_time == "":
+		log.Printf("Invalid X-CloudScheduler-ScheduleTime: '%s'", x_cloud_scheduler_schedule_time)
+		return model.Error.Create(&invalidRequest)
 	}
 	return nil
 }
