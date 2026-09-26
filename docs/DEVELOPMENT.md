@@ -23,6 +23,10 @@ Dev Containerでは専用Compose上書きによりgoコンテナだけを待機�
 
 E2E用の `compose.e2e.yaml` は通常Composeの一括フローを引き継ぎ、E2E用のCORS originだけを上書きします。これらの開発用フラグは本番環境では有効にしないでください。
 
+日次ジョブAPIの起動には `JOB_NAME`、`SCHEDULER_AUDIENCE`、`SCHEDULER_SERVICE_ACCOUNT_EMAIL` が必要です。本番ではCloud SchedulerのOIDC audienceとservice accountを同じ値に設定します。通常のComposeにはローカル起動用の値が設定されていますが、実際のジョブ呼び出しにはGoogle署名付きOIDC ID tokenが必要です。
+
+本番の初回構成では `moneyhook-scheduler@moneyhooks.iam.gserviceaccount.com` をScheduler専用identityとして作成します。このidentityには対象Cloud Run serviceのInvokerだけを付与します。GitHub Actionsのデプロイidentityには、専用identityに対するService Account Userと、カスタムロール `projects/moneyhooks/roles/moneyHookSchedulerJobUpdater`（`cloudscheduler.jobs.get`、`cloudscheduler.jobs.update`）を付与します。以降のOIDC設定はデプロイworkflowが既存Scheduler jobへ反映します。
+
 ## マイグレーション統合テスト
 
 統合テストは、指定されたPostgreSQLサーバー上に専用スキーマを作成して実行し、終了時に削除します。

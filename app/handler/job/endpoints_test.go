@@ -41,7 +41,6 @@ func TestProcessDailyJob(t *testing.T) {
 		{name: "insert failure", store: jobStoreStub{rows: []model.JobMonthlyTransaction{{UserNo: "2"}}, writeErr: errors.New("insert failed")}, status: 422, insertCount: 1},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			t.Setenv("JOB_NAME", "daily")
 			request := httptest.NewRequest(http.MethodPost, "/api/job/daily", nil)
 			request.Header.Set(model.UserAgent, "Google-Cloud-Scheduler")
 			request.Header.Set(model.ContentType, "application/octet-stream")
@@ -49,7 +48,7 @@ func TestProcessDailyJob(t *testing.T) {
 			request.Header.Set(model.XCloudSchedulerJobName, "daily")
 			request.Header.Set(model.XCloudSchedulerScheduleTime, "2026-09-18T00:00:00Z")
 			recorder := httptest.NewRecorder()
-			if err := New(&test.store).ProcessDailyJob(echo.New().NewContext(request, recorder)); err != nil {
+			if err := New(&test.store, "daily").ProcessDailyJob(echo.New().NewContext(request, recorder)); err != nil {
 				t.Fatal(err)
 			}
 			if recorder.Code != test.status || (test.body != "" && recorder.Body.String() != test.body) {
@@ -66,6 +65,42 @@ func TestProcessDailyJob(t *testing.T) {
 				if body["status"] != "error" || body["code"] != "INTERNAL_ERROR" || body["message"] != "Failed to select monthly transactions" {
 					t.Fatalf("unexpected error contract: %v", body)
 				}
+			}
+		})
+	}
+}
+
+func TestProcessDailyJobRejectsInvalidSchedulerHeaders(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		header string
+		value  string
+	}{
+		{name: "user agent", header: model.UserAgent, value: "browser"},
+		{name: "content type", header: model.ContentType, value: "application/json"},
+		{name: "scheduler marker", header: model.XCloudScheduler, value: "false"},
+		{name: "job name", header: model.XCloudSchedulerJobName, value: "other"},
+		{name: "schedule time", header: model.XCloudSchedulerScheduleTime, value: ""},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			store := &jobStoreStub{}
+			request := httptest.NewRequest(http.MethodPost, "/api/job/daily", nil)
+			request.Header.Set(model.UserAgent, "Google-Cloud-Scheduler")
+			request.Header.Set(model.ContentType, "application/octet-stream")
+			request.Header.Set(model.XCloudScheduler, "true")
+			request.Header.Set(model.XCloudSchedulerJobName, "daily")
+			request.Header.Set(model.XCloudSchedulerScheduleTime, "2026-09-18T00:00:00Z")
+			request.Header.Set(test.header, test.value)
+			recorder := httptest.NewRecorder()
+
+			if err := New(store, "daily").ProcessDailyJob(echo.New().NewContext(request, recorder)); err != nil {
+				t.Fatal(err)
+			}
+			if recorder.Code != http.StatusForbidden {
+				t.Fatalf("status = %d", recorder.Code)
+			}
+			if len(store.inserted) != 0 {
+				t.Fatalf("inserted = %+v", store.inserted)
 			}
 		})
 	}

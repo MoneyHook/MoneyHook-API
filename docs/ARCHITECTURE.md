@@ -61,10 +61,11 @@ main
 ## HTTPリクエストの流れ
 
 1. `main.go`が公開ヘルスチェック`GET /`を登録します。
-2. `handler.Register`が`/api`以下にFirebase認証middlewareを適用します。
-3. middlewareがFirebase ID tokenとGoogle provider、verified emailを検証し、解決した`user_no`をrequest contextへ保存します。
-4. 機能別Handlerが入力を読み取り、Store interfaceを呼び出し、HTTP responseへ変換します。
-5. PostgreSQLのStoreが永続化処理を行います。
+2. `handler.Register`が一般業務APIにFirebase認証middlewareを適用し、`/api/job/daily`にはScheduler専用OIDC認証middlewareを適用します。
+3. 一般業務APIではFirebase ID tokenとGoogle provider、verified emailを検証し、解決した`user_no`をrequest contextへ保存します。
+4. 日次ジョブではGoogle署名、固定audience、許可したScheduler service accountのemailを検証し、Schedulerヘッダーを追加確認します。
+5. 機能別Handlerが入力を読み取り、Store interfaceを呼び出し、HTTP responseへ変換します。
+6. PostgreSQLのStoreが永続化処理を行います。
 
 ## APIバージョン
 
