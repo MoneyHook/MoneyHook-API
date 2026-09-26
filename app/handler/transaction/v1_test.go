@@ -17,8 +17,22 @@ func TestValidateV1TransactionInput(t *testing.T) {
 		FixedFlg:        &fixedFlg,
 		PaymentId:       &paymentID,
 	}
-	if errors := validateV1TransactionInput(valid); len(errors) != 0 {
+	validCreate := v1TransactionCreateInput{
+		TransactionDate: valid.TransactionDate,
+		TransactionTime: valid.TransactionTime,
+		TransactionName: valid.TransactionName,
+		Amount:          valid.Amount,
+		Sign:            valid.Sign,
+		CategoryId:      valid.CategoryId,
+		SubCategoryId:   valid.SubCategoryId,
+		FixedFlg:        valid.FixedFlg,
+		PaymentId:       valid.PaymentId,
+	}
+	if errors := validateV1TransactionCreateInput(validCreate); len(errors) != 0 {
 		t.Fatalf("valid input returned errors: %v", errors)
+	}
+	if errors := validateV1TransactionUpdateInput(valid); len(errors) != 0 {
+		t.Fatalf("valid update input returned errors: %v", errors)
 	}
 
 	invalidTime := "24:00"
@@ -33,7 +47,7 @@ func TestValidateV1TransactionInput(t *testing.T) {
 		SubCategoryId:   "",
 		PaymentId:       &invalidPaymentID,
 	}
-	errors := validateV1TransactionInput(invalid)
+	errors := validateV1TransactionUpdateInput(invalid)
 	for _, field := range []string{
 		"transaction.transaction_date",
 		"transaction.transaction_time",
@@ -48,6 +62,49 @@ func TestValidateV1TransactionInput(t *testing.T) {
 		if _, exists := errors[field]; !exists {
 			t.Errorf("missing validation error for %s: %v", field, errors)
 		}
+	}
+}
+
+func TestValidateV1TransactionCreateSubCategoryChoice(t *testing.T) {
+	fixedFlg := false
+	base := v1TransactionInput{
+		TransactionDate: "2026-09-25",
+		TransactionName: "ランチ",
+		Amount:          1200,
+		Sign:            -1,
+		CategoryId:      "2",
+		FixedFlg:        &fixedFlg,
+	}
+
+	withName := v1TransactionCreateInput{
+		TransactionDate: base.TransactionDate,
+		TransactionName: base.TransactionName,
+		Amount:          base.Amount,
+		Sign:            base.Sign,
+		CategoryId:      base.CategoryId,
+		SubCategoryName: "  新しい分類  ",
+		FixedFlg:        base.FixedFlg,
+	}
+	if errors := validateV1TransactionCreateInput(withName); len(errors) != 0 {
+		t.Fatalf("name-only input returned errors: %v", errors)
+	}
+
+	withBoth := withName
+	withBoth.SubCategoryId = "4"
+	if _, exists := validateV1TransactionCreateInput(withBoth)["transaction.sub_category_id"]; !exists {
+		t.Fatal("ID and name together must be rejected")
+	}
+
+	withNeither := withName
+	withNeither.SubCategoryName = ""
+	if _, exists := validateV1TransactionCreateInput(withNeither)["transaction.sub_category_id"]; !exists {
+		t.Fatal("missing ID and name must be rejected")
+	}
+
+	tooLong := withName
+	tooLong.SubCategoryName = "あいうえおかきくけこさしすせそたち"
+	if _, exists := validateV1TransactionCreateInput(tooLong)["transaction.sub_category_name"]; !exists {
+		t.Fatal("a name longer than 16 characters must be rejected")
 	}
 }
 

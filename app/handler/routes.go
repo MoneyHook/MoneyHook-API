@@ -9,6 +9,7 @@ import (
 func (h *Handler) Register(api *echo.Group) {
 	authMiddleware := router.FirebaseAuthMiddleware(h.firebaseClient, h.userStore)
 	protected := api.Group("", authMiddleware)
+	schedulerProtected := api.Group("/job", router.SchedulerAuthMiddleware(h.schedulerToken, h.schedulerAuth))
 
 	reactV1 := protected.Group("/v1")
 	budget := reactV1.Group("/budget")
@@ -68,6 +69,5 @@ func (h *Handler) Register(api *echo.Group) {
 	payment.DELETE("/deletePayment/:paymentId", h.payment.DeletePaymentResource)
 	payment.GET("/getPaymentType", h.payment.GetPaymentTypeList)
 
-	job := protected.Group("/job")
-	job.POST("/daily", h.job.ProcessDailyJob)
+	schedulerProtected.POST("/daily", h.job.ProcessDailyJob)
 }

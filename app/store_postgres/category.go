@@ -33,7 +33,7 @@ func (cs *CategoryStore) GetCategoryWithSubCategoryList(userId string) *[]model.
 	for i, v := range result {
 		cs.db.Table("sub_category sc").
 			Select("sc.sub_category_id", "sc.sub_category_name", "hsc.sub_category_id IS NULL as enable").
-			Joins("LEFT JOIN hidden_sub_category hsc ON sc.sub_category_id = hsc.sub_category_id").
+			Joins("LEFT JOIN hidden_sub_category hsc ON sc.sub_category_id = hsc.sub_category_id AND hsc.user_no = ?", userId).
 			Where("category_id = ?", v.CategoryId).
 			Where("sc.user_no IN ? ", []string{"1", userId}).
 			Find(&result[i].SubCategoryList)

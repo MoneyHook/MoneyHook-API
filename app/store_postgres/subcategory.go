@@ -22,7 +22,7 @@ func NewSubCategoryStore(db *gorm.DB) *SubCategoryStore {
 func (cs *SubCategoryStore) GetSubCategoryList(userId string, categoryId string) *[]model.SubCategory {
 	var sub_category_list []model.SubCategory
 	cs.db.Table("sub_category sc").
-		Joins("LEFT JOIN hidden_sub_category hsc ON sc.sub_category_id = hsc.sub_category_id").
+		Joins("LEFT JOIN hidden_sub_category hsc ON sc.sub_category_id = hsc.sub_category_id AND hsc.user_no = ?", userId).
 		Where("sc.user_no IN ?", []string{"1", userId}).
 		Where("sc.category_id = ?", categoryId).
 		Where("hsc.sub_category_id is NULL").
@@ -32,17 +32,37 @@ func (cs *SubCategoryStore) GetSubCategoryList(userId string, categoryId string)
 }
 
 func (cs *SubCategoryStore) HideSubCategory(subCategory *model.EditSubCategoryModel) error {
-	return cs.db.Table("hidden_sub_category").Create(map[string]interface{}{
+	if err := cs.requireAccessibleSubCategory(subCategory); err != nil {
+		return err
+	}
+	return cs.db.Table("hidden_sub_category").Clauses(clause.OnConflict{DoNothing: true}).Create(map[string]interface{}{
 		"user_no":         subCategory.UserId,
 		"sub_category_id": subCategory.SubCategoryId,
 	}).Error
 }
 
 func (cs *SubCategoryStore) ExposeSubCategory(subCategory *model.EditSubCategoryModel) error {
+	if err := cs.requireAccessibleSubCategory(subCategory); err != nil {
+		return err
+	}
 	return cs.db.Table("hidden_sub_category").
 		Where("user_no = ?", subCategory.UserId).
 		Where("sub_category_id = ?", subCategory.SubCategoryId).
 		Delete(&subCategory).Error
+}
+
+func (cs *SubCategoryStore) requireAccessibleSubCategory(subCategory *model.EditSubCategoryModel) error {
+	var count int64
+	if err := cs.db.Table("sub_category").
+		Where("sub_category_id = ?", subCategory.SubCategoryId).
+		Where("user_no IN ?", []string{"1", subCategory.UserId}).
+		Count(&count).Error; err != nil {
+		return err
+	}
+	if count != 1 {
+		return subcategorydomain.ErrNotFound
+	}
+	return nil
 }
 
 // resolveWriteSubCategory must run inside the caller's write transaction.
