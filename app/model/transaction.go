@@ -120,10 +120,10 @@ type FrequentTransactionName struct {
 	TransactionName string
 	CategoryId      string
 	SubCategoryId   string
+	SubCategoryName string
 	FixedFlg        bool
 	PaymentId       string
 	CategoryName    string
-	SubCategoryName string
 	RowNum          int
 }
 
@@ -189,6 +189,7 @@ type V1TransactionWrite struct {
 	Sign            int
 	CategoryId      string
 	SubCategoryId   string
+	SubCategoryName string
 	FixedFlg        bool
 	PaymentId       *string
 }

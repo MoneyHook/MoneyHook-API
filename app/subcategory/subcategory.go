@@ -5,7 +5,10 @@ import (
 	"errors"
 )
 
-var ErrResolveFailed = errors.New("subcategory resolution failed")
+var (
+	ErrResolveFailed = errors.New("subcategory resolution failed")
+	ErrNotFound      = errors.New("subcategory not found")
+)
 
 type Store interface {
 	GetSubCategoryList(userId string, categoryId string) *[]model.SubCategory

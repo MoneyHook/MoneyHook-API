@@ -26,8 +26,25 @@ type v1TransactionInput struct {
 	PaymentId       *string `json:"payment_id"`
 }
 
+type v1TransactionCreateInput struct {
+	TransactionDate string  `json:"transaction_date"`
+	TransactionTime *string `json:"transaction_time"`
+	TransactionName string  `json:"transaction_name"`
+	Amount          int64   `json:"amount"`
+	Sign            int     `json:"sign"`
+	CategoryId      string  `json:"category_id"`
+	SubCategoryId   string  `json:"sub_category_id"`
+	SubCategoryName string  `json:"sub_category_name"`
+	FixedFlg        *bool   `json:"fixed_flg"`
+	PaymentId       *string `json:"payment_id"`
+}
+
 type v1TransactionRequest struct {
 	Transaction v1TransactionInput `json:"transaction"`
+}
+
+type v1TransactionCreateRequest struct {
+	Transaction v1TransactionCreateInput `json:"transaction"`
 }
 
 type v1TransactionResource struct {
@@ -77,15 +94,15 @@ func (h *Handler) CreateV1Transaction(c echo.Context) error {
 	if err != nil {
 		return httpx.RespondV1Unauthorized(c)
 	}
-	var request v1TransactionRequest
+	var request v1TransactionCreateRequest
 	if err := httpx.DecodeV1JSON(c, &request); err != nil {
 		return httpx.RespondV1Error(c, http.StatusBadRequest, "INVALID_JSON", "JSON形式が不正です", nil)
 	}
-	fieldErrors := validateV1TransactionInput(request.Transaction)
+	fieldErrors := validateV1TransactionCreateInput(request.Transaction)
 	if len(fieldErrors) > 0 {
 		return httpx.RespondV1Error(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "入力内容を確認してください", fieldErrors)
 	}
-	input := request.Transaction.toModel(userId, "")
+	input := request.Transaction.toModel(userId)
 	result, err := h.transactionStore.CreateV1Transaction(&input)
 	if err != nil {
 		return h.respondV1TransactionStoreError(c, err)
@@ -106,7 +123,7 @@ func (h *Handler) UpdateV1Transaction(c echo.Context) error {
 	if err := httpx.DecodeV1JSON(c, &request); err != nil {
 		return httpx.RespondV1Error(c, http.StatusBadRequest, "INVALID_JSON", "JSON形式が不正です", nil)
 	}
-	fieldErrors := validateV1TransactionInput(request.Transaction)
+	fieldErrors := validateV1TransactionUpdateInput(request.Transaction)
 	if len(fieldErrors) > 0 {
 		return httpx.RespondV1Error(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "入力内容を確認してください", fieldErrors)
 	}
@@ -167,6 +184,26 @@ func (input v1TransactionInput) toModel(userId string, transactionId string) mod
 	}
 }
 
+func (input v1TransactionCreateInput) toInput() v1TransactionInput {
+	return v1TransactionInput{
+		TransactionDate: input.TransactionDate,
+		TransactionTime: input.TransactionTime,
+		TransactionName: input.TransactionName,
+		Amount:          input.Amount,
+		Sign:            input.Sign,
+		CategoryId:      input.CategoryId,
+		SubCategoryId:   input.SubCategoryId,
+		FixedFlg:        input.FixedFlg,
+		PaymentId:       input.PaymentId,
+	}
+}
+
+func (input v1TransactionCreateInput) toModel(userId string) model.V1TransactionWrite {
+	result := input.toInput().toModel(userId, "")
+	result.SubCategoryName = strings.TrimSpace(input.SubCategoryName)
+	return result
+}
+
 func newV1TransactionResource(transaction *model.V1Transaction) v1TransactionResource {
 	return v1TransactionResource{
 		TransactionId:   transaction.TransactionId,
@@ -186,7 +223,7 @@ func newV1TransactionResource(transaction *model.V1Transaction) v1TransactionRes
 	}
 }
 
-func validateV1TransactionInput(input v1TransactionInput) map[string]string {
+func validateV1TransactionBaseInput(input v1TransactionInput) map[string]string {
 	errors := map[string]string{}
 	name := strings.TrimSpace(input.TransactionName)
 	nameLength := utf8.RuneCountInString(name)
@@ -208,14 +245,40 @@ func validateV1TransactionInput(input v1TransactionInput) map[string]string {
 	if !isPositiveNumericID(input.CategoryId) {
 		errors["transaction.category_id"] = "正の数値IDを指定してください"
 	}
-	if !isPositiveNumericID(input.SubCategoryId) {
-		errors["transaction.sub_category_id"] = "正の数値IDを指定してください"
-	}
 	if input.FixedFlg == nil {
 		errors["transaction.fixed_flg"] = "trueまたはfalseを指定してください"
 	}
 	if input.PaymentId != nil && !isPositiveNumericID(*input.PaymentId) {
 		errors["transaction.payment_id"] = "正の数値IDまたはnullを指定してください"
+	}
+	return errors
+}
+
+func validateV1TransactionCreateInput(input v1TransactionCreateInput) map[string]string {
+	errors := validateV1TransactionBaseInput(input.toInput())
+	name := strings.TrimSpace(input.SubCategoryName)
+	hasID := input.SubCategoryId != ""
+	hasName := name != ""
+	if hasID == hasName {
+		errors["transaction.sub_category_id"] = "サブカテゴリIDまたは名前のどちらか一方を指定してください"
+		return errors
+	}
+	if hasID && !isPositiveNumericID(input.SubCategoryId) {
+		errors["transaction.sub_category_id"] = "正の数値IDを指定してください"
+	}
+	if hasName {
+		nameLength := utf8.RuneCountInString(name)
+		if nameLength > 16 {
+			errors["transaction.sub_category_name"] = "1〜16文字で入力してください"
+		}
+	}
+	return errors
+}
+
+func validateV1TransactionUpdateInput(input v1TransactionInput) map[string]string {
+	errors := validateV1TransactionBaseInput(input)
+	if !isPositiveNumericID(input.SubCategoryId) {
+		errors["transaction.sub_category_id"] = "正の数値IDを指定してください"
 	}
 	return errors
 }

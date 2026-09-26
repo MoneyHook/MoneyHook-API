@@ -2,11 +2,14 @@ package store_postgres
 
 import (
 	"MoneyHook/MoneyHook-API/model"
+	subcategorydomain "MoneyHook/MoneyHook-API/subcategory"
 	transactiondomain "MoneyHook/MoneyHook-API/transaction"
 	"errors"
+	"fmt"
 	"strconv"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const v1TransactionTimeSelect = "LEFT(CAST(t.transaction_time AS TEXT), 5) AS transaction_time"
@@ -67,25 +70,36 @@ func getPostgresV1Transaction(db *gorm.DB, userId string, transactionId string) 
 func (ts *TransactionStore) CreateV1Transaction(input *model.V1TransactionWrite) (*model.V1Transaction, error) {
 	var created *model.V1Transaction
 	err := ts.db.Transaction(func(tx *gorm.DB) error {
-		if err := validatePostgresV1Relations(tx, input); err != nil {
+		if err := validatePostgresV1BaseRelations(tx, input); err != nil {
+			return err
+		}
+		resolvedInput := *input
+		if resolvedInput.SubCategoryId == "" {
+			subCategoryID, err := resolveV1WriteSubCategory(tx, &resolvedInput)
+			if err != nil {
+				return err
+			}
+			resolvedInput.SubCategoryId = subCategoryID
+		}
+		if err := validatePostgresV1SubCategory(tx, &resolvedInput); err != nil {
 			return err
 		}
 		record := v1TransactionRecord{
-			UserId:            input.UserId,
-			TransactionName:   input.TransactionName,
-			TransactionAmount: input.Amount * int64(input.Sign),
-			TransactionDate:   input.TransactionDate,
-			TransactionTime:   input.TransactionTime,
-			CategoryId:        input.CategoryId,
-			SubCategoryId:     input.SubCategoryId,
-			FixedFlg:          input.FixedFlg,
-			PaymentId:         input.PaymentId,
+			UserId:            resolvedInput.UserId,
+			TransactionName:   resolvedInput.TransactionName,
+			TransactionAmount: resolvedInput.Amount * int64(resolvedInput.Sign),
+			TransactionDate:   resolvedInput.TransactionDate,
+			TransactionTime:   resolvedInput.TransactionTime,
+			CategoryId:        resolvedInput.CategoryId,
+			SubCategoryId:     resolvedInput.SubCategoryId,
+			FixedFlg:          resolvedInput.FixedFlg,
+			PaymentId:         resolvedInput.PaymentId,
 		}
 		if err := tx.Create(&record).Error; err != nil {
 			return err
 		}
 		var err error
-		created, err = getPostgresV1Transaction(tx, input.UserId, stringID(record.TransactionId))
+		created, err = getPostgresV1Transaction(tx, resolvedInput.UserId, stringID(record.TransactionId))
 		return err
 	})
 	return created, err
@@ -100,7 +114,10 @@ func (ts *TransactionStore) UpdateV1Transaction(input *model.V1TransactionWrite)
 			return err
 		}
 		previousDate = current.TransactionDate
-		if err := validatePostgresV1Relations(tx, input); err != nil {
+		if err := validatePostgresV1BaseRelations(tx, input); err != nil {
+			return err
+		}
+		if err := validatePostgresV1SubCategory(tx, input); err != nil {
 			return err
 		}
 		result := tx.Table("transaction").
@@ -170,17 +187,14 @@ func (ts *TransactionStore) GetV1AnalyticsTransactions(userId string, startDate 
 	return result, err
 }
 
-func validatePostgresV1Relations(db *gorm.DB, input *model.V1TransactionWrite) error {
-	var subCategoryCount int64
-	if err := db.Table("sub_category").
-		Where("sub_category_id = ?", input.SubCategoryId).
+func validatePostgresV1BaseRelations(db *gorm.DB, input *model.V1TransactionWrite) error {
+	var categoryCount int64
+	if err := db.Table("category").
 		Where("category_id = ?", input.CategoryId).
-		Where("user_no = ? OR user_no = ?", input.UserId, 1).
-		Where("NOT EXISTS (SELECT 1 FROM hidden_sub_category hsc WHERE hsc.sub_category_id = sub_category.sub_category_id AND hsc.user_no = ?)", input.UserId).
-		Count(&subCategoryCount).Error; err != nil {
+		Count(&categoryCount).Error; err != nil {
 		return err
 	}
-	if subCategoryCount != 1 {
+	if categoryCount != 1 {
 		return transactiondomain.ErrInvalidRelation
 	}
 	if input.PaymentId == nil {
@@ -197,6 +211,75 @@ func validatePostgresV1Relations(db *gorm.DB, input *model.V1TransactionWrite) e
 		return transactiondomain.ErrInvalidRelation
 	}
 	return nil
+}
+
+func validatePostgresV1SubCategory(db *gorm.DB, input *model.V1TransactionWrite) error {
+	var subCategoryCount int64
+	if err := db.Table("sub_category").
+		Where("sub_category_id = ?", input.SubCategoryId).
+		Where("category_id = ?", input.CategoryId).
+		Where("user_no = ? OR user_no = ?", input.UserId, 1).
+		Where("NOT EXISTS (SELECT 1 FROM hidden_sub_category hsc WHERE hsc.sub_category_id = sub_category.sub_category_id AND hsc.user_no = ?)", input.UserId).
+		Count(&subCategoryCount).Error; err != nil {
+		return err
+	}
+	if subCategoryCount != 1 {
+		return transactiondomain.ErrInvalidRelation
+	}
+	return nil
+}
+
+type v1SubCategoryCandidate struct {
+	SubCategoryId string `gorm:"column:sub_category_id"`
+	UserId        string `gorm:"column:user_no"`
+	Enable        bool   `gorm:"column:enable"`
+}
+
+func resolveV1WriteSubCategory(db *gorm.DB, input *model.V1TransactionWrite) (string, error) {
+	var candidate v1SubCategoryCandidate
+	query := db.Table("sub_category sc").
+		Select("CAST(sc.sub_category_id AS TEXT) AS sub_category_id, CAST(sc.user_no AS TEXT) AS user_no, NOT EXISTS (SELECT 1 FROM hidden_sub_category hsc WHERE hsc.sub_category_id = sc.sub_category_id AND hsc.user_no = ?) AS enable", input.UserId).
+		Where("sc.category_id = ?", input.CategoryId).
+		Where("sc.sub_category_name = ?", input.SubCategoryName).
+		Where("sc.user_no IN ?", []string{"1", input.UserId}).
+		Order("enable DESC").
+		Order("CASE WHEN sc.user_no = 1 THEN 0 ELSE 1 END").
+		Order("sc.sub_category_id")
+	err := query.Take(&candidate).Error
+	if err == nil {
+		if !candidate.Enable {
+			if err := db.Table("hidden_sub_category").
+				Where("user_no = ?", input.UserId).
+				Where("sub_category_id = ?", candidate.SubCategoryId).
+				Delete(&model.EditSubCategoryModel{}).Error; err != nil {
+				return "", fmt.Errorf("%w: %w", subcategorydomain.ErrResolveFailed, err)
+			}
+		}
+		return candidate.SubCategoryId, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", fmt.Errorf("%w: %w", subcategorydomain.ErrResolveFailed, err)
+	}
+
+	created := model.SubCategoryModel{
+		UserNo:          input.UserId,
+		CategoryId:      input.CategoryId,
+		SubCategoryName: input.SubCategoryName,
+	}
+	if err := db.Table("sub_category").Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_no"}, {Name: "category_id"}, {Name: "sub_category_name"}},
+		DoNothing: true,
+	}).Create(&created).Error; err != nil {
+		return "", fmt.Errorf("%w: %w", subcategorydomain.ErrResolveFailed, err)
+	}
+	if err := db.Table("sub_category").
+		Where("user_no = ?", input.UserId).
+		Where("category_id = ?", input.CategoryId).
+		Where("sub_category_name = ?", input.SubCategoryName).
+		Take(&created).Error; err != nil {
+		return "", fmt.Errorf("%w: %w", subcategorydomain.ErrResolveFailed, err)
+	}
+	return strconv.FormatInt(created.SubCategoryId, 10), nil
 }
 
 func stringID(id uint64) string {
