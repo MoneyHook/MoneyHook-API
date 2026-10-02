@@ -163,6 +163,8 @@ type DeleteTransaction struct {
 }
 
 type V1Transaction struct {
+	Version         int64
+	Shared          bool
 	TransactionId   string
 	TransactionDate string
 	TransactionTime *string
@@ -180,6 +182,7 @@ type V1Transaction struct {
 }
 
 type V1TransactionWrite struct {
+	ExpectedVersion *int64
 	TransactionId   string
 	UserId          string
 	TransactionDate string

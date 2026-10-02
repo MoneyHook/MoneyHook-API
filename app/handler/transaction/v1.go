@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"MoneyHook/MoneyHook-API/handler/internal/httpx"
+	household "MoneyHook/MoneyHook-API/household"
 	"MoneyHook/MoneyHook-API/model"
 	transactiondomain "MoneyHook/MoneyHook-API/transaction"
 	"errors"
@@ -40,7 +41,8 @@ type v1TransactionCreateInput struct {
 }
 
 type v1TransactionRequest struct {
-	Transaction v1TransactionInput `json:"transaction"`
+	ExpectedVersion *int64             `json:"expected_version,omitempty"`
+	Transaction     v1TransactionInput `json:"transaction"`
 }
 
 type v1TransactionCreateRequest struct {
@@ -48,6 +50,8 @@ type v1TransactionCreateRequest struct {
 }
 
 type v1TransactionResource struct {
+	Version         int64   `json:"version"`
+	Shared          bool    `json:"shared"`
 	TransactionId   string  `json:"transaction_id"`
 	TransactionDate string  `json:"transaction_date"`
 	TransactionTime *string `json:"transaction_time"`
@@ -128,6 +132,7 @@ func (h *Handler) UpdateV1Transaction(c echo.Context) error {
 		return httpx.RespondV1Error(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "入力内容を確認してください", fieldErrors)
 	}
 	input := request.Transaction.toModel(userId, transactionId)
+	input.ExpectedVersion = request.ExpectedVersion
 	result, previousDate, err := h.transactionStore.UpdateV1Transaction(&input)
 	if err != nil {
 		return h.respondV1TransactionStoreError(c, err)
@@ -147,7 +152,23 @@ func (h *Handler) DeleteV1Transaction(c echo.Context) error {
 	if !isPositiveNumericID(transactionId) {
 		return httpx.RespondV1Error(c, http.StatusBadRequest, "INVALID_PATH_PARAMETER", "取引IDが不正です", nil)
 	}
-	if err := h.transactionStore.DeleteV1Transaction(userId, transactionId); err != nil {
+	var deleteErr error
+	if v := c.QueryParam("expected_version"); v != "" {
+		version, e := strconv.ParseInt(v, 10, 64)
+		if e != nil || version < 1 {
+			return httpx.RespondV1Error(c, 400, "INVALID_VERSION", "更新版が不正です", nil)
+		}
+		store, ok := h.transactionStore.(interface {
+			DeleteV1TransactionVersion(string, string, *int64) error
+		})
+		if !ok {
+			return httpx.RespondV1Error(c, 500, "INTERNAL_ERROR", "削除できません", nil)
+		}
+		deleteErr = store.DeleteV1TransactionVersion(userId, transactionId, &version)
+	} else {
+		deleteErr = h.transactionStore.DeleteV1Transaction(userId, transactionId)
+	}
+	if err := deleteErr; err != nil {
 		return h.respondV1TransactionStoreError(c, err)
 	}
 	return c.NoContent(http.StatusNoContent)
@@ -155,6 +176,8 @@ func (h *Handler) DeleteV1Transaction(c echo.Context) error {
 
 func (h *Handler) respondV1TransactionStoreError(c echo.Context, err error) error {
 	switch {
+	case errors.Is(err, household.Conflict):
+		return httpx.RespondV1Error(c, 409, "VERSION_CONFLICT", err.Error(), nil)
 	case errors.Is(err, transactiondomain.ErrNotFound):
 		return httpx.RespondV1Error(c, http.StatusNotFound, "TRANSACTION_NOT_FOUND", "取引が見つかりません", nil)
 	case errors.Is(err, transactiondomain.ErrInvalidRelation):
@@ -206,6 +229,8 @@ func (input v1TransactionCreateInput) toModel(userId string) model.V1Transaction
 
 func newV1TransactionResource(transaction *model.V1Transaction) v1TransactionResource {
 	return v1TransactionResource{
+		Version:         transaction.Version,
+		Shared:          transaction.Shared,
 		TransactionId:   transaction.TransactionId,
 		TransactionDate: transaction.TransactionDate,
 		TransactionTime: transaction.TransactionTime,

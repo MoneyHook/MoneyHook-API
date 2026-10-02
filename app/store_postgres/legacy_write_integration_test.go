@@ -3,6 +3,7 @@
 package store_postgres
 
 import (
+	"MoneyHook/MoneyHook-API/db/migration"
 	"MoneyHook/MoneyHook-API/model"
 	subcategorydomain "MoneyHook/MoneyHook-API/subcategory"
 	transactiondomain "MoneyHook/MoneyHook-API/transaction"
@@ -48,10 +49,14 @@ func legacyTestDB(t *testing.T) *gorm.DB {
 	}
 	t.Cleanup(func() { sqlDB, _ := db.DB(); sqlDB.Close() })
 	statements := []string{
+		`CREATE TABLE users (user_no BIGINT PRIMARY KEY, user_id TEXT)`,
+		`INSERT INTO users VALUES (1,'master'),(2,'user2'),(3,'user3'),(4,'user4'),(5,'user5')`,
+		`CREATE TABLE payment_type (payment_type_id BIGINT PRIMARY KEY)`,
+		`INSERT INTO payment_type VALUES (1),(2),(3)`,
 		`CREATE TABLE category (category_id BIGINT PRIMARY KEY, category_name VARCHAR(16) NOT NULL, order_num INT NOT NULL DEFAULT 0)`,
 		`CREATE TABLE sub_category (sub_category_id BIGSERIAL PRIMARY KEY, user_no BIGINT NOT NULL, category_id BIGINT NOT NULL, sub_category_name VARCHAR(16) NOT NULL, UNIQUE(user_no,category_id,sub_category_name))`,
 		`CREATE TABLE hidden_sub_category (user_no BIGINT NOT NULL, sub_category_id BIGINT NOT NULL, UNIQUE(user_no,sub_category_id))`,
-		`CREATE TABLE payment_resource (payment_id BIGSERIAL PRIMARY KEY, user_no BIGINT NOT NULL, payment_name VARCHAR(32) NOT NULL)`,
+		`CREATE TABLE payment_resource (payment_id BIGSERIAL PRIMARY KEY, user_no BIGINT NOT NULL, payment_name VARCHAR(32) NOT NULL, payment_type_id BIGINT NOT NULL DEFAULT 1, payment_date SMALLINT, closing_date SMALLINT)`,
 		`CREATE TABLE "transaction" (transaction_id BIGSERIAL PRIMARY KEY, user_no BIGINT NOT NULL, transaction_name VARCHAR(32) NOT NULL, transaction_amount BIGINT NOT NULL, transaction_date DATE NOT NULL, transaction_time TIME, category_id BIGINT NOT NULL, sub_category_id BIGINT NOT NULL REFERENCES sub_category(sub_category_id), fixed_flg BOOLEAN NOT NULL, payment_id BIGINT)`,
 		`CREATE TABLE monthly_transaction (monthly_transaction_id BIGSERIAL PRIMARY KEY, user_no BIGINT NOT NULL, monthly_transaction_name VARCHAR(32) NOT NULL, monthly_transaction_amount BIGINT NOT NULL, monthly_transaction_date INTEGER NOT NULL CHECK(monthly_transaction_date BETWEEN 1 AND 31), category_id BIGINT NOT NULL, sub_category_id BIGINT NOT NULL REFERENCES sub_category(sub_category_id), include_flg BOOLEAN NOT NULL, payment_id BIGINT)`,
 		`INSERT INTO category (category_id, category_name) VALUES (1, '食費'), (2, '日用品')`,
@@ -60,6 +65,9 @@ func legacyTestDB(t *testing.T) *gorm.DB {
 		if err := db.Exec(statement).Error; err != nil {
 			t.Fatal(err)
 		}
+	}
+	if err := migration.MigrateHouseholds(db); err != nil {
+		t.Fatal(err)
 	}
 	return db
 }

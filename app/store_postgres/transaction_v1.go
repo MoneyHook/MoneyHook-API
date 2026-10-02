@@ -1,6 +1,7 @@
 package store_postgres
 
 import (
+	household "MoneyHook/MoneyHook-API/household"
 	"MoneyHook/MoneyHook-API/model"
 	subcategorydomain "MoneyHook/MoneyHook-API/subcategory"
 	transactiondomain "MoneyHook/MoneyHook-API/transaction"
@@ -35,12 +36,14 @@ func (ts *TransactionStore) GetV1Transaction(userId string, transactionId string
 
 func getPostgresV1Transaction(db *gorm.DB, userId string, transactionId string) (*model.V1Transaction, error) {
 	var result model.V1Transaction
-	err := db.Table("transaction t").
+	err := db.Table("transaction t").Where("t.deleted_at IS NULL").
 		Select(
 			"CAST(t.transaction_id AS TEXT) AS transaction_id",
 			"TO_CHAR(t.transaction_date, 'YYYY-MM-DD') AS transaction_date",
 			v1TransactionTimeSelect,
 			"t.transaction_name",
+			"t.version",
+			"EXISTS (SELECT 1 FROM household_entry he WHERE he.source_transaction_id=t.transaction_id AND he.kind='shared' AND he.state='active') AS shared",
 			"ABS(t.transaction_amount) AS amount",
 			"CASE WHEN t.transaction_amount > 0 THEN 1 ELSE -1 END AS sign",
 			"t.transaction_amount AS signed_amount",
@@ -69,7 +72,7 @@ func getPostgresV1Transaction(db *gorm.DB, userId string, transactionId string) 
 
 func (ts *TransactionStore) CreateV1Transaction(input *model.V1TransactionWrite) (*model.V1Transaction, error) {
 	var created *model.V1Transaction
-	err := ts.db.Transaction(func(tx *gorm.DB) error {
+	err := householdTransaction(ts.db, func(tx *gorm.DB) error {
 		if err := validatePostgresV1BaseRelations(tx, input); err != nil {
 			return err
 		}
@@ -108,10 +111,17 @@ func (ts *TransactionStore) CreateV1Transaction(input *model.V1TransactionWrite)
 func (ts *TransactionStore) UpdateV1Transaction(input *model.V1TransactionWrite) (*model.V1Transaction, string, error) {
 	var updated *model.V1Transaction
 	var previousDate string
-	err := ts.db.Transaction(func(tx *gorm.DB) error {
+	err := householdTransaction(ts.db, func(tx *gorm.DB) error {
+		changes, err := beginHouseholdSourceChange(tx, input.UserId, input.TransactionId)
+		if err != nil {
+			return err
+		}
 		current, err := getPostgresV1Transaction(tx, input.UserId, input.TransactionId)
 		if err != nil {
 			return err
+		}
+		if input.ExpectedVersion != nil && *input.ExpectedVersion != current.Version {
+			return household.Conflict
 		}
 		previousDate = current.TransactionDate
 		if err := validatePostgresV1BaseRelations(tx, input); err != nil {
@@ -124,6 +134,8 @@ func (ts *TransactionStore) UpdateV1Transaction(input *model.V1TransactionWrite)
 			Where("transaction_id = ?", input.TransactionId).
 			Where("user_no = ?", input.UserId).
 			Updates(map[string]any{
+				"version":            gorm.Expr("version + 1"),
+				"updated_at":         gorm.Expr("CURRENT_TIMESTAMP"),
 				"transaction_name":   input.TransactionName,
 				"transaction_amount": input.Amount * int64(input.Sign),
 				"transaction_date":   input.TransactionDate,
@@ -136,6 +148,9 @@ func (ts *TransactionStore) UpdateV1Transaction(input *model.V1TransactionWrite)
 		if result.Error != nil {
 			return result.Error
 		}
+		if err := finishHouseholdSourceChange(tx, changes, false); err != nil {
+			return err
+		}
 		updated, err = getPostgresV1Transaction(tx, input.UserId, input.TransactionId)
 		return err
 	})
@@ -143,22 +158,31 @@ func (ts *TransactionStore) UpdateV1Transaction(input *model.V1TransactionWrite)
 }
 
 func (ts *TransactionStore) DeleteV1Transaction(userId string, transactionId string) error {
-	result := ts.db.Table("transaction").
-		Where("transaction_id = ?", transactionId).
-		Where("user_no = ?", userId).
-		Delete(&v1TransactionRecord{})
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return transactiondomain.ErrNotFound
-	}
-	return nil
+	return ts.DeleteV1TransactionVersion(userId, transactionId, nil)
+}
+func (ts *TransactionStore) DeleteV1TransactionVersion(userId, transactionId string, version *int64) error {
+	return householdTransaction(ts.db, func(tx *gorm.DB) error {
+		changes, err := beginHouseholdSourceChange(tx, userId, transactionId)
+		if err != nil {
+			return err
+		}
+		current, err := getPostgresV1Transaction(tx, userId, transactionId)
+		if err != nil {
+			return err
+		}
+		if version != nil && *version != current.Version {
+			return household.Conflict
+		}
+		if err = tx.Table("transaction").Where("transaction_id = ? AND user_no = ? AND deleted_at IS NULL", transactionId, userId).Updates(map[string]any{"deleted_at": gorm.Expr("CURRENT_TIMESTAMP"), "updated_at": gorm.Expr("CURRENT_TIMESTAMP"), "version": gorm.Expr("version + 1")}).Error; err != nil {
+			return err
+		}
+		return finishHouseholdSourceChange(tx, changes, true)
+	})
 }
 
 func (ts *TransactionStore) GetV1AnalyticsTransactions(userId string, startDate string, endDate string) ([]model.V1AnalyticsTransaction, error) {
 	result := make([]model.V1AnalyticsTransaction, 0)
-	err := ts.db.Table("transaction t").
+	err := ts.db.Table("transaction t").Where("t.deleted_at IS NULL").
 		Select(
 			"CAST(t.transaction_id AS TEXT) AS transaction_id",
 			"TO_CHAR(t.transaction_date, 'YYYY-MM-DD') AS transaction_date",
