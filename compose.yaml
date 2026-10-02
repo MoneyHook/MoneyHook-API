@@ -69,6 +69,8 @@ services:
       # Firebase
       GOOGLE_CLOUD_PROJECT: "demo-moneyhooks"
       FIREBASE_AUTH_EMULATOR_HOST: "firebase:9099"
+      # Development only. Production supplies an independent random secret.
+      HOUSEHOLD_INVITATION_SECRET: "local-development-household-secret-2026"
       ENABLE_SEED_DATA: "true"
       ENABLE_DEVELOPMENT_USER: "true"
     command: ["sh", "-c", "cd /workspace/app && go run ./cmd/migrate && go run ."]
