@@ -75,6 +75,9 @@ func Run(parent context.Context, db *gorm.DB, databaseName string, options Optio
 	} else {
 		log.Printf("event=schema_migration_skip action=synchronize_sequences database=cockroachdb")
 	}
+	if err := MigrateHouseholds(migrationDB); err != nil {
+		return fmt.Errorf("migrate households: %w", err)
+	}
 	if err := seedSampleData(ctx, migrationDB, options); err != nil {
 		return fmt.Errorf("seed sample data: %w", err)
 	}

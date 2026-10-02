@@ -1,11 +1,14 @@
 package migration
 
+import "time"
+
 type userSchema struct {
-	UserID       string `gorm:"column:user_id;type:varchar(128);not null;unique"`
-	UserNo       uint64 `gorm:"column:user_no;primaryKey;autoIncrement"`
-	AccentColor  string `gorm:"column:accent_color;type:varchar(16);not null;default:blue"`
-	ThemeMode    string `gorm:"column:theme_mode;type:varchar(16);not null;default:system"`
-	ChartPalette string `gorm:"column:chart_palette;type:varchar(16);not null;default:default"`
+	UserID                  string `gorm:"column:user_id;type:varchar(128);not null;unique"`
+	UserNo                  uint64 `gorm:"column:user_no;primaryKey;autoIncrement"`
+	AccentColor             string `gorm:"column:accent_color;type:varchar(16);not null;default:blue"`
+	ThemeMode               string `gorm:"column:theme_mode;type:varchar(16);not null;default:system"`
+	ChartPalette            string `gorm:"column:chart_palette;type:varchar(16);not null;default:default"`
+	DefaultTransactionScope string `gorm:"column:default_transaction_scope;type:varchar(16);not null;default:personal"`
 }
 
 func (userSchema) TableName() string { return "users" }
@@ -64,16 +67,19 @@ type paymentResourceSchema struct {
 func (paymentResourceSchema) TableName() string { return "payment_resource" }
 
 type transactionSchema struct {
-	TransactionID     uint64  `gorm:"column:transaction_id;primaryKey;autoIncrement"`
-	UserNo            uint64  `gorm:"column:user_no;not null"`
-	TransactionName   string  `gorm:"column:transaction_name;type:varchar(32);not null"`
-	TransactionAmount int64   `gorm:"column:transaction_amount;not null"`
-	TransactionDate   string  `gorm:"column:transaction_date;type:date;not null"`
-	TransactionTime   *string `gorm:"column:transaction_time;type:time(0)"`
-	CategoryID        uint64  `gorm:"column:category_id;not null"`
-	SubCategoryID     uint64  `gorm:"column:sub_category_id;not null"`
-	FixedFlg          bool    `gorm:"column:fixed_flg;not null"`
-	PaymentID         *uint64 `gorm:"column:payment_id"`
+	Version           int64      `gorm:"column:version;not null;default:1"`
+	UpdatedAt         time.Time  `gorm:"column:updated_at;type:timestamptz;not null;default:CURRENT_TIMESTAMP"`
+	DeletedAt         *time.Time `gorm:"column:deleted_at;type:timestamptz"`
+	TransactionID     uint64     `gorm:"column:transaction_id;primaryKey;autoIncrement"`
+	UserNo            uint64     `gorm:"column:user_no;not null"`
+	TransactionName   string     `gorm:"column:transaction_name;type:varchar(32);not null"`
+	TransactionAmount int64      `gorm:"column:transaction_amount;not null"`
+	TransactionDate   string     `gorm:"column:transaction_date;type:date;not null"`
+	TransactionTime   *string    `gorm:"column:transaction_time;type:time(0)"`
+	CategoryID        uint64     `gorm:"column:category_id;not null"`
+	SubCategoryID     uint64     `gorm:"column:sub_category_id;not null"`
+	FixedFlg          bool       `gorm:"column:fixed_flg;not null"`
+	PaymentID         *uint64    `gorm:"column:payment_id"`
 }
 
 func (transactionSchema) TableName() string { return "transaction" }
