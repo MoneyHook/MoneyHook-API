@@ -3,6 +3,7 @@
 package migration
 
 import (
+	h "MoneyHook/MoneyHook-API/household"
 	"MoneyHook/MoneyHook-API/model"
 	userdomain "MoneyHook/MoneyHook-API/user"
 	"context"
@@ -76,7 +77,7 @@ func exerciseMigration(t *testing.T, db *gorm.DB, databaseName string) {
 	if err := Run(ctx, db, databaseName, Options{}); err != nil {
 		t.Fatalf("migrate empty database: %v", err)
 	}
-	for _, column := range []string{"accent_color", "theme_mode", "chart_palette"} {
+	for _, column := range []string{"accent_color", "theme_mode", "chart_palette", "default_transaction_scope"} {
 		if !db.Migrator().HasColumn("users", column) {
 			t.Fatalf("users.%s was not added by migration", column)
 		}
@@ -228,6 +229,30 @@ func exerciseBudgetAndSettingsStores(t *testing.T, db *gorm.DB) {
 	}
 	if updatedSettings.AccentColor != "rose" || updatedSettings.ThemeMode != "system" || updatedSettings.ChartPalette != "default" {
 		t.Fatalf("partially updated user settings = %+v", updatedSettings)
+	}
+
+	if settings.DefaultTransactionScope != "personal" {
+		t.Fatal("default scope is not personal")
+	}
+	householdScope := "household"
+	if _, err := settingsStore.UpdateSettings("1", &model.UserSettingsUpdate{DefaultTransactionScope: &householdScope}); !errors.Is(err, h.Invalid) {
+		t.Fatalf("household scope without membership: %v", err)
+	}
+	familyStore := store_postgres.NewHouseholdStore(db, strings.Repeat("s", 32))
+	family, err := familyStore.Create(context.Background(), "1", h.FamilyInput{Name: "設定検証", DisplayName: "本人"}, "settings-create")
+	if err != nil {
+		t.Fatal(err)
+	}
+	updatedSettings, err = settingsStore.UpdateSettings("1", &model.UserSettingsUpdate{DefaultTransactionScope: &householdScope})
+	if err != nil || updatedSettings.DefaultTransactionScope != "household" || updatedSettings.AccentColor != "rose" {
+		t.Fatalf("household setting: %+v %v", updatedSettings, err)
+	}
+	if err := familyStore.Leave(context.Background(), "1", fmt.Sprint(family.ID), "", family.Version, true); err != nil {
+		t.Fatal(err)
+	}
+	settings, err = settingsStore.GetSettings("1")
+	if err != nil || settings.DefaultTransactionScope != "personal" {
+		t.Fatalf("archived setting: %+v %v", settings, err)
 	}
 
 	unconfiguredBudget, err := budgetStore.GetBudget("1", "2026-07-01")

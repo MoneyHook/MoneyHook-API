@@ -2,7 +2,9 @@ package settings
 
 import (
 	"MoneyHook/MoneyHook-API/handler/internal/httpx"
+	household "MoneyHook/MoneyHook-API/household"
 	"MoneyHook/MoneyHook-API/model"
+	"errors"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -29,15 +31,17 @@ var validChartPalettes = map[string]struct{}{
 }
 
 type v1SettingsPatchRequest struct {
-	AccentColor  *string `json:"accent_color"`
-	ThemeMode    *string `json:"theme_mode"`
-	ChartPalette *string `json:"chart_palette"`
+	DefaultTransactionScope *string `json:"default_transaction_scope"`
+	AccentColor             *string `json:"accent_color"`
+	ThemeMode               *string `json:"theme_mode"`
+	ChartPalette            *string `json:"chart_palette"`
 }
 
 type v1SettingsResponse struct {
-	AccentColor  string `json:"accent_color"`
-	ThemeMode    string `json:"theme_mode"`
-	ChartPalette string `json:"chart_palette"`
+	DefaultTransactionScope string `json:"default_transaction_scope"`
+	AccentColor             string `json:"accent_color"`
+	ThemeMode               string `json:"theme_mode"`
+	ChartPalette            string `json:"chart_palette"`
 }
 
 func (h *Handler) GetV1Settings(c echo.Context) error {
@@ -67,11 +71,15 @@ func (h *Handler) PatchV1Settings(c echo.Context) error {
 	}
 
 	result, err := h.settingsStore.UpdateSettings(userNo, &model.UserSettingsUpdate{
-		AccentColor:  request.AccentColor,
-		ThemeMode:    request.ThemeMode,
-		ChartPalette: request.ChartPalette,
+		DefaultTransactionScope: request.DefaultTransactionScope,
+		AccentColor:             request.AccentColor,
+		ThemeMode:               request.ThemeMode,
+		ChartPalette:            request.ChartPalette,
 	})
 	if err != nil {
+		if errors.Is(err, household.Invalid) {
+			return httpx.RespondV1Error(c, 422, "VALIDATION_ERROR", "家族への参加が必要です", nil)
+		}
 		return httpx.RespondV1Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "表示設定の保存に失敗しました", nil)
 	}
 	return c.JSON(http.StatusOK, newV1SettingsResponse(result))
@@ -79,15 +87,19 @@ func (h *Handler) PatchV1Settings(c echo.Context) error {
 
 func newV1SettingsResponse(settings *model.UserSettings) v1SettingsResponse {
 	return v1SettingsResponse{
-		AccentColor:  settings.AccentColor,
-		ThemeMode:    settings.ThemeMode,
-		ChartPalette: settings.ChartPalette,
+		DefaultTransactionScope: settings.DefaultTransactionScope,
+		AccentColor:             settings.AccentColor,
+		ThemeMode:               settings.ThemeMode,
+		ChartPalette:            settings.ChartPalette,
 	}
 }
 
 func validateV1SettingsPatch(request v1SettingsPatchRequest) map[string]string {
 	fieldErrors := map[string]string{}
-	if request.AccentColor == nil && request.ThemeMode == nil && request.ChartPalette == nil {
+	if request.DefaultTransactionScope != nil && *request.DefaultTransactionScope != "personal" && *request.DefaultTransactionScope != "household" {
+		fieldErrors["default_transaction_scope"] = "personalまたはhouseholdを指定してください"
+	}
+	if request.AccentColor == nil && request.ThemeMode == nil && request.ChartPalette == nil && request.DefaultTransactionScope == nil {
 		fieldErrors["settings"] = "少なくとも1つの設定項目を指定してください"
 	}
 	if request.AccentColor != nil {

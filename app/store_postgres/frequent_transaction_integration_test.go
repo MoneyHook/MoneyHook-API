@@ -16,8 +16,8 @@ func frequentTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	db := legacyTestDB(t)
 	for _, sql := range []string{
-		`CREATE TABLE category (category_id BIGINT PRIMARY KEY, category_name TEXT NOT NULL)`,
-		`INSERT INTO category VALUES (1, 'Food'), (2, 'Other')`,
+
+		`UPDATE category SET category_name = CASE category_id WHEN 1 THEN 'Food' ELSE 'Other' END`,
 		`INSERT INTO sub_category (sub_category_id, user_no, category_id, sub_category_name) VALUES (1, 2, 1, 'Lunch'), (2, 2, 2, 'Other')`,
 	} {
 		if err := db.Exec(sql).Error; err != nil {

@@ -21,7 +21,7 @@ func main() {
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins:  []string{common.GetEnv("FRONT_URL", "http://localhost:3000")},
 		AllowMethods:  []string{echo.GET, echo.PATCH, echo.PUT, echo.POST, echo.DELETE},
-		AllowHeaders:  []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+		AllowHeaders:  []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization, "Idempotency-Key"},
 		ExposeHeaders: []string{"Content-Length"},
 	}))
 
@@ -51,6 +51,7 @@ func main() {
 		log.Fatalf("Database setup failed: %v", err)
 	}
 	h := handler.New(handler.Dependencies{
+		HouseholdStore:       d.HouseholdStore,
 		FirebaseClient:       client,
 		SchedulerToken:       router.GoogleSchedulerIDTokenValidator{},
 		SchedulerAuth:        schedulerAuth,
