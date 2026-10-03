@@ -97,8 +97,7 @@ func captureHouseholdEntries(tx *gorm.DB, f string, m, actor *h.Member, state st
 		now := time.Now()
 		data.CapturedAt = &now
 		data.Payer.State = state
-		sourceVersion := data.SourceVersion
-		if e = tx.Table("household_entry_data").Create(map[string]any{"entry_id": r.ID, "payload": string(publicEntry(data)), "captured_at": now, "source_version": sourceVersion}).Error; e != nil {
+		if e = tx.Table("household_entry_data").Create(map[string]any{"entry_id": r.ID, "payload": string(publicEntry(data)), "captured_at": now}).Error; e != nil {
 			return e
 		}
 		r.Kind = "snapshot"

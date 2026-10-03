@@ -6,8 +6,55 @@ import (
 	"MoneyHook/MoneyHook-API/db/migration"
 	h "MoneyHook/MoneyHook-API/household"
 	"context"
+	"reflect"
 	"testing"
 )
+
+func TestHouseholdMigrationRemovesEvents(t *testing.T) {
+	db, store, familyID := householdReferenceFixture(t)
+	ctx := context.Background()
+	must := func(err error) {
+		t.Helper()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if db.Migrator().HasTable("household_event") {
+		t.Fatal("fresh schema contains event history")
+	}
+	family, err := store.Get(ctx, "2", familyID)
+	must(err)
+	entry, err := store.CreateEntry(ctx, "2", familyID, householdReferenceInput(), true, "migration-event-entry")
+	must(err)
+	must(db.Exec(`CREATE TABLE household_event (
+		event_id bigserial PRIMARY KEY,
+		household_id bigint NOT NULL REFERENCES household,
+		actor bigint NOT NULL REFERENCES users(user_no), target_id bigint,
+		action varchar(32) NOT NULL,
+		created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP)`).Error)
+	must(db.Exec("INSERT INTO household_event (household_id,actor,target_id,action) VALUES (?,2,?,'created')", familyID, family.MemberID).Error)
+	for range 2 {
+		must(migration.MigrateHouseholds(db))
+		if db.Migrator().HasTable("household_event") {
+			t.Fatal("migration retained event history")
+		}
+	}
+	currentFamily, err := store.Get(ctx, "2", familyID)
+	must(err)
+	if !reflect.DeepEqual(family, currentFamily) {
+		t.Fatalf("migration changed family or membership: %+v", currentFamily)
+	}
+	currentEntry, err := store.Entry(ctx, "2", familyID, entry.ID)
+	must(err)
+	if !reflect.DeepEqual(entry, currentEntry) {
+		t.Fatalf("migration changed shared transaction: %+v", currentEntry)
+	}
+	retry, err := store.CreateEntry(ctx, "2", familyID, householdReferenceInput(), true, "migration-event-entry")
+	must(err)
+	if retry.ID != entry.ID {
+		t.Fatal("migration lost transaction idempotency")
+	}
+}
 
 func TestHouseholdMigrationPreservesLatestCorrection(t *testing.T) {
 	db, store, familyID := householdReferenceFixture(t)
@@ -21,10 +68,14 @@ func TestHouseholdMigrationPreservesLatestCorrection(t *testing.T) {
 	if db.Migrator().HasTable("household_entry_revision") {
 		t.Fatal("fresh schema contains obsolete table")
 	}
+	if db.Migrator().HasColumn("household_entry_data", "source_version") {
+		t.Fatal("fresh schema contains obsolete snapshot source version")
+	}
 	entry, err := store.CreateEntry(ctx, "2", familyID, householdReferenceInput(), true, "migration-entry")
 	must(err)
 	// Reproduce an existing snapshot and its old correction storage.
 	must(db.Exec("UPDATE household_entry SET kind='snapshot', version=5 WHERE entry_id=?", entry.ID).Error)
+	must(db.Exec("ALTER TABLE household_entry_data ADD COLUMN source_version bigint").Error)
 	must(db.Exec("INSERT INTO household_entry_data (entry_id,payload,captured_at,source_version) VALUES (?,?::jsonb,CURRENT_TIMESTAMP,1)", entry.ID, string(publicEntry(entry))).Error)
 	must(db.Exec("ALTER TABLE household_entry_data DROP COLUMN corrected_payload").Error)
 	must(db.Exec(`CREATE TABLE household_entry_revision (
@@ -56,6 +107,9 @@ func TestHouseholdMigrationPreservesLatestCorrection(t *testing.T) {
 	must(migration.MigrateHouseholds(db))
 	if db.Migrator().HasTable("household_entry_revision") {
 		t.Fatal("migration retained obsolete table")
+	}
+	if db.Migrator().HasColumn("household_entry_data", "source_version") {
+		t.Fatal("migration retained obsolete snapshot source version")
 	}
 	current, err := store.Entry(ctx, "2", familyID, entry.ID)
 	must(err)

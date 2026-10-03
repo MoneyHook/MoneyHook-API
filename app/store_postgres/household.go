@@ -71,9 +71,6 @@ func checkVersion(expected, actual int64) error {
 func bumpFamily(tx *gorm.DB, f string) error {
 	return tx.Model(&h.Family{}).Where("household_id = ?", f).Update("version", gorm.Expr("version + 1")).Error
 }
-func familyEvent(tx *gorm.DB, u, f, action string, target any) error {
-	return tx.Table("household_event").Create(map[string]any{"household_id": f, "actor": u, "target_id": target, "action": action}).Error
-}
 func digest(v any) string {
 	b, _ := json.Marshal(v)
 	s := sha256.Sum256(b)
@@ -156,9 +153,6 @@ func (s *HouseholdStore) Create(ctx context.Context, u string, in h.FamilyInput,
 		}
 		out.Role = m.Role
 		out.MemberID = m.ID
-		if err := familyEvent(tx, u, stringID(out.ID), "created", m.ID); err != nil {
-			return err
-		}
 		return remember(tx, u, "family-create", key, in, out.ID)
 	})
 	return out, err
@@ -231,10 +225,7 @@ func (s *HouseholdStore) Transfer(ctx context.Context, u, f string, in h.MemberI
 		if e = tx.Model(&h.Invitation{}).Where("household_id = ? AND consumed_at IS NULL AND revoked_at IS NULL", f).Update("revoked_at", gorm.Expr("CURRENT_TIMESTAMP")).Error; e != nil {
 			return e
 		}
-		if e = bumpFamily(tx, f); e != nil {
-			return e
-		}
-		return familyEvent(tx, u, f, "admin_transferred", next.ID)
+		return bumpFamily(tx, f)
 	})
 }
 func (s *HouseholdStore) Leave(ctx context.Context, u, f, target string, version int64, archive bool) error {
@@ -268,7 +259,6 @@ func (s *HouseholdStore) Leave(ctx context.Context, u, f, target string, version
 			return h.Forbidden
 		}
 		state := "left"
-		action := "left"
 		if archive {
 			if subject.ID != m.ID || m.Role != "admin" {
 				return h.Forbidden
@@ -281,7 +271,6 @@ func (s *HouseholdStore) Leave(ctx context.Context, u, f, target string, version
 				return h.Fail("MEMBERS_REMAIN", "他のメンバーが参加しています")
 			}
 			state = "archived"
-			action = "archived"
 		} else if subject.Role == "admin" {
 			return h.Fail("ADMIN_TRANSFER_REQUIRED", "退出前に管理者を交代してください")
 		}
@@ -306,6 +295,6 @@ func (s *HouseholdStore) Leave(ctx context.Context, u, f, target string, version
 				return e
 			}
 		}
-		return familyEvent(tx, u, f, action, subject.ID)
+		return nil
 	})
 }

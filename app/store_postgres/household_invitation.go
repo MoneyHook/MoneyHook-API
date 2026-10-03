@@ -111,9 +111,6 @@ func (s *HouseholdStore) Issue(ctx context.Context, u, f, replace, key string) (
 		}
 		inv.State = "active"
 		out = &h.InviteSecret{Invitation: inv, Code: string(code[:5]) + "-" + string(code[5:]), Token: token}
-		if e = familyEvent(tx, u, f, "invited", inv.ID); e != nil {
-			return e
-		}
 		return remember(tx, u, op, key, replace, inv.ID)
 	})
 	return out, e
@@ -134,7 +131,7 @@ func (s *HouseholdStore) Revoke(ctx context.Context, u, f, id string) error {
 		if r.RowsAffected == 0 {
 			return inviteUnavailable
 		}
-		return familyEvent(tx, u, f, "invite_revoked", hid(id))
+		return nil
 	})
 }
 
@@ -278,9 +275,6 @@ func (s *HouseholdStore) Accept(ctx context.Context, u, ip string, c h.Credentia
 			return inviteUnavailable
 		}
 		if e = bumpFamily(tx, stringID(fam.ID)); e != nil {
-			return e
-		}
-		if e = familyEvent(tx, u, stringID(fam.ID), "joined", m.ID); e != nil {
 			return e
 		}
 		if e = remember(tx, u, "invite-accept", key, s.inviteDigest("request", digest(c)), fam.ID); e != nil {
