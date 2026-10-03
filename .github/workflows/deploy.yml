@@ -72,7 +72,7 @@ jobs:
             --image="${{ steps.image.outputs.uri }}" \
             --command=/app/migrate \
             --service-account="$RUNTIME_SERVICE_ACCOUNT" \
-            --task-timeout=15m \
+            --task-timeout=30m \
             --max-retries=0 \
             --set-env-vars="POSTGRES_HOST=$POSTGRES_HOST,POSTGRES_PORT=$POSTGRES_PORT,POSTGRES_DATABASE=$POSTGRES_DATABASE,POSTGRES_USER=$POSTGRES_USER,SSLMODE=$SSLMODE,ENABLE_SEED_DATA=false" \
             --set-secrets="POSTGRES_PASSWORD=$POSTGRES_PASSWORD_SECRET:latest"
