@@ -61,6 +61,15 @@ func seedSampleData(ctx context.Context, db *gorm.DB, options Options) error {
 				return fmt.Errorf("create sample user: %w", err)
 			}
 		} else {
+			var familyCount int64
+			if err := tx.Table("household_member").Where("user_no = ?", user.UserNo).Count(&familyCount).Error; err != nil {
+				return err
+			}
+			if familyCount > 0 {
+				result.Status = "preserved_family_data"
+				result.UserNo = user.UserNo
+				return nil
+			}
 			result.Status = "refreshed"
 			if err := clearSampleUserData(tx, user.UserNo); err != nil {
 				return err

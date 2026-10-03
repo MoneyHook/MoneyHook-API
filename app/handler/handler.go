@@ -8,11 +8,13 @@ import (
 	budgethandler "MoneyHook/MoneyHook-API/handler/budget"
 	categoryhandler "MoneyHook/MoneyHook-API/handler/category"
 	fixedhandler "MoneyHook/MoneyHook-API/handler/fixed"
+	householdhandler "MoneyHook/MoneyHook-API/handler/household"
 	jobhandler "MoneyHook/MoneyHook-API/handler/job"
 	paymenthandler "MoneyHook/MoneyHook-API/handler/payment"
 	settingshandler "MoneyHook/MoneyHook-API/handler/settings"
 	subcategoryhandler "MoneyHook/MoneyHook-API/handler/subcategory"
 	transactionhandler "MoneyHook/MoneyHook-API/handler/transaction"
+	householddomain "MoneyHook/MoneyHook-API/household"
 	jobdomain "MoneyHook/MoneyHook-API/job"
 	paymentresource "MoneyHook/MoneyHook-API/paymentresource"
 	"MoneyHook/MoneyHook-API/router"
@@ -23,6 +25,7 @@ import (
 )
 
 type Dependencies struct {
+	HouseholdStore       householddomain.Store
 	FirebaseClient       router.IDTokenVerifier
 	SchedulerToken       router.SchedulerIDTokenValidator
 	SchedulerAuth        router.SchedulerAuthConfig
@@ -38,6 +41,7 @@ type Dependencies struct {
 }
 
 type Handler struct {
+	household      *householdhandler.Handler
 	firebaseClient router.IDTokenVerifier
 	schedulerToken router.SchedulerIDTokenValidator
 	schedulerAuth  router.SchedulerAuthConfig
@@ -55,6 +59,7 @@ type Handler struct {
 
 func New(dependencies Dependencies) *Handler {
 	return &Handler{
+		household:      householdhandler.New(dependencies.HouseholdStore),
 		firebaseClient: dependencies.FirebaseClient,
 		schedulerToken: dependencies.SchedulerToken,
 		schedulerAuth:  dependencies.SchedulerAuth,

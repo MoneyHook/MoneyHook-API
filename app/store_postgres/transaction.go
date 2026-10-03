@@ -2,6 +2,7 @@ package store_postgres
 
 import (
 	"MoneyHook/MoneyHook-API/model"
+	transactiondomain "MoneyHook/MoneyHook-API/transaction"
 	"errors"
 	"time"
 
@@ -25,7 +26,7 @@ func (ts *TransactionStore) GetTimelineData(userId string, month string) (*[]mod
 			"CASE WHEN t.transaction_amount > 0 THEN 1 ELSE -1 END AS transaction_sign",
 			"t.transaction_date", "c.category_name", "t.category_id", "sc.sub_category_name",
 			"t.sub_category_id", "t.fixed_flg", "t.payment_id", "pr.payment_name").
-		Table("transaction t").
+		Table("transaction t").Where("t.deleted_at IS NULL").
 		Joins("INNER JOIN category c ON c.category_id = t.category_id").
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
 		Joins("LEFT JOIN payment_resource pr ON pr.payment_id = t.payment_id").
@@ -42,7 +43,7 @@ func (ts *TransactionStore) GetMonthlySpendingData(userId string, month string) 
 	err := ts.db.Unscoped().
 		Select("SUM(transaction_amount) as total_amount",
 			"TO_CHAR(date_trunc('month', transaction_date), 'YYYY-MM-DD') as month").
-		Table("transaction").
+		Table("transaction").Where("deleted_at IS NULL").
 		Where("user_no = ?", userId).
 		Where("transaction_amount < 0").
 		Where("transaction_date BETWEEN (?::date - INTERVAL '5 months') AND (date_trunc('month', ?::date) + INTERVAL '1 month' - INTERVAL '1 day')", month, month).
@@ -86,7 +87,7 @@ func (ts *TransactionStore) GetTransactionData(userId string, transactionId stri
 			"t.sub_category_id",
 			"sc.sub_category_name",
 			"t.fixed_flg").
-		Table("transaction t").
+		Table("transaction t").Where("t.deleted_at IS NULL").
 		Joins("INNER JOIN category c ON c.category_id = t.category_id").
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
 		Where("t.user_no = ?", userId).
@@ -127,7 +128,7 @@ func (ts *TransactionStore) GetMonthlyFixedData(userId string, month string, isS
 			"t.fixed_flg",
 			"pr.payment_id",
 			"pr.payment_name").
-		Table("transaction t").
+		Table("transaction t").Where("t.deleted_at IS NULL").
 		Joins("INNER JOIN category c ON c.category_id = t.category_id").
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
 		Joins("LEFT OUTER JOIN payment_resource pr ON t.payment_id = pr.payment_id").
@@ -153,7 +154,7 @@ func (ts *TransactionStore) GetHome(userId string, month string) (*[]model.HomeC
 		"ssc.category_id",
 		"ssc.sub_category_name",
 		"SUM(st.transaction_amount) AS sub_category_total_amount").
-		Table("transaction AS st").
+		Table("transaction AS st").Where("st.deleted_at IS NULL").
 		Joins("INNER JOIN sub_category AS ssc ON ssc.sub_category_id = st.sub_category_id").
 		Where("st.user_no = ?", userId).
 		Where("st.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", month, month).
@@ -166,7 +167,7 @@ func (ts *TransactionStore) GetHome(userId string, month string) (*[]model.HomeC
 		"sub_tran.sub_category_id",
 		"sub_tran.sub_category_name",
 		"sub_tran.sub_category_total_amount").
-		Table("transaction AS t").
+		Table("transaction AS t").Where("t.deleted_at IS NULL").
 		Joins("RIGHT JOIN (?) AS sub_tran ON sub_tran.sub_category_id = t.sub_category_id", subquery).
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", month, month).
@@ -186,14 +187,14 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId string, month string) 
 		"transaction_amount",
 		"transaction_date",
 		"payment_id").
-		Table("transaction").
+		Table("transaction").Where("deleted_at IS NULL").
 		Where("user_no = ?", userId).
 		Where("transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", month, month)
 
 	subquery_2 := ts.db.Select("t.sub_category_id",
 		"sc.sub_category_name",
 		"SUM(t.transaction_amount) AS sub_category_total_amount").
-		Table("transaction t").
+		Table("transaction t").Where("t.deleted_at IS NULL").
 		Joins("INNER JOIN sub_category sc ON t.sub_category_id = sc.sub_category_id").
 		Where("t.user_no = ?", userId).
 		Where("t.fixed_flg = FALSE").
@@ -212,7 +213,7 @@ func (ts *TransactionStore) GetMonthlyVariableData(userId string, month string) 
 		"tran_list.transaction_date",
 		"pr.payment_id",
 		"pr.payment_name").
-		Table("transaction t").
+		Table("transaction t").Where("t.deleted_at IS NULL").
 		Joins("INNER JOIN category c ON c.category_id = t.category_id").
 		Joins("RIGHT JOIN (?) AS tran_list ON tran_list.transaction_id = t.transaction_id", subquery_1).
 		Joins("RIGHT JOIN (?) AS sub_clist ON sub_clist.sub_category_id = t.sub_category_id", subquery_2).
@@ -246,7 +247,7 @@ func (ts *TransactionStore) GetTotalSpending(userId string, categoryId string, s
 		"transaction_id",
 		"transaction_name",
 		"transaction_amount").
-		Table("transaction").
+		Table("transaction").Where("deleted_at IS NULL").
 		Where("user_no = ?", userId).
 		Where("transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", startMonth, endMonth)
 
@@ -254,7 +255,7 @@ func (ts *TransactionStore) GetTotalSpending(userId string, categoryId string, s
 		"t.sub_category_id",
 		"sc.sub_category_name",
 		"SUM(t.transaction_amount) AS sub_category_total_amount").
-		Table("transaction t").
+		Table("transaction t").Where("t.deleted_at IS NULL").
 		Joins("INNER JOIN sub_category sc ON t.sub_category_id = sc.sub_category_id").
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", startMonth, endMonth).
@@ -270,7 +271,7 @@ func (ts *TransactionStore) GetTotalSpending(userId string, categoryId string, s
 		"tran_list.transaction_name",
 		"tran_list.transaction_amount",
 		"t.transaction_date").
-		Table("transaction t").
+		Table("transaction t").Where("t.deleted_at IS NULL").
 		Joins("INNER JOIN category c ON c.category_id = t.category_id").
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
 		Joins("RIGHT JOIN (?) AS tran_list ON tran_list.transaction_id = t.transaction_id", subquery_1).
@@ -305,7 +306,7 @@ func (ts *TransactionStore) GetGroupByPayment(userId string, month string) (*[]m
 		"sc.sub_category_id",
 		"sc.sub_category_name",
 		"t.fixed_flg").
-		Table("transaction t").
+		Table("transaction t").Where("t.deleted_at IS NULL").
 		Joins("LEFT JOIN payment_resource pr ON t.payment_id = pr.payment_id").
 		Joins("LEFT JOIN payment_type pt ON pr.payment_type_id = pt.payment_type_id").
 		Joins("JOIN category c ON c.category_id = t.category_id").
@@ -327,7 +328,7 @@ func (ts *TransactionStore) GetLastMonthGroupByPayment(userId string, month stri
 	err := ts.db.Select(
 		"t.payment_id",
 		"SUM(t.transaction_amount) AS payment_amount").
-		Table("transaction t").
+		Table("transaction t").Where("t.deleted_at IS NULL").
 		Where("t.user_no = ?", userId).
 		Where("t.transaction_amount < 0").
 		Where("t.transaction_date BETWEEN ? AND (date_trunc('month', ?::date) + interval '1 month' - interval '1 day')", month, month).
@@ -346,7 +347,7 @@ func (ts *TransactionStore) GetMonthlyWithdrawalAmount(userId string, paymentId 
 		"pr.payment_name",
 		"pr.payment_date",
 		"SUM(t.transaction_amount) AS withdrawal_amount").
-		Table("transaction t").
+		Table("transaction t").Where("t.deleted_at IS NULL").
 		Joins("LEFT JOIN payment_resource pr ON t.payment_id = pr.payment_id").
 		Where("t.user_no = ?", userId).
 		Where("t.payment_id = ?", paymentId).
@@ -378,7 +379,7 @@ func frequentTransactionReferenceDate(now time.Time) string {
 }
 
 func frequentTransactionNameQuery(db *gorm.DB, userId string, limit int, referenceDate string) *gorm.DB {
-	configurations := db.Table("transaction tran").
+	configurations := db.Table("transaction tran").Where("tran.deleted_at IS NULL").
 		Select(`tran.transaction_name, tran.category_id, c.category_name,
 			tran.sub_category_id, sc.sub_category_name, tran.fixed_flg, tran.payment_id,
 			SUM(POWER(0.5::numeric, (?::date - tran.transaction_date) / 60.0)) AS score,
@@ -406,7 +407,7 @@ func frequentTransactionNameQuery(db *gorm.DB, userId string, limit int, referen
 }
 
 func (ts *TransactionStore) AddTransaction(transaction *model.AddTransaction) error {
-	return ts.db.Transaction(func(tx *gorm.DB) error {
+	return householdTransaction(ts.db, func(tx *gorm.DB) error {
 		input := *transaction
 		transaction = &input
 		subCategoryID, err := resolveWriteSubCategory(tx, transaction.UserId, transaction.CategoryId, transaction.SubCategoryId, transaction.SubCategoryName)
@@ -435,7 +436,7 @@ func (ts *TransactionStore) AddTransaction(transaction *model.AddTransaction) er
 }
 
 func (ts *TransactionStore) AddTransactionList(transaction *model.AddTransactionList) error {
-	return ts.db.Transaction(func(tx *gorm.DB) error {
+	return householdTransaction(ts.db, func(tx *gorm.DB) error {
 		if len(transaction.TransactionList) == 0 {
 			return errors.New("transaction list is empty")
 		}
@@ -470,7 +471,11 @@ func (ts *TransactionStore) AddTransactionList(transaction *model.AddTransaction
 }
 
 func (ts *TransactionStore) EditTransaction(transaction *model.EditTransaction) error {
-	return ts.db.Transaction(func(tx *gorm.DB) error {
+	return householdTransaction(ts.db, func(tx *gorm.DB) error {
+		changes, err := beginHouseholdSourceChange(tx, transaction.UserId, transaction.TransactionId)
+		if err != nil {
+			return err
+		}
 		input := *transaction
 		transaction = &input
 		subCategoryID, err := resolveWriteSubCategory(tx, transaction.UserId, transaction.CategoryId, transaction.SubCategoryId, transaction.SubCategoryName)
@@ -485,9 +490,11 @@ func (ts *TransactionStore) EditTransaction(transaction *model.EditTransaction) 
 		}
 
 		result := tx.Table("transaction").
-			Where("transaction_id = ?", transaction.TransactionId).
+			Where("deleted_at IS NULL").Where("transaction_id = ?", transaction.TransactionId).
 			Where("user_no = ?", transaction.UserId).
 			Updates(map[string]interface{}{
+				"version":            gorm.Expr("version + 1"),
+				"updated_at":         gorm.Expr("CURRENT_TIMESTAMP"),
 				"transaction_name":   transaction.TransactionName,
 				"transaction_amount": transaction.TransactionAmount,
 				"transaction_date":   transaction.TransactionDate,
@@ -502,14 +509,15 @@ func (ts *TransactionStore) EditTransaction(transaction *model.EditTransaction) 
 		if result.RowsAffected == 0 {
 			return gorm.ErrRecordNotFound
 		}
-		return nil
+		return finishHouseholdSourceChange(tx, changes, false)
 
 	})
 }
 
 func (ts *TransactionStore) DeleteTransaction(transaction *model.DeleteTransaction) error {
-	return ts.db.Table("transaction").
-		Where("transaction_id = ?", transaction.TransactionId).
-		Where("user_no = ?", transaction.UserId).
-		Delete(&model.DeleteTransaction{}).Error
+	err := ts.DeleteV1Transaction(transaction.UserId, transaction.TransactionId)
+	if errors.Is(err, transactiondomain.ErrNotFound) {
+		return nil
+	}
+	return err
 }

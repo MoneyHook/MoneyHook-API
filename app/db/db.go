@@ -6,6 +6,7 @@ import (
 	common "MoneyHook/MoneyHook-API/common"
 	dbmigration "MoneyHook/MoneyHook-API/db/migration"
 	fixed "MoneyHook/MoneyHook-API/fixed"
+	household "MoneyHook/MoneyHook-API/household"
 	job "MoneyHook/MoneyHook-API/job"
 	paymentresource "MoneyHook/MoneyHook-API/paymentresource"
 	settings "MoneyHook/MoneyHook-API/settings"
@@ -27,6 +28,7 @@ import (
 )
 
 type Store struct {
+	HouseholdStore       household.Store
 	UserStore            user.Store
 	BudgetStore          budget.Store
 	SettingsStore        settings.Store
@@ -94,7 +96,7 @@ func newStore(db *gorm.DB) *Store {
 	pr := store_postgres.NewPaymentResourceStore(db)
 	job := store_postgres.NewJobStore(db)
 
-	return &Store{UserStore: us, BudgetStore: bs, SettingsStore: ss, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobStore: job}
+	return &Store{HouseholdStore: store_postgres.NewHouseholdStore(db, os.Getenv("HOUSEHOLD_INVITATION_SECRET")), UserStore: us, BudgetStore: bs, SettingsStore: ss, TransactionStore: ts, FixedStore: fs, CategoryStore: cs, SubCategoryStore: scs, PaymentResourceStore: pr, JobStore: job}
 }
 
 func ensurePostgresDatabase(ctx context.Context, databaseName string) error {
