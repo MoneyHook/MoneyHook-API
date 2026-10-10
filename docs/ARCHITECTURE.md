@@ -38,7 +38,7 @@ moneyHook_api/
 
 `cmd/migrate`はDB接続、schema migration、master data、`ENABLE_SEED_DATA`に応じたsample data投入を担当します。`main.go`はFirebase Auth clientとDB Storeを初期化し、`ENABLE_DEVELOPMENT_USER=true`の場合に固定UIDの開発ユーザーを冪等にprovisionしてからHTTP APIを起動します。API起動処理はDB schemaやsample dataを変更しません。
 
-通常のComposeではFirebase Auth Emulatorのhealthy確認後、`cmd/migrate`とAPIを順に起動します。Dev Containerは専用Compose上書きでGoサービスを待機させ、Run and Debugの `Seed Database (Migration + Sample Data)` と `Launch Echo Server via Air (Hot Reload + Debug)` がDB初期化とAPI起動をそれぞれ担当します。E2E用Composeは通常の一括フローを引き継ぎます。
+通常のComposeではFirebase Auth Emulatorのhealthy確認後、`cmd/migrate`とAPIを順に起動します。Dev Containerは専用Compose上書きでGoサービスを待機させ、Run and Debugの `Seed Database` と `Launch API (Air)` がDB初期化とAPI起動をそれぞれ担当します。E2E用Composeは通常の一括フローを引き継ぎます。
 
 開発ユーザーのUID・表示名・emailは`app/common`で定義し、Auth provisionとsample seedで共有します。Auth userが既に存在する場合は必要なプロフィールとGoogle provider情報を補正し、provider UIDの競合や予期しないAuthエラーは起動失敗として扱います。
 

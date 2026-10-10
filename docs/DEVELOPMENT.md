@@ -19,7 +19,7 @@ PostgreSQLでは、最初に `postgres` メンテナンスデータベースへ�
 
 通常の `docker compose up` はFirebase Auth Emulatorのhealthy確認後、`ENABLE_SEED_DATA=true`でmigration・master data・sample dataを実行してからAPIを起動します。API起動時は `ENABLE_DEVELOPMENT_USER=true` の場合に固定UID `a77a6e94-6aa2-47ea-87dd-129f580fb669` の開発用Googleユーザーがprovisionされます。
 
-Dev Containerでは専用Compose上書きによりgoコンテナだけを待機させます。Run and Debugから `Seed Database (Migration + Sample Data)` を実行した後、`Launch Echo Server via Air (Hot Reload + Debug)` を実行してください。seedの有効化はAPI起動とは独立して `ENABLE_SEED_DATA` で制御します。
+Dev Containerでは専用Compose上書きによりgoコンテナだけを待機させます。Run and Debugから `Seed Database` を実行した後、`Launch API (Air)` を実行してください。seedの有効化はAPI起動とは独立して `ENABLE_SEED_DATA` で制御します。
 
 E2E用の `compose.e2e.yaml` は通常Composeの一括フローを引き継ぎ、E2E用のCORS originだけを上書きします。これらの開発用フラグは本番環境では有効にしないでください。
 
