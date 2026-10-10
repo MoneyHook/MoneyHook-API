@@ -24,8 +24,8 @@ Firebase Emulator UIは`http://localhost:4000/auth`、Auth Emulatorはホスト�
 
 Dev Containerは専用Compose上書きによりgoコンテナを待機状態で起動します。Run and Debugから次の順番で実行してください。
 
-1. `Seed Database (Migration + Sample Data)`
-2. `Launch Echo Server via Air (Hot Reload + Debug)`
+1. `Seed Database`
+2. `Launch API (Air)`
 
 sample dataを再生成せずmigrationだけを実行したい場合は、`ENABLE_SEED_DATA=false go run ./cmd/migrate`を使用してください。これらの開発用フラグは本番環境では有効にしないでください。
 
