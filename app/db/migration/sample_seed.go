@@ -61,15 +61,6 @@ func seedSampleData(ctx context.Context, db *gorm.DB, options Options) error {
 				return fmt.Errorf("create sample user: %w", err)
 			}
 		} else {
-			var familyCount int64
-			if err := tx.Table("household_member").Where("user_no = ?", user.UserNo).Count(&familyCount).Error; err != nil {
-				return err
-			}
-			if familyCount > 0 {
-				result.Status = "preserved_family_data"
-				result.UserNo = user.UserNo
-				return nil
-			}
 			result.Status = "refreshed"
 			if err := clearSampleUserData(tx, user.UserNo); err != nil {
 				return err
@@ -131,6 +122,20 @@ func findExistingSampleUser(db *gorm.DB) (*userSchema, error) {
 }
 
 func clearSampleUserData(db *gorm.DB, userNo uint64) error {
+	// Remove family references before replacing the sample user's personal transactions.
+	if err := db.Exec(`DELETE FROM household_entry_data WHERE entry_id IN (
+		SELECT entry_id FROM household_entry WHERE source_transaction_id IN (
+			SELECT transaction_id FROM "transaction" WHERE user_no = ?
+		)
+	)`, userNo).Error; err != nil {
+		return fmt.Errorf("delete sample household entry data: %w", err)
+	}
+	if err := db.Exec(`DELETE FROM household_entry WHERE source_transaction_id IN (
+		SELECT transaction_id FROM "transaction" WHERE user_no = ?
+	)`, userNo).Error; err != nil {
+		return fmt.Errorf("delete sample household entries: %w", err)
+	}
+
 	for _, deletion := range []struct {
 		name  string
 		model any
