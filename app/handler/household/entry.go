@@ -77,3 +77,18 @@ func (v *Handler) ShareStatus(c echo.Context) error {
 		return v.store.ShareStatus(ctx, u, f, c.Param("transactionId"))
 	})
 }
+
+func (v *Handler) BulkShare(c echo.Context) error   { return v.bulkSharing(c, true) }
+func (v *Handler) BulkUnshare(c echo.Context) error { return v.bulkSharing(c, false) }
+func (v *Handler) bulkSharing(c echo.Context, share bool) error {
+	in, e := read[h.BulkSharingInput](c)
+	if e != nil || c.Response().Committed {
+		return e
+	}
+	return v.run(c, 200, func(ctx context.Context, u, f string) (any, error) {
+		if !h.ValidBulkSharing(in) {
+			return nil, h.Invalid
+		}
+		return v.store.BulkShare(ctx, u, f, in, share)
+	})
+}

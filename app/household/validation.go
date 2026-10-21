@@ -55,3 +55,15 @@ func ValidMonth(s string) bool {
 	t, e := time.Parse("2006-01-02", s)
 	return e == nil && t.Day() == 1 && t.Format("2006-01-02") == s
 }
+
+func ValidBulkSharing(in BulkSharingInput) bool {
+	if len(in.TransactionIDs) < 1 || len(in.TransactionIDs) > 1000 {
+		return false
+	}
+	for _, id := range in.TransactionIDs {
+		if !ID(id) {
+			return false
+		}
+	}
+	return true
+}

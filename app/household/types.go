@@ -192,7 +192,21 @@ type ShareStatus struct {
 	Kind    string `json:"kind,omitempty"`
 }
 
+type BulkSharingInput struct {
+	TransactionIDs []string `json:"transaction_ids"`
+}
+type BulkSharingResult struct {
+	TransactionID string `json:"transaction_id"`
+	Outcome       string `json:"outcome"`
+	Code          string `json:"code,omitempty"`
+	Message       string `json:"message,omitempty"`
+}
+type BulkSharingResponse struct {
+	Results []BulkSharingResult `json:"results"`
+}
+
 type Store interface {
+	BulkShare(context.Context, string, string, BulkSharingInput, bool) (*BulkSharingResponse, error)
 	ShareStatus(context.Context, string, string, string) (*ShareStatus, error)
 	List(context.Context, string) ([]Family, error)
 	Get(context.Context, string, string) (*Family, error)

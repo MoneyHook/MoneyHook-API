@@ -47,6 +47,8 @@ func routeSchedulerConfig() router.SchedulerAuthConfig {
 }
 
 var expectedBusinessRoutes = map[string]struct{}{
+	"POST /api/v1/households/:householdId/shares/bulk":                       {},
+	"POST /api/v1/households/:householdId/shares/bulk-unshare":               {},
 	"GET /api/v1/transactions":                                               {},
 	"GET /api/v1/households":                                                 {},
 	"POST /api/v1/households":                                                {},
