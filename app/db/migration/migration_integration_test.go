@@ -456,6 +456,94 @@ func exerciseSampleSeed(t *testing.T, db *gorm.DB, databaseName string) {
 	if refreshedUser.AccentColor != "blue" || refreshedUser.ThemeMode != "system" || refreshedUser.ChartPalette != "default" {
 		t.Fatalf("sample user settings = (%q, %q, %q), want (blue, system, default)", refreshedUser.AccentColor, refreshedUser.ThemeMode, refreshedUser.ChartPalette)
 	}
+	exerciseSampleSeedWithFamily(t, db, options, sampleUser.UserNo)
+}
+
+func exerciseSampleSeedWithFamily(t *testing.T, db *gorm.DB, options Options, userNo uint64) {
+	t.Helper()
+	var householdID, memberID uint64
+	if err := db.Raw("INSERT INTO household (name, state) VALUES ('seed test', 'active') RETURNING household_id").Scan(&householdID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Raw(`INSERT INTO household_member (household_id, user_no, role, state, slot_no, display_name)
+		VALUES (?, ?, 'admin', 'active', 1, 'sample') RETURNING member_id`, householdID, userNo).Scan(&memberID).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	otherUser := userSchema{UserID: "seed-family-preserved-user"}
+	if err := db.Create(&otherUser).Error; err != nil {
+		t.Fatal(err)
+	}
+	var otherTransaction transactionSchema
+	if err := db.Where("user_no = ?", userNo).Order("transaction_id").Take(&otherTransaction).Error; err != nil {
+		t.Fatal(err)
+	}
+	otherTransaction.TransactionID = 0
+	otherTransaction.UserNo = otherUser.UserNo
+	otherTransaction.PaymentID = nil
+	if err := db.Create(&otherTransaction).Error; err != nil {
+		t.Fatal(err)
+	}
+	mustExec(t, db, `INSERT INTO household_entry (household_id, kind, source_transaction_id, payer_member_id, created_by, updated_by)
+		VALUES (?, 'shared', ?, ?, ?, ?), (?, 'proxy', NULL, ?, ?, ?)`,
+		householdID, otherTransaction.TransactionID, memberID, memberID, memberID, householdID, memberID, memberID, memberID)
+	mustExec(t, db, `INSERT INTO household_entry_data (entry_id, payload)
+		SELECT entry_id, '{}'::jsonb FROM household_entry WHERE household_id = ?`, householdID)
+
+	for _, state := range []string{"active", "left", "archived"} {
+		t.Run("sample_seed_family_"+state, func(t *testing.T) {
+			mustExec(t, db, `UPDATE household_member SET state = ?, slot_no = CASE WHEN ? = 'active' THEN 1 ELSE NULL END
+				WHERE member_id = ?`, state, state, memberID)
+			var transactions []transactionSchema
+			if err := db.Where("user_no = ?", userNo).Order("transaction_id").Limit(2).Find(&transactions).Error; err != nil {
+				t.Fatal(err)
+			}
+			if len(transactions) != 2 {
+				t.Fatalf("sample transactions = %d, want at least 2", len(transactions))
+			}
+			mustExec(t, db, `INSERT INTO household_entry (household_id, kind, source_transaction_id, payer_member_id, created_by, updated_by)
+				VALUES (?, 'shared', ?, ?, ?, ?), (?, 'snapshot', ?, ?, ?, ?)`,
+				householdID, transactions[0].TransactionID, memberID, memberID, memberID,
+				householdID, transactions[1].TransactionID, memberID, memberID, memberID)
+			mustExec(t, db, `INSERT INTO household_entry_data (entry_id, payload, corrected_payload, captured_at)
+				SELECT entry_id, '{}'::jsonb, '{}'::jsonb, CURRENT_TIMESTAMP FROM household_entry WHERE source_transaction_id IN (?, ?)`,
+				transactions[0].TransactionID, transactions[1].TransactionID)
+			mustExec(t, db, "UPDATE transaction SET transaction_name = '手動変更' WHERE transaction_id = ?", transactions[0].TransactionID)
+			if err := seedSampleData(context.Background(), db, options); err != nil {
+				t.Fatalf("refresh sample with family state %s: %v", state, err)
+			}
+			assertUserCount(t, db, "transaction", userNo, int64(sampleTransactionCount()))
+			assertUserCount(t, db, "budget", userNo, 6)
+			assertUserCount(t, db, "transaction", otherUser.UserNo, 1)
+			assertUserCount(t, db, "household_member", userNo, 1)
+			var memberState string
+			if err := db.Table("household_member").Select("state").Where("member_id = ?", memberID).Scan(&memberState).Error; err != nil {
+				t.Fatal(err)
+			}
+			if memberState != state {
+				t.Fatalf("member state = %q, want %q", memberState, state)
+			}
+			for _, query := range []string{
+				"SELECT COUNT(*) FROM household_entry WHERE household_id = ?",
+				"SELECT COUNT(*) FROM household_entry_data d JOIN household_entry e USING (entry_id) WHERE e.household_id = ?",
+			} {
+				var count int64
+				if err := db.Raw(query, householdID).Scan(&count).Error; err != nil {
+					t.Fatal(err)
+				}
+				if count != 2 {
+					t.Fatalf("preserved family records = %d, want 2 (other user's shared entry and proxy entry)", count)
+				}
+			}
+			var changedCount int64
+			if err := db.Table("transaction").Where("user_no = ? AND transaction_name = '手動変更'", userNo).Count(&changedCount).Error; err != nil {
+				t.Fatal(err)
+			}
+			if changedCount != 0 {
+				t.Fatalf("manually changed sample transaction remains after refresh")
+			}
+		})
+	}
 }
 
 func createLegacyAuthSchema(t *testing.T, db *gorm.DB) {

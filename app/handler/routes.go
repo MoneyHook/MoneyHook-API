@@ -35,6 +35,8 @@ func (h *Handler) Register(api *echo.Group) {
 	reactV1.POST("/households/:householdId/proxy-transactions", h.household.Proxy)
 	reactV1.PATCH("/households/:householdId/proxy-transactions/:entryId", h.household.UpdateProxy)
 	reactV1.DELETE("/households/:householdId/proxy-transactions/:entryId", h.household.DeleteProxy)
+	reactV1.POST("/households/:householdId/shares/bulk", h.household.BulkShare)
+	reactV1.POST("/households/:householdId/shares/bulk-unshare", h.household.BulkUnshare)
 	reactV1.GET("/households/:householdId/shares/:transactionId", h.household.ShareStatus)
 	reactV1.PUT("/households/:householdId/shares/:transactionId", h.household.Share)
 	reactV1.DELETE("/households/:householdId/shares/:transactionId", h.household.Unshare)

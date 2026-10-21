@@ -13,19 +13,19 @@ go test ./...
 
 `ENABLE_SEED_DATA` がGoの `strconv.ParseBool` でtrueとして解釈できる値（`true`、`TRUE`、`True`、`1` など）に設定されている場合、`go run ./cmd/migrate`で開発用サンプルデータも投入されます。未設定、空文字、またはfalseの場合はサンプルデータを投入しません。不正な値の場合はmigrationの実行に失敗します。
 
-サンプルデータを有効にすると、固定開発ユーザーの取引、固定費、予算、支払い方法、カスタム／非表示サブカテゴリ、表示設定が、起動のたびに現在のサンプルシナリオへ再生成されます。開発ユーザーの変更内容を保持したい場合は、このフラグを無効にしてください。
+サンプルデータを有効にすると、家族への所属状態にかかわらず、固定開発ユーザーの取引、固定費、予算、支払い方法、カスタム／非表示サブカテゴリ、表示設定が、起動のたびに現在のサンプルシナリオへ再生成されます。再生成する個人取引に紐づく家族の共有記録・控えも削除します。家族の所属記録、他のユーザーの取引、原本を参照しない代理入力は保持します。開発ユーザーの変更内容を保持したい場合は、このフラグを無効にしてください。
 
 PostgreSQLでは、最初に `postgres` メンテナンスデータベースへ接続し、`POSTGRES_DATABASE` が存在しなければ作成します。そのため、初回起動時には設定したPostgreSQLユーザーにデータベース作成権限が必要です。
 
 通常の `docker compose up` はFirebase Auth Emulatorのhealthy確認後、`ENABLE_SEED_DATA=true`でmigration・master data・sample dataを実行してからAPIを起動します。API起動時は `ENABLE_DEVELOPMENT_USER=true` の場合に固定UID `a77a6e94-6aa2-47ea-87dd-129f580fb669` の開発用Googleユーザーがprovisionされます。
 
-Dev Containerでは専用Compose上書きによりgoコンテナだけを待機させます。Run and Debugから `Seed Database (Migration + Sample Data)` を実行した後、`Launch Echo Server via Air (Hot Reload + Debug)` を実行してください。seedの有効化はAPI起動とは独立して `ENABLE_SEED_DATA` で制御します。
+Dev Containerでは専用Compose上書きによりgoコンテナだけを待機させます。Run and Debugから `Seed Database` を実行した後、`Launch API (Air)` を実行してください。seedの有効化はAPI起動とは独立して `ENABLE_SEED_DATA` で制御します。
 
 E2E用の `compose.e2e.yaml` は通常Composeの一括フローを引き継ぎ、E2E用のCORS originだけを上書きします。これらの開発用フラグは本番環境では有効にしないでください。
 
 ## 家族の家計 v1
 
-`go run ./cmd/migrate` は家族の所属・招待・記録用テーブルと、個人取引のversion/論理削除、入力先デフォルト設定を追加します。既存取引の共有は自動で開始しません。家族の操作履歴は保存せず、旧 `household_event` がある場合はテーブルを削除します。旧取引履歴テーブルがある場合は、控えの最新訂正を `household_entry_data.corrected_payload` へ移してから旧テーブルを削除します。移行前にバックアップを取得し、旧APIを停止してmigration後に新APIを配備してください。過去の操作・変更履歴は削除され、復元にはバックアップが必要です。家族への所属記録があるサンプルユーザーは、個人原本と家族の参照を保つためサンプル再生成をスキップします。
+`go run ./cmd/migrate` は家族の所属・招待・記録用テーブルと、個人取引のversion/論理削除、入力先デフォルト設定を追加します。既存取引の共有は自動で開始しません。家族の操作履歴は保存せず、旧 `household_event` がある場合はテーブルを削除します。旧取引履歴テーブルがある場合は、控えの最新訂正を `household_entry_data.corrected_payload` へ移してから旧テーブルを削除します。移行前にバックアップを取得し、旧APIを停止してmigration後に新APIを配備してください。過去の操作・変更履歴は削除され、復元にはバックアップが必要です。
 
 控え作成時の原本の版は保存せず、旧 `household_entry_data.source_version` 列がある場合はmigrationで削除します。控えの内容・保存日時・最新訂正は保持します。
 
