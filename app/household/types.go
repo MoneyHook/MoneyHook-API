@@ -154,6 +154,13 @@ type Filter struct {
 	Kind   string
 	Cursor string
 }
+type DuplicateFilter struct {
+	Date    string
+	Amount  int64
+	Sign    int
+	Payer   string
+	Exclude string
+}
 type Reference struct {
 	ID            string  `json:"id"`
 	Name          string  `json:"name"`
@@ -206,6 +213,8 @@ type BulkSharingResponse struct {
 }
 
 type Store interface {
+	Analytics(context.Context, string, string, string, string) (*Summary, error)
+	Duplicates(context.Context, string, string, DuplicateFilter) ([]Entry, error)
 	BulkShare(context.Context, string, string, BulkSharingInput, bool) (*BulkSharingResponse, error)
 	ShareStatus(context.Context, string, string, string) (*ShareStatus, error)
 	List(context.Context, string) ([]Family, error)
