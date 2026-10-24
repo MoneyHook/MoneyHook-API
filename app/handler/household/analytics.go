@@ -4,7 +4,6 @@ import (
 	h "MoneyHook/MoneyHook-API/household"
 	"context"
 	"github.com/labstack/echo/v4"
-	"sort"
 	"strconv"
 	"time"
 )
@@ -14,49 +13,7 @@ func (v *Handler) Analytics(c echo.Context) error {
 		if c.Param("group") != "overview" && c.Param("group") != "categories" && c.Param("group") != "payers" {
 			return nil, h.Invalid
 		}
-		result := h.Summary{Groups: []h.SummaryGroup{}}
-		groups := map[string]h.SummaryGroup{}
-		cursor := ""
-		for {
-			p, e := v.store.Entries(ctx, u, f, h.Filter{Month: c.QueryParam("month"), Cursor: cursor})
-			if e != nil {
-				return nil, e
-			}
-			for _, entry := range p.Entries {
-				if entry.Excluded {
-					continue
-				}
-				if entry.Sign == 1 {
-					result.Income += entry.Amount
-				} else {
-					result.Expense += entry.Amount
-					id := entry.CategoryID
-					name := entry.CategoryName
-					if c.Param("group") == "payers" {
-						id = "common"
-						if entry.Payer.MemberID != nil {
-							id = *entry.Payer.MemberID
-						}
-						name = entry.Payer.DisplayName
-					}
-					g := groups[id]
-					g.ID = id
-					g.Name = name
-					g.Amount += entry.Amount
-					groups[id] = g
-				}
-			}
-			if p.NextCursor == nil {
-				break
-			}
-			cursor = *p.NextCursor
-		}
-		result.Balance = result.Income - result.Expense
-		for _, g := range groups {
-			result.Groups = append(result.Groups, g)
-		}
-		sort.Slice(result.Groups, func(i, j int) bool { return result.Groups[i].Amount > result.Groups[j].Amount })
-		return result, nil
+		return v.store.Analytics(ctx, u, f, c.QueryParam("month"), c.Param("group"))
 	})
 }
 func (v *Handler) Duplicates(c echo.Context) error {
@@ -77,23 +34,6 @@ func (v *Handler) Duplicates(c echo.Context) error {
 		if exclude := c.QueryParam("exclude"); exclude != "" && !h.ID(exclude) {
 			return nil, h.Invalid
 		}
-		out := []h.Entry{}
-		cursor := ""
-		for {
-			p, e := v.store.Entries(ctx, u, f, h.Filter{Month: date[:7] + "-01", Payer: c.QueryParam("payer"), Cursor: cursor})
-			if e != nil {
-				return nil, e
-			}
-			for _, r := range p.Entries {
-				if !r.Excluded && r.Date == date && r.Amount == amount && r.Sign == sign && r.ID != c.QueryParam("exclude") {
-					out = append(out, r)
-				}
-			}
-			if p.NextCursor == nil {
-				break
-			}
-			cursor = *p.NextCursor
-		}
-		return out, nil
+		return v.store.Duplicates(ctx, u, f, h.DuplicateFilter{Date: date, Amount: amount, Sign: sign, Payer: c.QueryParam("payer"), Exclude: c.QueryParam("exclude")})
 	})
 }
