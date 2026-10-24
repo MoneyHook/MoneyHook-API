@@ -14,6 +14,7 @@ import (
 )
 
 const v1TransactionTimeSelect = "LEFT(CAST(t.transaction_time AS TEXT), 5) AS transaction_time"
+const v1TransactionSharedExists = "EXISTS (SELECT 1 FROM household_entry he WHERE he.source_transaction_id=t.transaction_id AND he.kind='shared' AND he.state='active')"
 
 type v1TransactionRecord struct {
 	TransactionId     uint64  `gorm:"column:transaction_id;primaryKey;autoIncrement"`
@@ -36,14 +37,27 @@ func (ts *TransactionStore) GetV1Transaction(userId string, transactionId string
 
 func getPostgresV1Transaction(db *gorm.DB, userId string, transactionId string) (*model.V1Transaction, error) {
 	var result model.V1Transaction
-	err := db.Table("transaction t").Where("t.deleted_at IS NULL").
+	err := postgresV1TransactionQuery(db, userId).
+		Where("t.transaction_id = ?", transactionId).
+		Take(&result).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, transactiondomain.ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+func postgresV1TransactionQuery(db *gorm.DB, userId string) *gorm.DB {
+	return db.Table("transaction t").Where("t.deleted_at IS NULL").
 		Select(
 			"CAST(t.transaction_id AS TEXT) AS transaction_id",
 			"TO_CHAR(t.transaction_date, 'YYYY-MM-DD') AS transaction_date",
 			v1TransactionTimeSelect,
 			"t.transaction_name",
 			"t.version",
-			"EXISTS (SELECT 1 FROM household_entry he WHERE he.source_transaction_id=t.transaction_id AND he.kind='shared' AND he.state='active') AS shared",
+			v1TransactionSharedExists+" AS shared",
 			"ABS(t.transaction_amount) AS amount",
 			"CASE WHEN t.transaction_amount > 0 THEN 1 ELSE -1 END AS sign",
 			"t.transaction_amount AS signed_amount",
@@ -58,16 +72,7 @@ func getPostgresV1Transaction(db *gorm.DB, userId string, transactionId string) 
 		Joins("INNER JOIN category c ON c.category_id = t.category_id").
 		Joins("INNER JOIN sub_category sc ON sc.sub_category_id = t.sub_category_id").
 		Joins("LEFT JOIN payment_resource pr ON pr.payment_id = t.payment_id").
-		Where("t.user_no = ?", userId).
-		Where("t.transaction_id = ?", transactionId).
-		Take(&result).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, transactiondomain.ErrNotFound
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
+		Where("t.user_no = ?", userId)
 }
 
 func (ts *TransactionStore) CreateV1Transaction(input *model.V1TransactionWrite) (*model.V1Transaction, error) {
