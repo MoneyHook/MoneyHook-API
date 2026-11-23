@@ -2,15 +2,15 @@
 
 ## 基本ルール
 
-- `main`と`develop`へ直接commitまたはpushしない。変更は必ずPRで取り込む。
-- `main`と`develop`へのforce pushは禁止する。
+- `master`と`development`へ直接commitまたはpushしない。変更は必ずPRで取り込む。
+- `master`と`development`へのforce pushは禁止する。
 - 1つのbranchとPRには、1つの目的に関係する変更だけを含める。
 - 秘密情報、`.env`、ログ、build成果物をcommitしない。
-- 自動化されたエージェントは、ユーザーから明示的に依頼されない限り、branch作成、commit、push、PR作成、tag操作を行わない。
+- 自動化されたエージェントには [AGENTS.md](../AGENTS.md) のGit作業方針も適用する。
 
 ## Branch戦略
 
-通常の機能追加、バグ修正、文書変更、refactorは`develop`から作業branchを作り、`develop`向けのPRで取り込みます。
+通常の機能追加、バグ修正、文書変更、refactorは `development` から作業branchを作り、同じbranchをPRのbaseにします。
 
 ### Branch名
 
@@ -63,19 +63,18 @@ docs: ローカル起動手順を整理
 
 ## Pull Request
 
-- 通常の作業branchは`develop`をbaseにする。
 - PRタイトルはcommit messageと同じ`<type>(<optional-scope>): <日本語による具体的な変更内容>`形式にする。typeとscopeを除き、タイトルは日本語で記載する。
 - PR本文は日本語で記載し、次の項目を必ず含める。
   - 変更概要
   - 影響範囲
   - 実行した確認
   - 未実行または失敗した確認（ない場合も「なし」と記載する）
-- repositoryで有効なrequired checksをすべて通す。CI導入前は、変更範囲に応じたローカル検証結果をPRへ記載する。
+- repositoryで有効なrequired checksをすべて通し、[変更範囲に応じた検証](DEVELOPMENT.md#検証)の結果をPRへ記載する。
 - conflictを解消し、意図しないファイルや生成物が含まれていないことを確認する。
 - squash mergeを使用し、merge後は作業branchを削除する。
 
 ## ReleaseとHotfix
 
-- Release準備は`release/v1-2-0`形式のbranchを作成し、通常のPRルールに従う。
-- 本番の緊急修正だけは`main`から`hotfix/<英語kebab-case-summary>`を作成する。
-- hotfixは`main`へのPRで取り込み、必要な修正を`develop`にも反映する。
+- Release準備は `development` から `release/v1-2-0` 形式のbranchを作成し、通常のPRルールに従う。
+- 本番リリースは `development` から `master` へPRを作り、取り込む。`master` への反映で[デプロイ workflow](../.github/workflows/deploy.yml)が実行される。
+- 本番の緊急修正は `master` から `hotfix/<英語kebab-case-summary>` を作成し、`master` 向けのPRで取り込む。必要な修正は `development` にも反映する。
