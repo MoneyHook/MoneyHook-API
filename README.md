@@ -1,55 +1,33 @@
 # MoneyHooks API
 
-MoneyHooksのバックエンドAPIです。GoとEchoでHTTP APIを提供し、Firebase Authenticationで利用者を認証します。データベースはPostgreSQLを使用します。
+MoneyHooksのバックエンドAPIです。GoとEchoでHTTP APIを提供します。
 
 ## ローカル開発
 
-Docker Composeを使うと、PostgreSQL、Firebase Auth Emulator、APIをまとめて起動できます。通常のComposeではFirebase Auth Emulatorのhealthy確認後、PostgreSQLのmigration・master data・sample dataを実行してからAPIを起動します。
+Docker ComposeでPostgreSQL、Firebase Auth Emulator、APIを起動します。
 
 ```bash
 docker compose up --build
 ```
 
-APIは`http://localhost:8080`で起動します。次の公開エンドポイントで起動状態を確認できます。
+公開ヘルスチェックでAPIの起動を確認します。
 
 ```bash
 curl http://localhost:8080/
 ```
 
-Firebase Emulator UIは`http://localhost:4000/auth`、Auth Emulatorはホストの`http://localhost:9099`で公開されます。コンテナ間通信も`firebase:9099`を使用します。
+Firebase Emulator UIは `http://localhost:4000/auth`、ホストからのAuth Emulator接続先は `http://localhost:9099` です。
 
-業務APIは`/api`以下にあり、GoogleプロバイダーのFirebase ID tokenをBearer tokenとして要求します。ローカル構成ではFirebase Auth Emulatorを使用します。
-
-通常のComposeでは`ENABLE_SEED_DATA=true`により、起動のたびに固定UID `a77a6e94-6aa2-47ea-87dd-129f580fb669`の開発ユーザーに紐づくsample dataを再生成します。API起動時は`ENABLE_DEVELOPMENT_USER=true`により、Firebaseの開発ユーザー（表示名「開発ユーザー」、`developer@example.com`）もprovisionされます。
-
-Dev Containerは専用Compose上書きによりgoコンテナを待機状態で起動します。Run and Debugから次の順番で実行してください。
-
-1. `Seed Database`
-2. `Launch API (Air)`
-
-sample dataを再生成せずmigrationだけを実行したい場合は、`ENABLE_SEED_DATA=false go run ./cmd/migrate`を使用してください。これらの開発用フラグは本番環境では有効にしないでください。
-
-E2Eの`compose.e2e.yaml`は通常Composeの自動migration・seed・API起動を引き継ぎ、E2E用のCORS originだけを上書きします。
-
-## 開発コマンド
-
-Goコマンドはmodule rootの`app/`で実行します。
-
-```bash
-cd app
-gofmt -w .
-go vet ./...
-go test ./...
-go build ./...
-```
-
-DB migrationと開発環境の詳細は[開発ガイド](docs/DEVELOPMENT.md)を参照してください。
+一般業務APIはFirebaseのGoogleログインを使います。日次ジョブはCloud Scheduler用のOIDC認証を使います。[HTTPリクエストの流れ](docs/ARCHITECTURE.md#httpリクエストの流れ)
 
 ## ドキュメント
 
-- [アーキテクチャ](docs/ARCHITECTURE.md): ディレクトリ構造、package責務、依存方向、HTTP処理の流れ
-- [Git workflow](docs/GIT_WORKFLOW.md): branch、commit、PRの運用ルール
-- [開発エージェント向けガイド](AGENTS.md): 変更時の作業方針と検証ルール
-- OpenAPI契約: 隣接する`moneyhooks-react/contracts/openapi.yaml`
-
-API実装、DB migration、認証・認可はこのリポジトリを正本とします。HTTP契約を変更する場合は、ReactリポジトリのOpenAPI契約と生成クライアントも同じ変更単位で更新してください。
+| 確認する内容 | 文書 |
+| --- | --- |
+| Compose・Dev Container・E2E・seed | [ローカル環境とDB初期化](docs/DEVELOPMENT.md#ローカル環境とdb初期化) |
+| 変更範囲に応じたGo検証・PostgreSQL統合テスト | [検証](docs/DEVELOPMENT.md#検証) |
+| 家族機能の本番migration・公開・切り戻し | [家族機能の移行と公開](docs/DEVELOPMENT.md#家族機能の移行と公開) |
+| 日次ジョブの認証・Scheduler設定 | [日次ジョブ](docs/DEVELOPMENT.md#日次ジョブ) |
+| package責務・依存方向・API契約 | [アーキテクチャ](docs/ARCHITECTURE.md) |
+| branch・commit・PR・release | [Git Workflow](docs/GIT_WORKFLOW.md) |
+| エージェント向け作業方針 | [AGENTS.md](AGENTS.md) |
